@@ -1,0 +1,826 @@
+<!-- 
+    Moodle Chatbot Templates
+    This template contains the structure, styles and scripts for the chatbot interface
+-->
+
+<!-- Inline CSS Styles -->
+<style>
+    /* Base styles */
+    body {
+        font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    
+    /* Chat widget (floating button) */
+    #chat-widget {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        width: 140px;
+        height: 108px;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        font-size: 24px;
+        font-weight: bold;
+        z-index: 9999;
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    #chat-widget:hover {
+        transform: scale(1.1);
+    }
+
+    /* Chat box container */
+    #chat-box {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 25%;
+        max-width: 550px;
+        min-width: 340px;
+        height: 500px;
+        background: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        display: none;
+        flex-direction: column;
+        z-index: 9999;
+        transform: translateY(20px);
+        opacity: 0;
+        transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    }
+
+    #chat-box.active {
+        display: flex;
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    /* Chat header */
+    #chat-header {
+        background: %%MAIN_COLOR%%;
+        color: white;
+        padding: 12px;
+        text-align: center;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+        font-weight: bold;
+        position: relative;
+    }
+
+    #chat-header span {
+        position: absolute;
+        right: 10px;
+        cursor: pointer;
+    }
+
+    /* Messages container */
+    #chat-messages {
+        flex: 1;
+        padding: 12px;
+        overflow-y: auto;
+        white-space: pre-line;
+        display: flex;
+        flex-direction: column;
+        scroll-behavior: smooth;
+    }
+    
+    /* Message formatting - headings */
+    #chat-messages h3, #chat-messages h4, #chat-messages h5 {
+        display: block;
+        font-weight: bold;
+        color: #333;
+        margin-top: 16px;
+        margin-bottom: 8px;
+    }
+    
+    #chat-messages h3 { font-size: 16px; }
+    #chat-messages h4 { font-size: 15px; }
+    #chat-messages h5 { font-size: 14px; }
+    
+    /* Message formatting - lists */
+    #chat-messages .numbered-item, #chat-messages .bullet-item {
+        display: block;
+        margin: 1px 0;
+        padding: 1px 10px 1px 5px;
+        background-color: rgba(240, 240, 240, 0.1);
+    }
+    
+    #chat-messages .numbered-list {
+        display: block;
+        margin: 2px 0;
+    }
+    
+    #chat-messages .numbered-list .numbered-item {
+        margin: 0;
+    }
+    
+    /* List spacing fixes */
+    #chat-messages .numbered-list + .numbered-list,
+    #chat-messages .bullet-item + .numbered-list,
+    #chat-messages .numbered-list + .bullet-item {
+        margin-top: 1px;
+    }
+    
+    #chat-messages br + .numbered-list,
+    #chat-messages br + .bullet-item {
+        margin-top: 0;
+        display: inline-block;
+    }
+    
+    #chat-messages strong {
+        margin-top: 8px;
+        display: inline-block;
+    }
+
+    /* Chat bubbles */
+    .chat-bubble {
+        max-width: 85%;
+        padding: 12px;
+        border-radius: 15px;
+        margin: 6px 0;
+    }
+
+    .user-message {
+        background: %%MAIN_COLOR%%;
+        color: white;
+        align-self: flex-end;
+        text-align: right;
+        border-bottom-right-radius: 2px;
+    }
+
+    .bot-message {
+        background: #e3f2fd;
+        color: black;
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+    }
+    
+    /* Error message */
+    .error-message {
+        background: #ffebee;
+        color: #b71c1c;
+        border-left: 3px solid #f44336;
+        align-self: center;
+        text-align: center;
+        max-width: 95%;
+    }
+    
+    /* Loading indicator */
+    .loading {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        border: 3px solid rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        border-top-color: %%MAIN_COLOR%%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Chat input area */
+    #chat-input {
+        display: flex;
+        border-top: 1px solid #ddd;
+        padding: 8px;
+        background: #f8f9fa;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    #chat-input input {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        outline: none;
+        border-radius: 5px;
+    }
+
+    #chat-input button {
+        background: %%MAIN_COLOR%%;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-left: 8px;
+    }
+    
+    /* Prompt suggestions */
+    #prompt-suggestions-panel {
+        display: none;
+        position: absolute;
+        bottom: 60px;
+        left: 0;
+        right: 0;
+        background: white;
+        border-top: 1px solid #ddd;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 100;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+        padding: 10px;
+    }
+    
+    .prompt-suggestion {
+        cursor: pointer;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        background: #f1f1f1;
+        border-radius: 5px;
+        transition: background 0.2s;
+        font-size: 14px;
+    }
+    
+    .prompt-suggestion:hover {
+        background: #e3e3e3;
+    }
+
+    /* Animations */
+    #fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<!-- Chat Widget HTML Structure -->
+<div id="chat-widget"><img src="%%CHATBOT_LOGO%%" alt="Logo"></div>
+<div id="chat-box">
+    <div id="chat-header">%%CHATBOT_NAME%% <span onclick="toggleChat()">✖</span></div>
+    <div id="chat-messages"></div>
+    <div id="analytics-notice" style="display: none; font-size: 12px; color: #666; padding: 4px 8px; text-align: center; background-color: #f8f9fa; border-top: 1px solid #eee;">%%ANALYTICS_NOTICE%%</div>
+    <div id="prompt-suggestions-panel">
+        <!-- Prompt suggestions will be dynamically added here -->
+    </div>
+    <div id="chat-input">
+        <input type="text" id="user-input" placeholder="Schreibe eine Nachricht...">
+        <button onclick="sendMessage()">➤</button>
+        <button id="suggestions-button" onclick="togglePromptSuggestions()" style="display: none;">
+            <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 24 24">
+                <path d="M7,8h10V6H7V8z M7,12h10v-2H7V12z M7,16h10v-2H7V16z"/>
+            </svg>
+        </button>
+        <button onclick="resetSession()">
+            <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 32 32">
+                <path d="M 16 4 C 10.886719 4 6.617188 7.160156 4.875 11.625 L 6.71875 12.375 C 8.175781 8.640625 11.710938 6 16 6 C 19.242188 6 22.132813 7.589844 23.9375 10 L 20 10 L 20 12 L 27 12 L 27 5 L 25 5 L 25 8.09375 C 22.808594 5.582031 19.570313 4 16 4 Z M 25.28125 19.625 C 23.824219 23.359375 20.289063 26 16 26 C 12.722656 26 9.84375 24.386719 8.03125 22 L 12 22 L 12 20 L 5 20 L 5 27 L 7 27 L 7 23.90625 C 9.1875 26.386719 12.394531 28 16 28 C 21.113281 28 25.382813 24.839844 27.125 20.375 Z"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<script>
+    /**
+     * Chatbot functionality
+     *
+     * This script handles the chatbot UI interaction, message formatting,
+     * and communication with the server.
+     */
+    
+    // Global variables
+    let assistantName = "%%CHATBOT_NAME%%";
+    let conversationHistory = [];
+    let analyticsEnabled = %%ANALYTICS_ENABLED%%;
+    let promptSuggestionsEnabled = %%PROMPT_SUGGESTIONS_ENABLED%%;
+    let promptSuggestions = `%%PROMPT_SUGGESTIONS%%`;
+    let promptSuggestionsOpen = false;
+
+    // Event listeners and initialization
+    document.addEventListener('DOMContentLoaded', initChatbot);
+    
+    /**
+     * Initialize the chatbot interface
+     */
+    function initChatbot() {
+        addEventListeners();
+        
+        // Check analytics status and force reset if needed
+        const needsReset = checkAnalyticsStatus();
+        
+        // If we need to reset, don't load the old session
+        if (!needsReset) {
+            loadSession();
+        }
+        
+        setTimeout(scrollToBottom, 100);
+        showAnalyticsNotice();
+        
+        // Initialize prompt suggestions if enabled
+        if (promptSuggestionsEnabled) {
+            initPromptSuggestions();
+        }
+    }
+    
+    /**
+     * Check if analytics status has changed
+     * Resets the conversation if the status has changed since last visit
+     */
+    function checkAnalyticsStatus() {
+        // Get stored analytics status
+        const storedStatus = localStorage.getItem("analyticsEnabled");
+        
+        // If analytics status has changed since last visit, force reset the conversation
+        if (storedStatus !== null && storedStatus !== String(analyticsEnabled)) {
+            console.log("Analytics status changed from " + storedStatus + " to " + analyticsEnabled + ", resetting conversation");
+            
+            // Reset stored conversation
+            localStorage.removeItem("chatHistory");
+            localStorage.removeItem("conversationHistory");
+            conversationHistory = [];
+            
+            // Force a welcome message reset when we open the chat
+            return true;
+        }
+        
+        // Always store current status
+        localStorage.setItem("analyticsEnabled", analyticsEnabled);
+        return false;
+    }
+    
+    /**
+     * Show analytics notice if it's provided
+     */
+    function showAnalyticsNotice() {
+        const analyticsNotice = document.getElementById("analytics-notice");
+        const noticeText = analyticsNotice.textContent.trim();
+        
+        if (noticeText && noticeText !== "%%ANALYTICS_NOTICE%%") {
+            analyticsNotice.style.display = "block";
+        }
+    }
+    
+    /**
+     * Add event listeners to UI elements
+     */
+    function addEventListeners() {
+        const chatWidget = document.getElementById("chat-widget");
+        const userInput = document.getElementById("user-input");
+        
+        if (chatWidget) {
+            chatWidget.addEventListener("click", toggleChat);
+        }
+        
+        if (userInput) {
+            userInput.addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    sendMessage();
+                }
+            });
+        }
+    }
+
+    /**
+     * Toggle the chat interface visibility
+     */
+    function toggleChat() {
+        const chatBox = document.getElementById("chat-box");
+        if (chatBox.classList.contains("active")) {
+            chatBox.classList.remove("active");
+            chatBox.style.opacity = "0";
+            setTimeout(() => chatBox.style.display = "none", 300);
+        } else {
+            chatBox.style.display = "flex";
+            setTimeout(() => {
+                chatBox.style.opacity = "1";
+                chatBox.classList.add("active");
+            }, 10);
+            
+            // Check if analytics status has changed and force reset if needed
+            const needsReset = checkAnalyticsStatus();
+            introduceBot(needsReset);
+        }
+    }
+
+    /**
+     * Display the bot's welcome message if it's the first time opening the chat
+     * or forced by reset
+     */
+    function introduceBot(forceReset = false) {
+        const chatMessages = document.getElementById("chat-messages");
+        
+        // Always show welcome message if forced or first time
+        if (forceReset || conversationHistory.length === 0) {
+            // Analytics status is now determined from the global variable
+            // which is set directly from PHP based on whether analytics are enabled
+            
+            // Set welcome message based on analytics status
+            let welcomeMessage = "Hey! Schön, dass du hier bist. Ich bin dein Freund und Lern-Begleiter. Frag mich einfach, wenn du Hilfe brauchst! 😊";
+            
+            if (analyticsEnabled) {
+                // Hard-coded analytics notice text since the placeholder doesn't seem to get replaced properly
+                welcomeMessage = "Hey! Schön, dass du hier bist. Ich bin dein Lern-Begleiter. Deine Referentinnen oder/und Referenten haben die Chat-Analyse aktiviert, um aus deinen Fragen zu lernen, welche Inhalte zusätzliche Nachfragen erzeugt haben. Die Analyse findet anonym statt und ist nie auf dich zurückführbar. Stelle also alle Fragen, und denk daran, es gibt keine dummen Fragen ;-).";
+            }
+            
+            // Clear existing conversation if forced
+            if (forceReset) {
+                chatMessages.innerHTML = "";
+                conversationHistory = [];
+            }
+            
+            const formattedMessage = formatBotResponse(welcomeMessage);
+            
+            chatMessages.innerHTML += `<div class='chat-bubble bot-message fade-in'><strong>${assistantName}:</strong><br>${formattedMessage}</div>`;
+            
+            conversationHistory.push({
+                role: "assistant",
+                content: welcomeMessage
+            });
+            
+            saveConversationHistory();
+            scrollToBottom();
+            
+            // Store current analytics status
+            localStorage.setItem("analyticsEnabled", analyticsEnabled);
+        }
+    }
+
+    /**
+     * Scroll the chat window to the bottom
+     */
+    function scrollToBottom() {
+        const chatMessages = document.getElementById("chat-messages");
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    /**
+     * Session management - save chat UI state and history
+     */
+    function saveSession() {
+        localStorage.setItem("chatHistory", document.getElementById("chat-messages").innerHTML);
+        saveConversationHistory();
+    }
+
+    /**
+     * Save conversation history to local storage
+     */
+    function saveConversationHistory() {
+        localStorage.setItem("conversationHistory", JSON.stringify(conversationHistory));
+    }
+
+    /**
+     * Load saved session from local storage
+     */
+    function loadSession() {
+        const chatMessages = document.getElementById("chat-messages");
+        const savedHistory = localStorage.getItem("chatHistory");
+        if (savedHistory) {
+            chatMessages.innerHTML = savedHistory;
+            
+            const savedConversation = localStorage.getItem("conversationHistory");
+            if (savedConversation) {
+                try {
+                    conversationHistory = JSON.parse(savedConversation);
+                } catch (e) {
+                    conversationHistory = [];
+                }
+            }
+            
+            scrollToBottom();
+        }
+    }
+
+    /**
+     * Reset the chat session
+     */
+    function resetSession() {
+        localStorage.removeItem("chatHistory");
+        localStorage.removeItem("conversationHistory");
+        document.getElementById("chat-messages").innerHTML = "";
+        conversationHistory = [];
+        
+        // Store current analytics status from the global variable
+        localStorage.setItem("analyticsEnabled", analyticsEnabled);
+        
+        // Force a new welcome message
+        introduceBot(true);
+    }
+
+    /**
+     * Send a user message to the server and handle the response
+     */
+    async function sendMessage() {
+        const inputField = document.getElementById("user-input");
+        const message = inputField.value.trim();
+        if (!message) return;
+
+        const chatMessages = document.getElementById("chat-messages");
+        chatMessages.innerHTML += `<div class='chat-bubble user-message fade-in'><strong>Du:</strong> ${message}</div>`;
+        chatMessages.innerHTML += `<div id="loading" class="loading fade-in"></div>`;
+        scrollToBottom();
+        inputField.value = "";
+        
+        conversationHistory.push({
+            role: "user",
+            content: message
+        });
+        
+        saveSession();
+
+        try {
+            // Prepare form data for request
+            const formData = new FormData();
+            formData.append('message', message);
+            formData.append('history', JSON.stringify(conversationHistory));
+            
+            // Add Moodle session key for CSRF protection - required for security
+            if (typeof M !== 'undefined' && M.cfg && M.cfg.sesskey) {
+                formData.append('sesskey', M.cfg.sesskey);
+            } else {
+                // Show error if sesskey is not available
+                chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Sicherheitstoken (sesskey) fehlt. Bitte lade die Seite neu.</div>`;
+                scrollToBottom();
+                document.getElementById("loading").remove();
+                return;
+            }
+            
+            // Add block ID if available
+            const blockId = %%BLOCK_ID%%;
+            if (blockId) {
+                formData.append('blockid', blockId);
+            }
+            
+            // Add course ID if available
+            const courseId = M.cfg.courseId;
+            if (courseId) {
+                formData.append('courseid', courseId);
+            }
+            
+            // Send request to server
+            const response = await fetch("/blocks/chatbot/chatbot.php", {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: formData,
+                credentials: 'same-origin' // Ensure cookies are sent with the request
+            });
+
+            document.getElementById("loading").remove();
+            
+            // Check for HTTP errors
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            
+            await handleServerResponse(response);
+        } catch (error) {
+            document.getElementById("loading").remove();
+            chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Verbindungsproblem: ${error.message}</div>`;
+            scrollToBottom();
+            saveSession();
+        }
+    }
+    
+    /**
+     * Handle the server response
+     * @param {Response} response - The fetch response object
+     */
+    async function handleServerResponse(response) {
+        const chatMessages = document.getElementById("chat-messages");
+        const responseText = await response.text();
+        let data;
+        
+        try {
+            data = JSON.parse(responseText);
+        } catch (jsonError) {
+            // Handle non-JSON responses
+            if (responseText && responseText.trim().length > 0) {
+                const plainTextResponse = responseText.trim();
+                const formattedMessage = formatBotResponse(plainTextResponse);
+                chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Debug:</strong><br>${formattedMessage}</div>`;
+                
+                conversationHistory.push({
+                    role: "assistant",
+                    content: plainTextResponse
+                });
+            } else {
+                chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Die Server-Antwort konnte nicht verarbeitet werden.</div>`;
+            }
+            saveConversationHistory();
+            return;
+        }
+        
+        // Check for API error
+        if (data.error) {
+            chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>${data.message || 'Ein Fehler ist aufgetreten.'}</div>`;
+            scrollToBottom();
+            saveSession();
+            return;
+        }
+
+        if (data.response) {
+            // Format the response text
+            let formattedResponse = formatBotResponse(data.response);
+            
+            chatMessages.innerHTML += `<div class='chat-bubble bot-message fade-in'><strong>${assistantName}:</strong><br>${formattedResponse}</div>`;
+            
+            // Add assistant response to conversation history
+            if (data.lastMessage) {
+                conversationHistory.push(data.lastMessage);
+            } else {
+                conversationHistory.push({
+                    role: "assistant",
+                    content: data.response
+                });
+            }
+        } else {
+            chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Hm, da scheint was schiefgelaufen zu sein. Versuch's nochmal!</div>`;
+        }
+        
+        scrollToBottom();
+        saveSession();
+    }
+    
+    /**
+     * Format bot messages with markdown-like syntax
+     * @param {string} text - The raw text to format
+     * @returns {string} - The formatted HTML
+     */
+    function formatBotResponse(text) {
+        // Sanitize text to prevent XSS
+        let formatted = sanitizeHTML(text);
+        
+        // Process numbered lists
+        formatted = processNumberedLists(formatted);
+        
+        // Process headers
+        formatted = processHeaders(formatted);
+        
+        // Process bullet lists
+        formatted = processBulletLists(formatted);
+        
+        // Cleanup and final formatting
+        formatted = cleanupFormatting(formatted);
+            
+        return formatted;
+    }
+    
+    /**
+     * Sanitize HTML to prevent XSS attacks
+     * @param {string} text - The text to sanitize
+     * @returns {string} - The sanitized text
+     */
+    function sanitizeHTML(text) {
+        const element = document.createElement('div');
+        element.textContent = text;
+        return element.innerHTML;
+    }
+    
+    /**
+     * Process numbered lists in text
+     * @param {string} text - Text to process
+     * @returns {string} - Processed text with HTML numbered lists
+     */
+    function processNumberedLists(text) {
+        let lines = text.split('\n');
+        let inNumberedList = false;
+        let numberedListItems = [];
+        
+        // First pass: identify and collect numbered list items
+        for (let i = 0; i < lines.length; i++) {
+            const numberedMatch = lines[i].match(/^(\d+)\.\s+(.*?)$/);
+            
+            if (numberedMatch) {
+                if (!inNumberedList) {
+                    inNumberedList = true;
+                    lines[i] = `__NUMBERED_LIST_START__${i}__`;
+                    numberedListItems.push({
+                        start: i,
+                        items: [`<div class="numbered-item">${numberedMatch[1]}. ${numberedMatch[2].trim()}</div>`]
+                    });
+                } else {
+                    const currentList = numberedListItems[numberedListItems.length - 1];
+                    currentList.items.push(`<div class="numbered-item">${numberedMatch[1]}. ${numberedMatch[2].trim()}</div>`);
+                    lines[i] = '';
+                }
+            } else {
+                inNumberedList = false;
+            }
+        }
+        
+        // Second pass: replace placeholders with HTML
+        numberedListItems.forEach(list => {
+            const numberedListHtml = `<div class="numbered-list">${list.items.join('')}</div>`;
+            lines[list.start] = numberedListHtml;
+        });
+        
+        return lines.join('\n');
+    }
+    
+    /**
+     * Process header tags in text
+     * @param {string} text - Text to process
+     * @returns {string} - Processed text with HTML headers
+     */
+    function processHeaders(text) {
+        return text
+            .replace(/^# (.*?)$/gm, "<h3>$1</h3>")
+            .replace(/\n# (.*?)$/gm, "<br><h3>$1</h3>")
+            .replace(/^## (.*?)$/gm, "<h4>$1</h4>")
+            .replace(/\n## (.*?)$/gm, "<br><h4>$1</h4>")
+            .replace(/^### (.*?)$/gm, "<h5>$1</h5>")
+            .replace(/\n### (.*?)$/gm, "<br><h5>$1</h5>");
+    }
+    
+    /**
+     * Process bullet lists in text
+     * @param {string} text - Text to process
+     * @returns {string} - Processed text with HTML bullet lists
+     */
+    function processBulletLists(text) {
+        let processed = text.replace(/^- (.*?)$/gm, function(match, content) {
+            return `<div class="bullet-item">• ${content.trim()}</div>`;
+        });
+        
+        return processed.replace(/\n- (.*?)$/gm, function(match, content) {
+            return `\n<div class="bullet-item">• ${content.trim()}</div>`;
+        });
+    }
+    
+    /**
+     * Cleanup and apply final formatting
+     * @param {string} text - Text to clean up
+     * @returns {string} - Cleaned text with final formatting applied
+     */
+    function cleanupFormatting(text) {
+        // Limit consecutive newlines
+        let cleaned = text.replace(/\n{2,}/g, '\n');
+        
+        // Special handling for consecutive lists
+        cleaned = cleaned.replace(/(<\/div>\n<div class="numbered-list">|<\/div>\n<div class="bullet-item">)/g, '</div><div class="numbered-list">');
+        
+        // Process remaining paragraph structure
+        cleaned = cleaned.replace(/\n\n/g, "<br>");
+        
+        // Final formatting
+        return cleaned
+            .replace(/\n/g, " ") // Replace newlines with spaces
+            .replace(/(<br>){2,}/g, "<br>") // Limit consecutive <br> tags
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\*(.*?)\*/g, "<em>$1</em>");
+    }
+    
+    /**
+     * Initialize prompt suggestions
+     */
+    function initPromptSuggestions() {
+        if (!promptSuggestionsEnabled || !promptSuggestions) {
+            return;
+        }
+        
+        // Show suggestions button
+        document.getElementById('suggestions-button').style.display = 'block';
+        
+        // Parse and populate suggestions
+        const suggestionsPanel = document.getElementById('prompt-suggestions-panel');
+        const suggestionLines = promptSuggestions.split('\n').filter(line => line.trim() !== '');
+        
+        if (suggestionLines.length > 0) {
+            suggestionLines.forEach(suggestion => {
+                const suggestionElem = document.createElement('div');
+                suggestionElem.className = 'prompt-suggestion';
+                suggestionElem.textContent = suggestion.trim();
+                suggestionElem.onclick = function() {
+                    usePromptSuggestion(suggestion.trim());
+                };
+                suggestionsPanel.appendChild(suggestionElem);
+            });
+        }
+    }
+    
+    /**
+     * Toggle the visibility of prompt suggestions panel
+     */
+    function togglePromptSuggestions() {
+        const panel = document.getElementById('prompt-suggestions-panel');
+        promptSuggestionsOpen = !promptSuggestionsOpen;
+        
+        if (promptSuggestionsOpen) {
+            panel.style.display = 'block';
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Use a prompt suggestion
+     */
+    function usePromptSuggestion(suggestion) {
+        const inputField = document.getElementById('user-input');
+        inputField.value = suggestion;
+        togglePromptSuggestions(); // Hide suggestions panel
+        
+        // Focus on the input field and move cursor to the end
+        inputField.focus();
+        inputField.selectionStart = inputField.selectionEnd = inputField.value.length;
+    }
+</script>

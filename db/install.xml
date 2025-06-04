@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="blocks/chatbot/db" VERSION="20250630" COMMENT="XMLDB file for Moodle blocks/chatbot"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="block_chatbot_pdf_cache" COMMENT="Cache for extracted PDF content">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="contenthash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="Hash of the PDF file content"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Time the PDF was last modified"/>
+        <FIELD NAME="timecached" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Time the PDF content was cached"/>
+        <FIELD NAME="content" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Extracted text content from the PDF"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="contenthash" UNIQUE="true" FIELDS="contenthash" COMMENT="Unique index on content hash"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="block_chatbot_analytics" COMMENT="Analytics for chatbot usage">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Course ID"/>
+        <FIELD NAME="blockinstanceid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Block instance ID"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Time when the query was logged"/>
+        <FIELD NAME="query" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Anonymized user query"/>
+        <FIELD NAME="querytype" TYPE="char" LENGTH="50" NOTNULL="false" SEQUENCE="false" COMMENT="Category/type of query if classified"/>
+        <FIELD NAME="tokens" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Number of tokens used"/>
+        <FIELD NAME="model" TYPE="char" LENGTH="50" NOTNULL="false" SEQUENCE="false" COMMENT="AI model used"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="blockcourse" UNIQUE="false" FIELDS="blockinstanceid, courseid" COMMENT="Index for block instance and course lookups"/>
+        <INDEX NAME="timecreated" UNIQUE="false" FIELDS="timecreated" COMMENT="Index for time-based queries"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>
