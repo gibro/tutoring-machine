@@ -47,40 +47,92 @@ echo $OUTPUT->heading(get_string('contextsources', 'block_chatbot'));
 // Display the active context sources
 require_once($CFG->dirroot . '/blocks/chatbot/classes/content_extractor.php');
 
-// Kontextquellen-Optionen auflisten
-$sources = array(
-    'use_textpages' => get_string('use_textpages', 'block_chatbot'),
-    'use_glossaries' => get_string('use_glossaries', 'block_chatbot'),
-    'use_h5p' => get_string('use_h5p', 'block_chatbot'),
-    'use_pdfs' => get_string('use_pdfs', 'block_chatbot') . ' (PDF-Dokumente)',
-    'use_forums' => get_string('use_forums', 'block_chatbot'),
-    'use_quizzes' => get_string('use_quizzes', 'block_chatbot'),
-    'use_books' => get_string('use_books', 'block_chatbot'),
-    'use_assignments' => get_string('use_assignments', 'block_chatbot'),
-    'use_labels' => get_string('use_labels', 'block_chatbot'),
-    'use_urls' => get_string('use_urls', 'block_chatbot'),
-    'use_lessons' => get_string('use_lessons', 'block_chatbot'),
-    'use_internet' => get_string('use_internet', 'block_chatbot')
-);
+// Kursmodule laden (für die selektive Aktivitätsauswahl)
+$modinfo = get_fast_modinfo($course);
+$cms = $modinfo->get_cms();
 
-// Card für die aktivierten Quellen
+// Zeige Internetsuche-Einstellung
 echo html_writer::start_div('card mb-4');
-echo html_writer::div('Aktivierte Kontextquellen', 'card-header');
+echo html_writer::div('Kontexteinstellungen', 'card-header');
 echo html_writer::start_div('card-body');
 
+// Internetsuche
+$internet_enabled = isset($block_config->use_internet) && $block_config->use_internet;
 echo html_writer::start_tag('ul', array('class' => 'list-group'));
-foreach ($sources as $key => $label) {
-    $enabled = !$block_config || (isset($block_config->{$key}) && $block_config->{$key});
-    $status_class = $enabled ? 'success' : 'light';
-    echo html_writer::tag('li',
-        $label,
-        array('class' => "list-group-item list-group-item-$status_class")
-    );
-}
+echo html_writer::tag('li',
+    'Internetsuche: ' . ($internet_enabled ? 'Aktiviert' : 'Deaktiviert'),
+    array('class' => 'list-group-item list-group-item-' . ($internet_enabled ? 'success' : 'light'))
+);
 echo html_writer::end_tag('ul');
 
 echo html_writer::end_div(); // card-body
 echo html_writer::end_div(); // card
+
+// Selektive Aktivitätsauswahl
+$specific_activities_enabled = isset($block_config->use_specific_activities) && $block_config->use_specific_activities;
+
+if ($specific_activities_enabled) {
+    echo html_writer::start_div('card mb-4');
+    echo html_writer::div('Ausgewählte Aktivitäten für den Kontext', 'card-header');
+    echo html_writer::start_div('card-body');
+    
+    // Nachricht zur Erklärung
+    echo html_writer::div(
+        '<div class="alert alert-info">Die Aktivitätsauswahl ist aktiviert. Nur die unten aufgeführten Aktivitäten werden in den Kontext einbezogen.</div>',
+        'mb-3'
+    );
+    
+    // Aktivitäten nach Sektionen sammeln
+    $selected_activities = array();
+    foreach ($cms as $cm) {
+        if (!$cm->uservisible) {
+            continue;
+        }
+        
+        $activity_key = "activity_{$cm->id}";
+        if (isset($block_config->{$activity_key}) && $block_config->{$activity_key}) {
+            $section_num = $cm->sectionnum;
+            $section_name = get_section_name($course, $section_num);
+            
+            if (!isset($selected_activities[$section_num])) {
+                $selected_activities[$section_num] = array(
+                    'name' => $section_name,
+                    'activities' => array()
+                );
+            }
+            
+            $selected_activities[$section_num]['activities'][] = $cm;
+        }
+    }
+    
+    // Prüfen, ob Aktivitäten ausgewählt wurden
+    if (empty($selected_activities)) {
+        echo html_writer::div(
+            '<div class="alert alert-warning">Es wurden keine spezifischen Aktivitäten ausgewählt. Alle Aktivitäten im Kurs werden berücksichtigt.</div>',
+            'mb-3'
+        );
+    } else {
+        // Nach Sektionen anzeigen
+        foreach ($selected_activities as $section_data) {
+            echo html_writer::tag('h5', $section_data['name'], array('class' => 'mt-3 mb-2'));
+            
+            echo html_writer::start_tag('ul', array('class' => 'list-group mb-3'));
+            foreach ($section_data['activities'] as $cm) {
+                $icon_url = $cm->get_icon_url()->out(false);
+                $icon_html = html_writer::img($icon_url, '', array('class' => 'icon', 'style' => 'width:16px;height:16px;margin-right:5px;'));
+                
+                echo html_writer::tag('li',
+                    $icon_html . s($cm->name),
+                    array('class' => 'list-group-item list-group-item-success')
+                );
+            }
+            echo html_writer::end_tag('ul');
+        }
+    }
+    
+    echo html_writer::end_div(); // card-body
+    echo html_writer::end_div(); // card
+}
 
 // Inhaltliche Übersicht über verfügbare Materialien im Kurs
 echo html_writer::start_div('card mb-4');
@@ -152,11 +204,23 @@ echo html_writer::start_div('card-body');
 require_once($CFG->dirroot . '/blocks/chatbot/classes/content_extractor.php');
 
 try {
+    // Force cache update by adding a timestamp to URL if specific activities are enabled
+    if (isset($block_config->use_specific_activities) && $block_config->use_specific_activities) {
+        $_GET['cache_buster'] = time();
+    }
+    
     // Extrahiere den Kontext, wie es der Chatbot tun würde
     $extractor = new block_chatbot_content_extractor($course->id, $block_config);
     $full_context = $extractor->get_context();
-
+    
+    // Informationen über die selektive Aktivitätsauswahl
+    $selection_info = '';
+    if ($specific_activities_enabled) {
+        $selection_info = '<div class="alert alert-info mb-3">Der folgende Kontext enthält nur die selektiv ausgewählten Aktivitäten.</div>';
+    }
+    
     echo html_writer::tag('p', 'Dies ist der vollständige Kontext, der an die API übertragen wird:');
+    echo $selection_info;
     echo html_writer::tag('div',
         html_writer::tag('pre', s($full_context),
         array('class' => 'border p-2 bg-light', 'style' => 'white-space: pre-wrap; max-height: 400px; overflow-y: auto;'))

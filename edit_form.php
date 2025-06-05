@@ -75,72 +75,131 @@ class block_chatbot_edit_form extends block_edit_form {
         $mform->setType('config_main_color', PARAM_TEXT);
         $mform->addHelpButton('config_main_color', 'main_color', 'block_chatbot');
 
-        // Context sources section header
-        $mform->addElement('header', 'contextsources', get_string('contextsources', 'block_chatbot'));
-
-        // Überschrift für Kontextquellen
-        $mform->addElement('static', 'activities_label', '',
-            '<div style="margin-bottom: 15px;"><strong>Einbezogene Aktivitäten:</strong></div>');
-
-        // Textseiten
-        $mform->addElement('advcheckbox', 'config_use_textpages', 'Textseite', '', array(), array(0, 1));
-        $mform->setDefault('config_use_textpages', 1);
-        $mform->addHelpButton('config_use_textpages', 'use_textpages', 'block_chatbot');
-
-        // Glossare
-        $mform->addElement('advcheckbox', 'config_use_glossaries', 'Glossare', '', array(), array(0, 1));
-        $mform->setDefault('config_use_glossaries', 1);
-        $mform->addHelpButton('config_use_glossaries', 'use_glossaries', 'block_chatbot');
-
-        // H5P-Aktivitäten
-        $mform->addElement('advcheckbox', 'config_use_h5p', 'H5P-Aktivitäten', '', array(), array(0, 1));
-        $mform->setDefault('config_use_h5p', 1);
-        $mform->addHelpButton('config_use_h5p', 'use_h5p', 'block_chatbot');
-
-        // PDF-Dokumente
-        $mform->addElement('advcheckbox', 'config_use_pdfs', 'PDF-Dokumente', '', array(), array(0, 1));
-        $mform->setDefault('config_use_pdfs', 1);
-        $mform->addHelpButton('config_use_pdfs', 'use_pdfs', 'block_chatbot');
-
-        // Foren
-        $mform->addElement('advcheckbox', 'config_use_forums', 'Foren', '', array(), array(0, 1));
-        $mform->setDefault('config_use_forums', 1);
-        $mform->addHelpButton('config_use_forums', 'use_forums', 'block_chatbot');
-
-        // Quizze
-        $mform->addElement('advcheckbox', 'config_use_quizzes', 'Quizze', '', array(), array(0, 1));
-        $mform->setDefault('config_use_quizzes', 1);
-        $mform->addHelpButton('config_use_quizzes', 'use_quizzes', 'block_chatbot');
-
-        // Bücher
-        $mform->addElement('advcheckbox', 'config_use_books', 'Bücher', '', array(), array(0, 1));
-        $mform->setDefault('config_use_books', 1);
-        $mform->addHelpButton('config_use_books', 'use_books', 'block_chatbot');
-
-        // Aufgaben
-        $mform->addElement('advcheckbox', 'config_use_assignments', 'Aufgaben', '', array(), array(0, 1));
-        $mform->setDefault('config_use_assignments', 1);
-        $mform->addHelpButton('config_use_assignments', 'use_assignments', 'block_chatbot');
-
-        // Textfelder
-        $mform->addElement('advcheckbox', 'config_use_labels', 'Textfelder', '', array(), array(0, 1));
-        $mform->setDefault('config_use_labels', 1);
-        $mform->addHelpButton('config_use_labels', 'use_labels', 'block_chatbot');
-
-        // URL-Ressourcen
-        $mform->addElement('advcheckbox', 'config_use_urls', 'URL-Ressourcen', '', array(), array(0, 1));
-        $mform->setDefault('config_use_urls', 1);
-        $mform->addHelpButton('config_use_urls', 'use_urls', 'block_chatbot');
-
-        // Lektionen
-        $mform->addElement('advcheckbox', 'config_use_lessons', 'Lektionen', '', array(), array(0, 1));
-        $mform->setDefault('config_use_lessons', 1);
-        $mform->addHelpButton('config_use_lessons', 'use_lessons', 'block_chatbot');
-
+        // Kontext-Einstellungen
+        $mform->addElement('header', 'context_settings', 'Kontext');
+        
         // Internetsuche
-        $mform->addElement('advcheckbox', 'config_use_internet', 'Internetsuche', '', array(), array(0, 1));
+        $mform->addElement('advcheckbox', 'config_use_internet', 'Internetsuche', 
+            'Darf der Chatbot bei Fragen, die nicht durch den Kurskontext beantwortet werden können, auf Internetwissen zurückgreifen?', 
+            array(), array(0, 1));
         $mform->setDefault('config_use_internet', 0);
         $mform->addHelpButton('config_use_internet', 'use_internet', 'block_chatbot');
+        
+        // Erklärung zur Aktivitätsauswahl
+        $mform->addElement('static', 'specific_activities_explanation', '',
+            '<div class="alert alert-info">Wählen Sie hier aus, welche konkreten Aktivitäten und Materialien ' .
+            'im Chatbot-Kontext berücksichtigt werden sollen. Der Chatbot kann nur auf die hier ausgewählten ' .
+            'Materialien eingehen. Wenn keine Aktivierung erfolgt, wird der gesamte Kursinhalt berücksichtigt.</div>');
+        
+        // Aktiviere die selektive Aktivitätsauswahl
+        $mform->addElement('advcheckbox', 'config_use_specific_activities', 
+            'Aktivitätsauswahl aktivieren', 
+            'Nur ausgewählte Aktivitäten in den Kontext einbeziehen', 
+            array(), array(0, 1));
+        $mform->setDefault('config_use_specific_activities', 0);
+        
+        // Aktivitäten des Kurses auflisten und als Auswahlmöglichkeiten anbieten
+        global $COURSE;
+        $modinfo = get_fast_modinfo($COURSE);
+        $cms = $modinfo->get_cms();
+        
+        // Aktivitäten nach Sektionen gruppieren
+        $activities_by_section = array();
+        
+        foreach ($cms as $cm) {
+            if (!$cm->uservisible) {
+                continue;
+            }
+            
+            $section_num = $cm->sectionnum;
+            $section_name = get_section_name($COURSE, $section_num);
+            
+            if (!isset($activities_by_section[$section_num])) {
+                $activities_by_section[$section_num] = array(
+                    'name' => $section_name,
+                    'activities' => array()
+                );
+            }
+            
+            $activities_by_section[$section_num]['activities'][] = $cm;
+        }
+        
+        // Für jede Sektion eine Gruppe von Checkboxen erstellen
+        foreach ($activities_by_section as $section_num => $section_data) {
+            if (empty($section_data['activities'])) {
+                continue;
+            }
+            
+            $mform->addElement('html', '<div class="card mb-3">');
+            $mform->addElement('html', '<div class="card-header">' . $section_data['name'] . '</div>');
+            $mform->addElement('html', '<div class="card-body">');
+            
+            // Alle auswählen/abwählen Buttons
+            $mform->addElement('html', '<div class="mb-2">');
+            $mform->addElement('html', '<button type="button" class="btn btn-sm btn-outline-secondary select-all-section-' . $section_num . '">Alle auswählen</button> ');
+            $mform->addElement('html', '<button type="button" class="btn btn-sm btn-outline-secondary deselect-all-section-' . $section_num . '">Alle abwählen</button>');
+            $mform->addElement('html', '</div>');
+            
+            // Aktivitäten als Checkboxen anzeigen
+            foreach ($section_data['activities'] as $cm) {
+                $activity_icon = $cm->get_icon_url()->out(false);
+                $checkbox_id = 'id_config_activity_' . $cm->id;
+                
+                $icon_html = '<img src="' . $activity_icon . '" alt="" class="icon" style="width:16px;height:16px;margin-right:5px;">';
+                $mform->addElement('advcheckbox', 'config_activity_' . $cm->id, '', $icon_html . s($cm->name), array('id' => $checkbox_id), array(0, 1));
+                $mform->setDefault('config_activity_' . $cm->id, 1); // Standardmäßig ausgewählt
+                
+                // Die Checkbox deaktivieren, wenn die selektive Aktivitätsauswahl nicht aktiviert ist
+                $mform->disabledIf('config_activity_' . $cm->id, 'config_use_specific_activities', 'neq', 1);
+            }
+            
+            $mform->addElement('html', '</div>'); // card-body
+            $mform->addElement('html', '</div>'); // card
+        }
+        
+        // JavaScript für die "Alle auswählen/abwählen" Buttons
+        $script = "
+        require(['jquery'], function($) {
+            $(document).ready(function() {
+                // Verarbeite die Buttons für jede Sektion
+                " . implode("\n", array_map(function($section_num) {
+                    return "
+                    $('.select-all-section-{$section_num}').on('click', function() {
+                        // Finde die übergeordnete Card (der aktuelle Abschnitt)
+                        var sectionCard = $(this).closest('.card');
+                        
+                        // Wähle nur Checkboxen innerhalb dieser Card
+                        sectionCard.find('[id^=\"id_config_activity_\"]').each(function() {
+                            if(!$(this).prop('disabled')) {
+                                $(this).prop('checked', true);
+                            }
+                        });
+                    });
+                    
+                    $('.deselect-all-section-{$section_num}').on('click', function() {
+                        // Finde die übergeordnete Card (der aktuelle Abschnitt)
+                        var sectionCard = $(this).closest('.card');
+                        
+                        // Wähle nur Checkboxen innerhalb dieser Card
+                        sectionCard.find('[id^=\"id_config_activity_\"]').each(function() {
+                            if(!$(this).prop('disabled')) {
+                                $(this).prop('checked', false);
+                            }
+                        });
+                    });
+                    ";
+                }, array_keys($activities_by_section))) . "
+                
+                // Verarbeite die Hauptcheckbox für selektive Aktivitätsauswahl
+                $('#id_config_use_specific_activities').on('change', function() {
+                    var isChecked = $(this).prop('checked');
+                    $('[id^=\"id_config_activity_\"]').prop('disabled', !isChecked);
+                });
+            });
+        });
+        ";
+        
+        $mform->addElement('html', '<script>' . $script . '</script>');
 
         // Teaching analytics section header
         $mform->addElement('header', 'teachinganalytics', get_string('teachinganalytics', 'block_chatbot'));

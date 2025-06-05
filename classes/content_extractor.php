@@ -62,17 +62,33 @@ class block_chatbot_content_extractor {
             'use_assignments' => true,
             'use_labels' => true,
             'use_urls' => true,
-            'use_lessons' => true
+            'use_lessons' => true,
+            'use_specific_activities' => false,
+            'specific_activities' => []
         ];
 
         // Override with provided configuration
         if ($config) {
             $config_array = (array)$config;
+            
+            // Process main settings
             foreach ($config_array as $key => $value) {
                 $setting_key = preg_replace('/^config_/', '', $key);
                 if (array_key_exists($setting_key, $this->config)) {
                     $this->config[$setting_key] = (bool)$value;
                 }
+                
+                // Erfasse ausgewählte spezifische Aktivitäten
+                if (preg_match('/^activity_(\d+)$/', $key, $matches) && (bool)$value) {
+                    $cm_id = intval($matches[1]);
+                    $this->config['specific_activities'][] = $cm_id;
+                }
+            }
+            
+            // Wenn selektive Aktivitätsauswahl aktiviert ist, füge einen Timestamp hinzu,
+            // um den Cache zu umgehen (da diese Funktion neu ist)
+            if (!empty($this->config['use_specific_activities'])) {
+                $this->config['cache_timestamp'] = time();
             }
         }
 
@@ -89,20 +105,35 @@ class block_chatbot_content_extractor {
         global $CFG;
         require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
 
-        // Try to get from cache firs
+        // Cache-Key immer generieren, unabhängig davon, ob wir ihn jetzt verwenden
         $cache_key = block_chatbot_cache_manager::get_course_content_key($this->course->id, $this->config);
-        $cached_context = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_COURSE, $cache_key);
+        
+        // Überprüfe, ob ein Cache-Buster in der URL ist
+        $skip_cache = isset($_GET['cache_buster']);
 
-        // Return cached context if it's valid
-        if ($cached_context && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_COURSE, $cache_key)) {
-            // Check if we need to update the information sources instructions
-            if ((strpos($cached_context, '# Internetsuche') !== false && !$this->config['use_internet']) ||
-                (strpos($cached_context, '# WICHTIG: Strikte Informationsquellen') !== false && $this->config['use_internet'])) {
-                error_log("Cache contains outdated internet search settings - regenerating");
-                // Internet setting has changed, regenerate context
-            } else {
-                return $cached_context;
+        if (!$skip_cache) {
+            // Try to get from cache
+            $cached_context = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_COURSE, $cache_key);
+    
+            // Return cached context if it's valid
+            if ($cached_context && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_COURSE, $cache_key)) {
+                // Check if we need to update the information sources instructions
+                if ((strpos($cached_context, '# Internetsuche') !== false && !$this->config['use_internet']) ||
+                    (strpos($cached_context, '# WICHTIG: Strikte Informationsquellen') !== false && $this->config['use_internet'])) {
+                    error_log("Cache contains outdated internet search settings - regenerating");
+                    // Internet setting has changed, regenerate context
+                } else {
+                    // Wenn selektive Aktivitätsauswahl aktiviert ist, aber der Cache stammt aus einer Zeit,
+                    // als dies noch nicht implementiert war, dann Cache ignorieren
+                    if (empty($this->config['use_specific_activities']) || strpos($cached_context, 'Aktivitätsauswahl') !== false) {
+                        return $cached_context;
+                    } else {
+                        error_log("Selektive Aktivitätsauswahl aktiviert, aber Cache enthält veraltete Daten - generiere neu");
+                    }
+                }
             }
+        } else {
+            error_log("Cache-Buster in URL gefunden - Cache wird umgangen");
         }
 
         // If not cached or expired, generate the context
@@ -234,6 +265,13 @@ class block_chatbot_content_extractor {
 
         if (!empty($sections)) {
             $context = "# Kursinhalte als Kontext\n\n";
+            
+            // Wenn Aktivitätsauswahl aktiviert ist, einen Hinweis hinzufügen
+            if (!empty($this->config['use_specific_activities'])) {
+                $context .= "## Hinweis zur Aktivitätsauswahl\n";
+                $context .= "Der folgende Kontext enthält nur ausgewählte Aktivitäten. " .
+                           "Andere Aktivitäten im Kurs wurden bewusst ausgeschlossen.\n\n";
+            }
 
             foreach ($sections as $section) {
                 $context .= "## {$section['title']}\n";
@@ -264,6 +302,51 @@ class block_chatbot_content_extractor {
     }
 
     /**
+     * Prüft, ob eine Aktivität in den Kontext einbezogen werden soll
+     * 
+     * @param object $cm Course module instance
+     * @return bool True, wenn die Aktivität einbezogen werden soll
+     */
+    private function should_include_activity($cm) {
+        // Prüfe, ob selektive Aktivitätsauswahl aktiviert ist
+        if (!empty($this->config['use_specific_activities'])) {
+            // Wenn selektive Auswahl aktiv ist, nur ausgewählte Aktivitäten einbeziehen
+            return in_array($cm->id, $this->config['specific_activities']);
+        }
+        
+        // Sonst nach globalen Einstellungen prüfen - je nach Modultyp
+        $modname = $cm->modname;
+        
+        switch ($modname) {
+            case 'page':
+                return !empty($this->config['use_textpages']);
+            case 'glossary':
+                return !empty($this->config['use_glossaries']);
+            case 'hvp':
+                return !empty($this->config['use_h5p']);
+            case 'resource': // Für PDF-Dokumente
+                return !empty($this->config['use_pdfs']);
+            case 'forum':
+                return !empty($this->config['use_forums']);
+            case 'quiz':
+                return !empty($this->config['use_quizzes']);
+            case 'book':
+                return !empty($this->config['use_books']);
+            case 'assign':
+                return !empty($this->config['use_assignments']);
+            case 'label':
+                return !empty($this->config['use_labels']);
+            case 'url':
+                return !empty($this->config['use_urls']);
+            case 'lesson':
+                return !empty($this->config['use_lessons']);
+            default:
+                // Bei unbekannten Typen standardmäßig nicht einbeziehen
+                return false;
+        }
+    }
+    
+    /**
      * Extract content from text pages with caching
      *
      * @return string Formatted content from text pages
@@ -275,8 +358,8 @@ class block_chatbot_content_extractor {
         $pages_context = '';
 
         foreach ($this->modinfo->get_instances_of('page') as $page_instance) {
-            // Skip if not visible to user
-            if (!$page_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$page_instance->uservisible || !$this->should_include_activity($page_instance)) {
                 continue;
             }
 
@@ -325,8 +408,8 @@ class block_chatbot_content_extractor {
         $glossaries_context = '';
 
         foreach ($this->modinfo->get_instances_of('glossary') as $glossary_instance) {
-            // Skip if not visible to user
-            if (!$glossary_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$glossary_instance->uservisible || !$this->should_include_activity($glossary_instance)) {
                 continue;
             }
 
@@ -407,8 +490,8 @@ class block_chatbot_content_extractor {
         }
 
         foreach ($this->modinfo->get_instances_of('hvp') as $h5p_instance) {
-            // Skip if not visible to user
-            if (!$h5p_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$h5p_instance->uservisible || !$this->should_include_activity($h5p_instance)) {
                 continue;
             }
 
@@ -500,8 +583,8 @@ class block_chatbot_content_extractor {
 
         // Loop through each resource
         foreach ($resources as $resource_instance) {
-            // Skip if not visible to user
-            if (!$resource_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$resource_instance->uservisible || !$this->should_include_activity($resource_instance)) {
                 continue;
             }
 
@@ -809,8 +892,8 @@ class block_chatbot_content_extractor {
         }
 
         foreach ($this->modinfo->get_instances_of('forum') as $forum_instance) {
-            // Skip if not visible to user
-            if (!$forum_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$forum_instance->uservisible || !$this->should_include_activity($forum_instance)) {
                 continue;
             }
 
@@ -913,8 +996,8 @@ class block_chatbot_content_extractor {
         }
 
         foreach ($this->modinfo->get_instances_of('quiz') as $quiz_instance) {
-            // Skip if not visible to user
-            if (!$quiz_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$quiz_instance->uservisible || !$this->should_include_activity($quiz_instance)) {
                 continue;
             }
 
@@ -1025,8 +1108,8 @@ class block_chatbot_content_extractor {
         }
 
         foreach ($this->modinfo->get_instances_of('book') as $book_instance) {
-            // Skip if not visible to user
-            if (!$book_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$book_instance->uservisible || !$this->should_include_activity($book_instance)) {
                 continue;
             }
 
@@ -1122,8 +1205,8 @@ class block_chatbot_content_extractor {
         }
 
         foreach ($this->modinfo->get_instances_of('assign') as $assign_instance) {
-            // Skip if not visible to user
-            if (!$assign_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$assign_instance->uservisible || !$this->should_include_activity($assign_instance)) {
                 continue;
             }
 
@@ -1210,8 +1293,8 @@ class block_chatbot_content_extractor {
         $section_labels = [];
 
         foreach ($this->modinfo->get_instances_of('label') as $label_instance) {
-            // Skip if not visible to user
-            if (!$label_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$label_instance->uservisible || !$this->should_include_activity($label_instance)) {
                 continue;
             }
 
@@ -1307,8 +1390,8 @@ class block_chatbot_content_extractor {
         $section_urls = [];
 
         foreach ($this->modinfo->get_instances_of('url') as $url_instance) {
-            // Skip if not visible to user
-            if (!$url_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$url_instance->uservisible || !$this->should_include_activity($url_instance)) {
                 continue;
             }
 
@@ -1406,8 +1489,8 @@ class block_chatbot_content_extractor {
         }
 
         foreach ($this->modinfo->get_instances_of('lesson') as $lesson_instance) {
-            // Skip if not visible to user
-            if (!$lesson_instance->uservisible) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$lesson_instance->uservisible || !$this->should_include_activity($lesson_instance)) {
                 continue;
             }
 
