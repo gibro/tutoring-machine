@@ -3,7 +3,7 @@
 /**
  * AJAX handler for API test script for Chatbot block.
  *
- * @package    block_chatbot
+ * @package    block_chatbo
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -53,9 +53,9 @@ switch ($provider) {
                 $client->set_model('gpt-4o');
                 $client->set_max_tokens(100);
                 $client->set_temperature(0.7);
-                
+
                 $response = $client->get_completion($test_messages);
-                
+
                 if ($response !== false) {
                     echo json_encode(['success' => true, 'message' => htmlspecialchars($response)]);
                 } else {
@@ -66,7 +66,7 @@ switch ($provider) {
             }
         }
         break;
-        
+
     case 'google':
         if (empty($config->google_apikey)) {
             echo json_encode(['success' => false, 'error' => 'Google API key is not configured']);
@@ -76,9 +76,9 @@ switch ($provider) {
                 $client->set_model('gemini-1.5-pro');
                 $client->set_max_tokens(100);
                 $client->set_temperature(0.7);
-                
+
                 $response = $client->get_completion($test_messages);
-                
+
                 if ($response !== false) {
                     echo json_encode(['success' => true, 'message' => htmlspecialchars($response)]);
                 } else {
@@ -89,7 +89,7 @@ switch ($provider) {
             }
         }
         break;
-        
+
     default:
         echo json_encode(['success' => false, 'error' => 'Invalid provider specified']);
 }

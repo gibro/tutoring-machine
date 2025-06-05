@@ -3,7 +3,7 @@
 /**
  * AJAX handler for the Chatbot block.
  *
- * @package    block_chatbot
+ * @package    block_chatbo
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,8 +26,8 @@ require_once(__DIR__ . '/classes/message_processor.php');
 // Require login
 require_login();
 
-// Security check - verify this is an AJAX request
-if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || 
+// Security check - verify this is an AJAX reques
+if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
     header('HTTP/1.0 403 Forbidden');
     die('Direkter Zugriff nicht erlaubt.');
@@ -57,28 +57,28 @@ try {
     $conversation_history = block_chatbot_message_processor::get_conversation_history_from_request();
     $course_id = block_chatbot_message_processor::get_course_id_from_request();
     $block_id = block_chatbot_message_processor::get_block_id_from_request();
-    
+
     // Validate the message
     if (empty($message)) {
         throw new moodle_exception('missingparam', 'error', '', 'message');
     }
-    
+
     // Rate limiting - check if user has made too many requests
     if (!check_rate_limit()) {
         throw new moodle_exception('toomanyrequests', 'error');
     }
-    
+
     // Get metaprompt if available for this block instance
     $metaprompt = block_chatbot_message_processor::get_metaprompt($block_id);
-    
+
     // Get API keys from plugin settings
     $api_key = get_api_key();
-    
-    // Get context from course content
+
+    // Get context from course conten
     $system_message = '';
     $content_instructions = '';
     $metaprompt_used = false;
-    
+
     // Add course content as context if course ID is provided
     if (!empty($course_id)) {
         try {
@@ -91,16 +91,16 @@ try {
                     $block_config = unserialize(base64_decode($block_record->configdata));
                 }
             }
-            
-            // Extract course content
+
+            // Extract course conten
             $extractor = new block_chatbot_content_extractor($course_id, $block_config);
             $course_content = $extractor->get_context();
-            
+
             if (!empty($course_content)) {
-                // Parse out the instructions part from the context
+                // Parse out the instructions part from the contex
                 $content_parts = explode('# WICHTIG: Strikte Informationsquellen', $course_content);
                 $content_parts_alt = explode('# Internetsuche', $course_content);
-                
+
                 if (count($content_parts) > 1) {
                     // Found strict instructions
                     $content_instructions = "# WICHTIG: Strikte Informationsquellen" . $content_parts[1];
@@ -113,7 +113,7 @@ try {
                     // No instructions found
                     $pure_content = $course_content;
                 }
-                
+
                 // Build the system message
                 if (!empty($metaprompt)) {
                     $system_message = $metaprompt;
@@ -126,12 +126,12 @@ try {
             } else {
                 // Even if no content was extracted, add a strict instruction when internet search is disabled
                 $use_internet = isset($block_config->use_internet) ? (bool)$block_config->use_internet : false;
-                
+
                 if (!$use_internet) {
                     $content_instructions = "# WICHTIG: Strikte Informationsquellen\n";
                     $content_instructions .= "Beantworte Fragen AUSSCHLIESSLICH basierend auf den gegebenen Kursinhalten. Da aktuell keine Kursinhalte verfügbar sind, antworte: \"Entschuldigung, aber ich kann aktuell keine Kursinhalte finden. Bitte wende dich an deinen Kursleiter für Unterstützung.\"\n\n";
                     $content_instructions .= "Verwende NIEMALS dein eigenes Wissen oder externe Quellen für die Beantwortung.\n\n";
-                    
+
                     if (!empty($metaprompt)) {
                         $system_message = $metaprompt;
                         $metaprompt_used = true;
@@ -140,7 +140,7 @@ try {
                         $system_message = $content_instructions;
                     }
                 } else if (!empty($metaprompt)) {
-                    // Internet allowed, but no content, use metaprompt
+                    // Internet allowed, but no content, use metapromp
                     $system_message = $metaprompt;
                     $metaprompt_used = true;
                 }
@@ -149,7 +149,7 @@ try {
             // Add fallback instruction if content extraction fails
             $error_message = "# WICHTIG: Fehler beim Laden der Kursinhalte\n";
             $error_message .= "Beim Laden der Kursinhalte ist ein Fehler aufgetreten. Bitte entschuldige diese Störung und verweise den Benutzer an den Kursleiter oder den Support.\n\n";
-            
+
             if (!empty($metaprompt)) {
                 $system_message = $metaprompt;
                 $metaprompt_used = true;
@@ -163,16 +163,16 @@ try {
         $system_message = $metaprompt;
         $metaprompt_used = true;
     }
-    
+
     // Make sure we always add source instructions at the end to ensure they take precedence
     if (!empty($content_instructions) && $metaprompt_used) {
         // Re-add the content instructions at the end to ensure they are respected
         $system_message .= "\n\n" . $content_instructions;
     }
-    
+
     // Prepare messages array for the API
     $messages = [];
-    
+
     // Add system message if available
     if (!empty($system_message)) {
         $messages[] = [
@@ -180,7 +180,7 @@ try {
             'content' => $system_message
         ];
     }
-    
+
     // Add conversation history
     if (!empty($conversation_history) && is_array($conversation_history)) {
         foreach ($conversation_history as $msg) {
@@ -192,19 +192,19 @@ try {
             }
         }
     }
-    
+
     // Add current user message
     $messages[] = [
         'role' => 'user',
         'content' => $message
     ];
-    
+
     // Get system configuration
     $config = get_config('block_chatbot');
-    
+
     // Get model to use (block settings override global settings)
     $model_to_use = !empty($config->default_model) ? $config->default_model : 'openai:gpt-4o';
-    
+
     // Check if there are block-specific model settings
     if (!empty($block_id)) {
         global $DB;
@@ -216,45 +216,79 @@ try {
             }
         }
     }
-    
+
     // Create API client with the factory using the selected model
-    $client = block_chatbot_api_client::create($api_key, $model_to_use);
-    
+    try {
+        // Verbose logging for debugging
+        error_log("[CHATBOT DEBUG] Using model: " . $model_to_use);
+        error_log("[CHATBOT DEBUG] API key length: " . (strlen($api_key) > 0 ? strlen($api_key) : "Empty"));
+
+        $client = block_chatbot_api_client::create($api_key, $model_to_use);
+    } catch (Exception $e) {
+        error_log("[CHATBOT ERROR] Failed to create API client: " . $e->getMessage());
+        throw new moodle_exception('apiconnectionerror', 'block_chatbot');
+    }
+
     // Set parameters if configured
     if (isset($config->temperature)) {
         $client->set_temperature((float)$config->temperature);
     }
-    
+
     if (isset($config->top_p)) {
         $client->set_top_p((float)$config->top_p);
     }
-    
+
     if (isset($config->max_tokens)) {
         $client->set_max_tokens((int)$config->max_tokens);
     }
-    
+
     if (isset($config->timeout)) {
         $client->set_timeout((int)$config->timeout);
     }
-    
+
     if (isset($config->response_format)) {
         $client->set_response_format($config->response_format);
     }
-    
+
     // Send request to API
-    $response_text = $client->get_completion($messages);
-    
-    // Check for errors
-    if ($response_text === false) {
+    try {
+        error_log("[CHATBOT DEBUG] Sending request to API...");
+        $start_time = microtime(true);
+
+        $response_text = $client->get_completion($messages);
+
+        $end_time = microtime(true);
+        $time_taken = round($end_time - $start_time, 2);
+        error_log("[CHATBOT DEBUG] API response received in " . $time_taken . " seconds");
+
+        // Check for errors
+        if ($response_text === false) {
+            error_log("[CHATBOT ERROR] API returned false response");
+            throw new moodle_exception('apiconnectionerror', 'block_chatbot');
+        }
+    } catch (Exception $e) {
+        error_log("[CHATBOT ERROR] Exception during API request: " . $e->getMessage());
         throw new moodle_exception('apiconnectionerror', 'block_chatbot');
     }
-    
+
     // Process and truncate response
-    $processor = new block_chatbot_message_processor($response_text);
-    $processor->truncate_response();
-    $response_text = $processor->get_response_text();
-    $last_message = $processor->get_assistant_message();
-    
+    try {
+        error_log("[CHATBOT DEBUG] Processing response text (length: " . strlen($response_text) . ")");
+        $processor = new block_chatbot_message_processor($response_text);
+        $processor->truncate_response();
+        $response_text = $processor->get_response_text();
+        $last_message = $processor->get_assistant_message();
+        error_log("[CHATBOT DEBUG] Response processed successfully");
+    } catch (Exception $e) {
+        error_log("[CHATBOT ERROR] Error processing response: " . $e->getMessage());
+        // Fallback to raw response if processing fails
+        $response_text = "Es tut mir leid, aber es gab ein Problem beim Verarbeiten der Antwort. Bitte versuche es erneut.";
+        $last_message = [
+            'role' => 'assistant',
+            'content' => $response_tex
+        ];
+    }
+
     // Debug mode: If debug=1 is provided, return the raw response for diagnostics
     if (isset($_REQUEST['debug']) && $_REQUEST['debug'] == 1) {
         // Create a diagnostic response
@@ -266,14 +300,14 @@ try {
         $debug_response .= "System message length: " . (isset($system_message) ? strlen($system_message) : 0) . " chars\n";
         $debug_response .= "User message: " . substr($message, 0, 50) . "...\n\n";
         $debug_response .= "Raw API response:\n" . substr($response_text, 0, 1000) . "...";
-        
+
         $response_text = $debug_response;
         $last_message = [
             'role' => 'assistant',
             'content' => $debug_response
         ];
     }
-    
+
     // Log query for analytics if analytics are enabled
     if (!empty($course_id) && !empty($block_id)) {
         try {
@@ -283,17 +317,17 @@ try {
             // Just log the error but don't interrupt the main flow
         }
     }
-    
+
     // Send response
     block_chatbot_message_processor::send_response($response_text, $last_message);
-    
+
 } catch (moodle_exception $e) {
     // For critical errors, keep minimal logging
     error_log("Chatbot error: " . $e->getMessage());
-    
+
     // Provide more helpful error message based on error type
     $error_type = $e->getMessage();
-    
+
     if ($error_type === 'apiconnectionerror') {
         block_chatbot_message_processor::send_response("Es tut mir leid, aber die Verbindung zum KI-Dienst konnte nicht hergestellt werden. Bitte überprüfe die API-Schlüssel in den Einstellungen und ob die ausgewählte KI (OpenAI, Google, Anthropic) verfügbar ist. Details für Administratoren wurden in die Moodle-Logs geschrieben.");
     } else if ($error_type === 'noapikey') {
@@ -318,38 +352,38 @@ try {
 function get_api_key() {
     // Get configuration
     $config = get_config('block_chatbot');
-    
+
     // Get the default provider
     $default_provider = isset($config->default_provider) ? $config->default_provider : 'openai';
-    
+
     // Get the appropriate API key based on provider
     $api_key = '';
-    
+
     switch ($default_provider) {
         case 'google':
             $api_key = isset($config->google_apikey) ? trim($config->google_apikey) : '';
             break;
-            
+
         case 'anthropic':
             $api_key = isset($config->anthropic_apikey) ? trim($config->anthropic_apikey) : '';
             break;
-            
+
         case 'openai':
         default:
             $api_key = isset($config->openai_apikey) ? trim($config->openai_apikey) : '';
             break;
     }
-    
+
     // Check if API key is configured
     if (!empty($api_key)) {
         return $api_key;
     }
-    
+
     // Legacy fallback for old setups: check for deprecated apikey field
     if (isset($config->apikey) && !empty($config->apikey)) {
         return trim($config->apikey);
     }
-    
+
     // Fallback: Try to read key from file (for backward compatibility)
     $key_file_path = __DIR__ . '/your-secret-key.txt';
     if (file_exists($key_file_path)) {
@@ -358,44 +392,44 @@ function get_api_key() {
             return trim($api_key_content);
         }
     }
-    
+
     // If still no key available, throw exception
     throw new moodle_exception('noapikey', 'block_chatbot');
 }
 
 /**
- * Check if user has exceeded rate limit
+ * Check if user has exceeded rate limi
  * Uses a simple approach that stores timestamps in user sessions
  *
  * @return bool True if user is within rate limit, false otherwise
  */
 function check_rate_limit() {
     global $USER, $SESSION;
-    
+
     // Define rate limits
     $max_requests = 30;      // Maximum number of requests
     $time_window = 3600;     // Time window in seconds (1 hour)
-    
+
     // Get current time
     $now = time();
-    
-    // Initialize request history in session if not set
+
+    // Initialize request history in session if not se
     if (!isset($SESSION->chatbot_requests)) {
         $SESSION->chatbot_requests = [];
     }
-    
+
     // Remove old requests outside the time window
     $SESSION->chatbot_requests = array_filter($SESSION->chatbot_requests, function($timestamp) use ($now, $time_window) {
         return ($now - $timestamp) < $time_window;
     });
-    
-    // Check if user has exceeded rate limit
+
+    // Check if user has exceeded rate limi
     if (count($SESSION->chatbot_requests) >= $max_requests) {
         return false;
     }
-    
-    // Add current request to the list
+
+    // Add current request to the lis
     $SESSION->chatbot_requests[] = $now;
-    
+
     return true;
 }

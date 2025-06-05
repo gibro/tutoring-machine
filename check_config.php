@@ -3,7 +3,7 @@
 /**
  * Configuration checker for Chatbot block.
  *
- * @package    block_chatbot
+ * @package    block_chatbo
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -124,7 +124,7 @@ if (function_exists('curl_init')) {
     curl_exec($ch);
     $ssl_verify_error = curl_errno($ch) === CURLE_SSL_CACERT || curl_errno($ch) === CURLE_SSL_CACERT_BADFILE;
     curl_close($ch);
-    
+
     if ($ssl_verify_error) {
         echo '<li class="list-group-item list-group-item-danger">SSL certificate verification failed - this will prevent secure API connections</li>';
     } else {
@@ -134,7 +134,7 @@ if (function_exists('curl_init')) {
 
 // Check if the server can reach the API endpoints
 if (function_exists('curl_init')) {
-    // Check OpenAI endpoint
+    // Check OpenAI endpoin
     $ch = curl_init('https://api.openai.com/v1/chat/completions');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_NOBODY, true);
@@ -143,8 +143,8 @@ if (function_exists('curl_init')) {
     curl_exec($ch);
     $openai_reachable = curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 0;
     curl_close($ch);
-    
-    // Check Google endpoint
+
+    // Check Google endpoin
     $ch = curl_init('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_NOBODY, true);
@@ -153,8 +153,8 @@ if (function_exists('curl_init')) {
     curl_exec($ch);
     $google_reachable = curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 0;
     curl_close($ch);
-    
-    // Check Anthropic endpoint
+
+    // Check Anthropic endpoin
     $ch = curl_init('https://api.anthropic.com/v1/messages');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_NOBODY, true);
@@ -163,13 +163,13 @@ if (function_exists('curl_init')) {
     curl_exec($ch);
     $anthropic_reachable = curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 0;
     curl_close($ch);
-    
+
     echo '<li class="list-group-item ' . ($openai_reachable ? 'list-group-item-success' : 'list-group-item-danger') . '">
           OpenAI API endpoint is ' . ($openai_reachable ? 'reachable' : 'not reachable') . '</li>';
-          
+
     echo '<li class="list-group-item ' . ($google_reachable ? 'list-group-item-success' : 'list-group-item-danger') . '">
           Google API endpoint is ' . ($google_reachable ? 'reachable' : 'not reachable') . '</li>';
-          
+
     echo '<li class="list-group-item ' . ($anthropic_reachable ? 'list-group-item-success' : 'list-group-item-danger') . '">
           Anthropic API endpoint is ' . ($anthropic_reachable ? 'reachable' : 'not reachable') . '</li>';
 }
@@ -186,53 +186,53 @@ echo '<script>
 document.addEventListener("DOMContentLoaded", function() {
     const resultsDiv = document.getElementById("api-validation-results");
     resultsDiv.innerHTML = "<p>Validating API keys (this may take a few seconds)...</p>";
-    
-    // Function to check OpenAI key format
+
+    // Function to check OpenAI key forma
     function validateOpenAIKey(key) {
         if (!key) return false;
         return key.startsWith("sk-") && key.length > 20;
     }
-    
+
     // Function to check Google key format (basic check)
     function validateGoogleKey(key) {
         if (!key) return false;
         return key.length > 10;
     }
-    
-    // Function to check Anthropic key format
+
+    // Function to check Anthropic key forma
     function validateAnthropicKey(key) {
         if (!key) return false;
         return key.startsWith("sk-ant-") && key.length > 20;
     }
-    
+
     // Generate validation results
     let results = "<ul class=\'list-group\'>";
-    
+
     // OpenAI key validation
     const openaiKey = "' . (!empty($openai_key) ? $openai_key : '') . '";
     const openaiValid = validateOpenAIKey(openaiKey);
     results += "<li class=\'list-group-item " + (openaiValid ? "list-group-item-success" : "list-group-item-danger") + "\'>" +
-              "OpenAI API Key: " + (openaiValid ? "Valid format" : "Invalid format or not provided") + 
+              "OpenAI API Key: " + (openaiValid ? "Valid format" : "Invalid format or not provided") +
               (openaiKey && !openaiValid ? " (should start with sk- and be longer than 20 characters)" : "") +
               "</li>";
-    
+
     // Google key validation
     const googleKey = "' . (!empty($google_key) ? $google_key : '') . '";
     const googleValid = validateGoogleKey(googleKey);
     results += "<li class=\'list-group-item " + (googleValid ? "list-group-item-success" : "list-group-item-danger") + "\'>" +
-              "Google API Key: " + (googleValid ? "Valid format" : "Invalid format or not provided") + 
+              "Google API Key: " + (googleValid ? "Valid format" : "Invalid format or not provided") +
               "</li>";
-    
+
     // Anthropic key validation
     const anthropicKey = "' . (!empty($anthropic_key) ? $anthropic_key : '') . '";
     const anthropicValid = validateAnthropicKey(anthropicKey);
     results += "<li class=\'list-group-item " + (anthropicValid ? "list-group-item-success" : "list-group-item-danger") + "\'>" +
-              "Anthropic API Key: " + (anthropicValid ? "Valid format" : "Invalid format or not provided") + 
+              "Anthropic API Key: " + (anthropicValid ? "Valid format" : "Invalid format or not provided") +
               (anthropicKey && !anthropicValid ? " (should start with sk-ant- and be longer than 20 characters)" : "") +
               "</li>";
-    
+
     results += "</ul>";
-    
+
     resultsDiv.innerHTML = results;
 });
 </script>';

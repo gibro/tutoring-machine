@@ -13,7 +13,7 @@ $string['google_apikeydesc']  = 'Geben Sie Ihren Google API-Schlüssel für den 
 $string['anthropic_apikey']   = 'Anthropic API-Schlüssel';
 $string['anthropic_apikeydesc'] = 'Geben Sie Ihren Anthropic API-Schlüssel für den Zugriff auf Claude-Modelle ein.';
 
-// Veraltet - für Abwärtskompatibilität
+// Veraltet - für Abwärtskompatibilitä
 $string['apikey']             = 'API-Schlüssel (Veraltet)';
 $string['apikeydesc']         = 'Geben Sie Ihren API-Schlüssel für die Chatbot-Funktionalität ein (veraltet, verwenden Sie stattdessen anbieterspezifische Schlüssel).';
 $string['metaprompt']         = 'Chatbot-Anweisungen';

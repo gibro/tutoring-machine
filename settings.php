@@ -28,7 +28,7 @@ if ($ADMIN->fulltree) {
         '',
         PARAM_TEXT
     ));
-    
+
     // Einstellung: API Key für Google Gemini
     $settings->add(new admin_setting_configpasswordunmask(
         'block_chatbot/google_apikey',
@@ -37,27 +37,27 @@ if ($ADMIN->fulltree) {
         '',
         PARAM_TEXT
     ));
-    
-    // Claude API wurde entfernt
-    
+
+    // Claude API wurde entfern
+
     // API-Test-Info
     $api_test_info = 'Erweiterte Einstellungen für die API-Kommunikation. ';
     $api_test_info .= 'Bei Verbindungsproblemen können Sie das <a href="'.$CFG->wwwroot.'/blocks/chatbot/api_test_web.php" target="_blank">API-Test-Tool</a> verwenden, ';
     $api_test_info .= 'um die Kommunikation mit den AI-Providern zu diagnostizieren.';
-    
+
     $settings->add(new admin_setting_heading(
         'block_chatbot/apitestinfo',
         'API-Test',
         $api_test_info
     ));
-    
+
     // Modell-Einstellungen
     $settings->add(new admin_setting_heading(
         'block_chatbot/modelsettings',
         get_string('modelsettings', 'block_chatbot'),
         get_string('modelsettingsdesc', 'block_chatbot')
     ));
-    
+
     // Einstellung: KI-Modell
     $model_choices = [
         // OpenAI Models
@@ -67,14 +67,14 @@ if ($ADMIN->fulltree) {
         'openai:gpt-4o-mini' => 'OpenAI GPT-4o Mini (für Zusammenfassungen - kostengünstig)',
         'openai:gpt-4.1-nano' => 'OpenAI GPT-4.1 Nano (für einfache Fragen - höchste Geschwindigkeit)',
         'openai:gpt-4.1-mini' => 'OpenAI GPT-4.1 Mini (kreatives Lernen - gute Balance)',
-        
+
         // Google Gemini Models
         'google:gemini-1.5-pro' => 'Google Gemini 1.5 Pro (umfangreiches Wissen - allgemeine Verwendung)',
         'google:gemini-1.5-flash' => 'Google Gemini 1.5 Flash (schnelle Antworten - kostengünstig)',
-        
-        // Anthropic Models wurden entfernt
+
+        // Anthropic Models wurden entfern
     ];
-    
+
     $settings->add(new admin_setting_configselect(
         'block_chatbot/default_model',
         get_string('default_model', 'block_chatbot'),
@@ -82,13 +82,13 @@ if ($ADMIN->fulltree) {
         'openai:gpt-4o',
         $model_choices
     ));
-    
+
     // Einstellung: API-Provider-Auswahl
     $provider_choices = [
         'openai' => get_string('provider_openai', 'block_chatbot'),
         'google' => get_string('provider_google', 'block_chatbot')
     ];
-    
+
     $settings->add(new admin_setting_configselect(
         'block_chatbot/default_provider',
         get_string('default_provider', 'block_chatbot'),
@@ -96,49 +96,49 @@ if ($ADMIN->fulltree) {
         'openai',
         $provider_choices
     ));
-    
+
     // Parameter-Einstellungen
     $settings->add(new admin_setting_heading(
         'block_chatbot/parametersettings',
         get_string('parametersettings', 'block_chatbot'),
         get_string('parametersettingsdesc', 'block_chatbot')
     ));
-    
-    
+
+
     // Einstellung: Kreativität (Temperatur)
     $temperature_options = [];
     for ($i = 0.1; $i <= 1.0; $i += 0.1) {
         $temperature_options[number_format($i, 1)] = number_format($i, 1);
     }
-    
+
     $settings->add(new admin_setting_configselect(
         'block_chatbot/temperature',
         get_string('temperature', 'block_chatbot'),
         get_string('temperature_desc', 'block_chatbot'),
-        '0.7', // Standardwert
+        '0.7', // Standardwer
         $temperature_options
     ));
-    
+
     // Einstellung: Top-P/Nucleus Sampling
     $top_p_options = [];
     for ($i = 0.1; $i <= 1.0; $i += 0.1) {
         $top_p_options[number_format($i, 1)] = number_format($i, 1);
     }
-    
+
     $settings->add(new admin_setting_configselect(
         'block_chatbot/top_p',
         get_string('top_p', 'block_chatbot'),
         get_string('top_p_desc', 'block_chatbot'),
-        '0.9', // Standardwert
+        '0.9', // Standardwer
         $top_p_options
     ));
-    
-    // Einstellung: Antwortformat
+
+    // Einstellung: Antwortforma
     $response_format_choices = [
         'text' => get_string('response_format_text', 'block_chatbot'),
         'json' => get_string('response_format_json', 'block_chatbot')
     ];
-    
+
     $settings->add(new admin_setting_configselect(
         'block_chatbot/response_format',
         get_string('response_format', 'block_chatbot'),
@@ -146,18 +146,18 @@ if ($ADMIN->fulltree) {
         'text',
         $response_format_choices
     ));
-    
+
     // System-Einstellungen
     $systemsettings_desc = 'Erweiterte Einstellungen für die API-Kommunikation. ';
     $systemsettings_desc .= 'Bei Verbindungsproblemen können Sie das <a href="'.$CFG->wwwroot.'/blocks/chatbot/api_test_web.php" target="_blank">API-Test-Tool</a> verwenden, ';
     $systemsettings_desc .= 'um die Kommunikation mit den AI-Providern zu diagnostizieren.';
-    
+
     $settings->add(new admin_setting_heading(
         'block_chatbot/systemsettings',
         get_string('systemsettings', 'block_chatbot'),
         $systemsettings_desc
     ));
-    
+
     // Einstellung: Maximale Tokens
     $settings->add(new admin_setting_configtext(
         'block_chatbot/max_tokens',
@@ -166,8 +166,8 @@ if ($ADMIN->fulltree) {
         '2500',
         PARAM_INT
     ));
-    
-    // Einstellung: Timeout
+
+    // Einstellung: Timeou
     $settings->add(new admin_setting_configtext(
         'block_chatbot/timeout',
         get_string('timeout', 'block_chatbot'),

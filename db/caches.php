@@ -3,7 +3,7 @@
 /**
  * Cache definitions for block_chatbot.
  *
- * @package    block_chatbot
+ * @package    block_chatbo
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -20,7 +20,7 @@ $definitions = [
         'staticacceleration' => true,
         'staticaccelerationsize' => 30, // Maximum number of items to store in accelerated cache
     ],
-    
+
     // Course content cache
     'course_content' => [
         'mode' => cache_store::MODE_APPLICATION,
@@ -30,7 +30,7 @@ $definitions = [
         'staticacceleration' => true,
         'staticaccelerationsize' => 10, // Store up to 10 courses in memory
     ],
-    
+
     // Page content cache
     'page_content' => [
         'mode' => cache_store::MODE_APPLICATION,
@@ -40,7 +40,7 @@ $definitions = [
         'staticacceleration' => true,
         'staticaccelerationsize' => 50, // Store up to 50 pages in memory
     ],
-    
+
     // Glossary content cache
     'glossary_content' => [
         'mode' => cache_store::MODE_APPLICATION,
@@ -50,7 +50,7 @@ $definitions = [
         'staticacceleration' => true,
         'staticaccelerationsize' => 20, // Store up to 20 glossaries in memory
     ],
-    
+
     // H5P content cache
     'h5p_content' => [
         'mode' => cache_store::MODE_APPLICATION,
@@ -60,7 +60,7 @@ $definitions = [
         'staticacceleration' => true,
         'staticaccelerationsize' => 20, // Store up to 20 H5P activities in memory
     ],
-    
+
     // Miscellaneous content cache (forums, quizzes, books, etc.)
     'misc_content' => [
         'mode' => cache_store::MODE_APPLICATION,

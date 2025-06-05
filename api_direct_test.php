@@ -3,7 +3,7 @@
 /**
  * Direct API test for Chatbot block.
  *
- * @package    block_chatbot
+ * @package    block_chatbo
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,7 +26,7 @@ if (empty($api_key)) {
 
 // Set up a simple test using direct cURL to minimize interference
 $url = 'https://api.openai.com/v1/chat/completions';
-$model = 'gpt-3.5-turbo'; // Use the smallest, fastest model for test
+$model = 'gpt-3.5-turbo'; // Use the smallest, fastest model for tes
 
 $data = [
     'model' => $model,
@@ -53,7 +53,7 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
 curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
-// Execute request
+// Execute reques
 echo "<h2>Direct OpenAI API Test</h2>";
 echo "<pre>";
 echo "Sending request to OpenAI API...\n";
@@ -71,10 +71,10 @@ if (curl_errno($ch)) {
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     echo "HTTP Status: " . $http_code . "\n";
     echo "Time taken: " . round($time_taken, 2) . " seconds\n\n";
-    
+
     // Process and display response
     $result = json_decode($response, true);
-    
+
     if ($http_code >= 200 && $http_code < 300) {
         echo "SUCCESS!\n\n";
         if (isset($result['choices'][0]['message']['content'])) {
@@ -98,23 +98,23 @@ echo "<h2>API Client Test</h2>";
 echo "<pre>";
 
 try {
-    // Create API client
+    // Create API clien
     $client = new block_chatbot_openai_client($api_key);
     $client->set_model('gpt-3.5-turbo');
     $client->set_max_tokens(20);
-    
+
     $messages = [
         ['role' => 'user', 'content' => 'Say hello in a simple way.']
     ];
-    
-    // Send request
+
+    // Send reques
     echo "Sending request through API client...\n";
     $start_time = microtime(true);
     $response = $client->get_completion($messages);
     $time_taken = microtime(true) - $start_time;
-    
+
     echo "Time taken: " . round($time_taken, 2) . " seconds\n\n";
-    
+
     if ($response !== false) {
         echo "SUCCESS!\n\n";
         echo "Response: " . $response . "\n";
@@ -128,7 +128,7 @@ try {
 
 echo "</pre>";
 
-// Show JavaScript for direct test
+// Show JavaScript for direct tes
 echo "<h2>Browser API Test</h2>";
 echo "<p>This tests if your browser can directly reach the OpenAI API (CORS restrictions may prevent this)</p>";
 echo "<button id='testButton'>Run Browser Test</button>";
@@ -139,7 +139,7 @@ echo "<div id='result'></div>";
 document.getElementById('testButton').addEventListener('click', async function() {
     const resultDiv = document.getElementById('result');
     resultDiv.innerHTML = "<p>Testing API from browser...</p>";
-    
+
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -155,9 +155,9 @@ document.getElementById('testButton').addEventListener('click', async function()
                 max_tokens: 20
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok) {
             resultDiv.innerHTML = `
                 <p style="color: green;">SUCCESS!</p>

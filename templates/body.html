@@ -51,6 +51,8 @@
         transform: translateY(20px);
         opacity: 0;
         transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+        resize: both;
+        overflow: hidden;
     }
 
     #chat-box.active {
@@ -69,11 +71,31 @@
         border-top-right-radius: 12px;
         font-weight: bold;
         position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    #chat-header .chat-title {
+        flex-grow: 1;
+        text-align: center;
+    }
+    
+    #chat-header .chat-controls {
+        display: flex;
+        gap: 10px;
     }
 
-    #chat-header span {
-        position: absolute;
-        right: 10px;
+    #chat-header .size-control {
+        cursor: pointer;
+        display: inline-block;
+        margin-left: 5px;
+        width: 16px;
+        height: 16px;
+        text-align: center;
+    }
+    
+    #chat-header .close-button {
         cursor: pointer;
     }
 
@@ -148,8 +170,9 @@
         background: %%MAIN_COLOR%%;
         color: white;
         align-self: flex-end;
-        text-align: right;
+        text-align: left;
         border-bottom-right-radius: 2px;
+        white-space: pre-wrap;
     }
 
     .bot-message {
@@ -187,6 +210,7 @@
     /* Chat input area */
     #chat-input {
         display: flex;
+        flex-direction: column;
         border-top: 1px solid #ddd;
         padding: 8px;
         background: #f8f9fa;
@@ -194,19 +218,33 @@
         border-bottom-right-radius: 12px;
     }
 
-    #chat-input input {
-        flex: 1;
+    #chat-input textarea {
+        width: 100%;
         padding: 8px;
         border: none;
         outline: none;
         border-radius: 5px;
+        resize: none;
+        min-height: 38px;
+        max-height: 120px;
+        overflow-y: auto;
+        margin-bottom: 8px;
+    }
+
+    #chat-input .button-row {
+        display: flex;
+        justify-content: flex-end;
     }
 
     #chat-input button {
         background: %%MAIN_COLOR%%;
         color: white;
         border: none;
-        padding: 8px 12px;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
         border-radius: 5px;
         margin-left: 8px;
@@ -228,6 +266,22 @@
         padding: 10px;
     }
     
+    #prompt-back-button {
+        display: none;
+        padding: 5px 10px;
+        margin-bottom: 10px;
+        background: #f1f1f1;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: left;
+    }
+    
+    #prompt-back-button:hover {
+        background: #e3e3e3;
+    }
+    
     .prompt-suggestion {
         cursor: pointer;
         padding: 8px 12px;
@@ -240,6 +294,22 @@
     
     .prompt-suggestion:hover {
         background: #e3e3e3;
+    }
+    
+    .prompt-category {
+        cursor: pointer;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        background: #e0e0e0;
+        border-radius: 5px;
+        transition: background 0.2s;
+        font-size: 14px;
+        font-weight: bold;
+        border-left: 3px solid %%MAIN_COLOR%%;
+    }
+    
+    .prompt-category:hover {
+        background: #d0d0d0;
     }
 
     /* Animations */
@@ -256,25 +326,38 @@
 <!-- Chat Widget HTML Structure -->
 <div id="chat-widget"><img src="%%CHATBOT_LOGO%%" alt="Logo"></div>
 <div id="chat-box">
-    <div id="chat-header">%%CHATBOT_NAME%% <span onclick="toggleChat()">✖</span></div>
+    <div id="chat-header">
+        <div class="chat-title">%%CHATBOT_NAME%%</div>
+        <div class="chat-controls">
+            <span class="size-control" id="size-sm" title="Klein">S</span>
+            <span class="size-control" id="size-md" title="Mittel">M</span>
+            <span class="size-control" id="size-lg" title="Groß">L</span>
+            <span class="close-button" onclick="toggleChat()">✖</span>
+        </div>
+    </div>
     <div id="chat-messages"></div>
     <div id="analytics-notice" style="display: none; font-size: 12px; color: #666; padding: 4px 8px; text-align: center; background-color: #f8f9fa; border-top: 1px solid #eee;">%%ANALYTICS_NOTICE%%</div>
     <div id="prompt-suggestions-panel">
-        <!-- Prompt suggestions will be dynamically added here -->
+        <button id="prompt-back-button">← Zurück</button>
+        <div id="prompt-suggestions-content">
+            <!-- Prompt suggestions will be dynamically added here -->
+        </div>
     </div>
     <div id="chat-input">
-        <input type="text" id="user-input" placeholder="Schreibe eine Nachricht...">
-        <button onclick="sendMessage()">➤</button>
-        <button id="suggestions-button" onclick="togglePromptSuggestions()" style="display: none;">
-            <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 24 24">
-                <path d="M7,8h10V6H7V8z M7,12h10v-2H7V12z M7,16h10v-2H7V16z"/>
-            </svg>
-        </button>
-        <button onclick="resetSession()">
-            <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 32 32">
-                <path d="M 16 4 C 10.886719 4 6.617188 7.160156 4.875 11.625 L 6.71875 12.375 C 8.175781 8.640625 11.710938 6 16 6 C 19.242188 6 22.132813 7.589844 23.9375 10 L 20 10 L 20 12 L 27 12 L 27 5 L 25 5 L 25 8.09375 C 22.808594 5.582031 19.570313 4 16 4 Z M 25.28125 19.625 C 23.824219 23.359375 20.289063 26 16 26 C 12.722656 26 9.84375 24.386719 8.03125 22 L 12 22 L 12 20 L 5 20 L 5 27 L 7 27 L 7 23.90625 C 9.1875 26.386719 12.394531 28 16 28 C 21.113281 28 25.382813 24.839844 27.125 20.375 Z"></path>
-            </svg>
-        </button>
+        <textarea id="user-input" placeholder="Schreibe eine Nachricht..."></textarea>
+        <div class="button-row">
+            <button onclick="sendMessage()">➤</button>
+            <button id="suggestions-button" onclick="togglePromptSuggestions()" style="display: none;">
+                <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 24 24">
+                    <path d="M7,8h10V6H7V8z M7,12h10v-2H7V12z M7,16h10v-2H7V16z"/>
+                </svg>
+            </button>
+            <button onclick="resetSession()">
+                <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 32 32">
+                    <path d="M 16 4 C 10.886719 4 6.617188 7.160156 4.875 11.625 L 6.71875 12.375 C 8.175781 8.640625 11.710938 6 16 6 C 19.242188 6 22.132813 7.589844 23.9375 10 L 20 10 L 20 12 L 27 12 L 27 5 L 25 5 L 25 8.09375 C 22.808594 5.582031 19.570313 4 16 4 Z M 25.28125 19.625 C 23.824219 23.359375 20.289063 26 16 26 C 12.722656 26 9.84375 24.386719 8.03125 22 L 12 22 L 12 20 L 5 20 L 5 27 L 7 27 L 7 23.90625 C 9.1875 26.386719 12.394531 28 16 28 C 21.113281 28 25.382813 24.839844 27.125 20.375 Z"></path>
+                </svg>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -294,6 +377,14 @@
     let promptSuggestions = `%%PROMPT_SUGGESTIONS%%`;
     let promptSuggestionsOpen = false;
 
+    // Global variables for chat box sizing
+    let chatSizes = {
+        'sm': { width: '25%', height: '500px', minWidth: '340px', maxWidth: '550px' },
+        'md': { width: '35%', height: '600px', minWidth: '400px', maxWidth: '700px' },
+        'lg': { width: '45%', height: '700px', minWidth: '450px', maxWidth: '900px' }
+    };
+    let currentSize = 'sm';
+    
     // Event listeners and initialization
     document.addEventListener('DOMContentLoaded', initChatbot);
     
@@ -311,12 +402,67 @@
             loadSession();
         }
         
+        // Load saved size preference if it exists
+        loadSizePreference();
+        
         setTimeout(scrollToBottom, 100);
         showAnalyticsNotice();
         
         // Initialize prompt suggestions if enabled
         if (promptSuggestionsEnabled) {
             initPromptSuggestions();
+        }
+        
+        // Initialize size controls
+        initSizeControls();
+    }
+    
+    /**
+     * Initialize size control buttons
+     */
+    function initSizeControls() {
+        document.getElementById('size-sm').addEventListener('click', function() {
+            resizeChatBox('sm');
+        });
+        
+        document.getElementById('size-md').addEventListener('click', function() {
+            resizeChatBox('md');
+        });
+        
+        document.getElementById('size-lg').addEventListener('click', function() {
+            resizeChatBox('lg');
+        });
+    }
+    
+    /**
+     * Resize the chat box
+     */
+    function resizeChatBox(size) {
+        if (!chatSizes[size]) return;
+        
+        const chatBox = document.getElementById('chat-box');
+        
+        // Apply new dimensions
+        chatBox.style.width = chatSizes[size].width;
+        chatBox.style.height = chatSizes[size].height;
+        chatBox.style.minWidth = chatSizes[size].minWidth;
+        chatBox.style.maxWidth = chatSizes[size].maxWidth;
+        
+        // Save the current size
+        currentSize = size;
+        localStorage.setItem('chatBoxSize', size);
+        
+        // Scroll to bottom after resize
+        setTimeout(scrollToBottom, 100);
+    }
+    
+    /**
+     * Load saved size preference
+     */
+    function loadSizePreference() {
+        const savedSize = localStorage.getItem('chatBoxSize');
+        if (savedSize && chatSizes[savedSize]) {
+            resizeChatBox(savedSize);
         }
     }
     
@@ -370,8 +516,14 @@
         }
         
         if (userInput) {
-            userInput.addEventListener("keypress", function(event) {
-                if (event.key === "Enter") {
+            userInput.addEventListener("keydown", function(event) {
+                // Allow growing textarea as content increases
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+                
+                // Send message on Enter without Shift key
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
                     sendMessage();
                 }
             });
@@ -513,7 +665,7 @@
         if (!message) return;
 
         const chatMessages = document.getElementById("chat-messages");
-        chatMessages.innerHTML += `<div class='chat-bubble user-message fade-in'><strong>Du:</strong> ${message}</div>`;
+        chatMessages.innerHTML += `<div class='chat-bubble user-message fade-in'><strong>Du:</strong><br>${message}</div>`;
         chatMessages.innerHTML += `<div id="loading" class="loading fade-in"></div>`;
         scrollToBottom();
         inputField.value = "";
@@ -770,7 +922,7 @@
     }
     
     /**
-     * Initialize prompt suggestions
+     * Initialize prompt suggestions with hierarchical categories
      */
     function initPromptSuggestions() {
         if (!promptSuggestionsEnabled || !promptSuggestions) {
@@ -780,21 +932,116 @@
         // Show suggestions button
         document.getElementById('suggestions-button').style.display = 'block';
         
-        // Parse and populate suggestions
-        const suggestionsPanel = document.getElementById('prompt-suggestions-panel');
+        // Setup back button handler
+        const backButton = document.getElementById('prompt-back-button');
+        backButton.addEventListener('click', navigateBackToCategories);
+        
+        // Parse and organize suggestions
+        parsePromptSuggestions();
+    }
+    
+    /**
+     * Parse prompt suggestions and detect categories if present
+     */
+    function parsePromptSuggestions() {
+        const suggestionsContent = document.getElementById('prompt-suggestions-content');
+        suggestionsContent.innerHTML = ''; // Clear existing content
+        
+        // Parse suggestions
         const suggestionLines = promptSuggestions.split('\n').filter(line => line.trim() !== '');
         
-        if (suggestionLines.length > 0) {
-            suggestionLines.forEach(suggestion => {
-                const suggestionElem = document.createElement('div');
-                suggestionElem.className = 'prompt-suggestion';
-                suggestionElem.textContent = suggestion.trim();
-                suggestionElem.onclick = function() {
-                    usePromptSuggestion(suggestion.trim());
+        // Check if we have categories (lines starting with #)
+        const hasCategories = suggestionLines.some(line => line.trim().startsWith('#'));
+        
+        if (hasCategories) {
+            // Process hierarchical structure
+            let currentCategory = null;
+            let categoryPrompts = {};
+            
+            // First pass: identify categories and their prompts
+            suggestionLines.forEach(line => {
+                const trimmedLine = line.trim();
+                
+                if (trimmedLine.startsWith('#')) {
+                    // This is a category header
+                    currentCategory = trimmedLine.substring(1).trim();
+                    if (!categoryPrompts[currentCategory]) {
+                        categoryPrompts[currentCategory] = [];
+                    }
+                } else if (currentCategory && trimmedLine) {
+                    // This is a prompt under the current category
+                    categoryPrompts[currentCategory].push(trimmedLine);
+                }
+            });
+            
+            // Create category elements
+            for (const category in categoryPrompts) {
+                const categoryElem = document.createElement('div');
+                categoryElem.className = 'prompt-category';
+                categoryElem.textContent = category;
+                categoryElem.dataset.category = category;
+                categoryElem.onclick = function() {
+                    showCategoryPrompts(category, categoryPrompts[category]);
                 };
-                suggestionsPanel.appendChild(suggestionElem);
+                suggestionsContent.appendChild(categoryElem);
+            }
+        } else {
+            // No categories, display flat list of suggestions
+            suggestionLines.forEach(suggestion => {
+                if (suggestion.trim()) {
+                    const suggestionElem = document.createElement('div');
+                    suggestionElem.className = 'prompt-suggestion';
+                    suggestionElem.textContent = suggestion.trim();
+                    suggestionElem.onclick = function() {
+                        usePromptSuggestion(suggestion.trim());
+                    };
+                    suggestionsContent.appendChild(suggestionElem);
+                }
             });
         }
+    }
+    
+    /**
+     * Show prompts for a specific category
+     */
+    function showCategoryPrompts(category, prompts) {
+        const suggestionsContent = document.getElementById('prompt-suggestions-content');
+        const backButton = document.getElementById('prompt-back-button');
+        
+        // Clear current content
+        suggestionsContent.innerHTML = '';
+        
+        // Show back button
+        backButton.style.display = 'block';
+        
+        // Add category title
+        const categoryTitle = document.createElement('div');
+        categoryTitle.style.fontWeight = 'bold';
+        categoryTitle.style.marginBottom = '10px';
+        categoryTitle.textContent = category;
+        suggestionsContent.appendChild(categoryTitle);
+        
+        // Add prompts for this category
+        prompts.forEach(prompt => {
+            const promptElem = document.createElement('div');
+            promptElem.className = 'prompt-suggestion';
+            promptElem.textContent = prompt;
+            promptElem.onclick = function() {
+                usePromptSuggestion(prompt);
+            };
+            suggestionsContent.appendChild(promptElem);
+        });
+    }
+    
+    /**
+     * Navigate back to the categories view
+     */
+    function navigateBackToCategories() {
+        const backButton = document.getElementById('prompt-back-button');
+        backButton.style.display = 'none';
+        
+        // Reparse and show categories
+        parsePromptSuggestions();
     }
     
     /**
@@ -806,6 +1053,10 @@
         
         if (promptSuggestionsOpen) {
             panel.style.display = 'block';
+            // Reset to top level view when opening
+            const backButton = document.getElementById('prompt-back-button');
+            backButton.style.display = 'none';
+            parsePromptSuggestions();
         } else {
             panel.style.display = 'none';
         }

@@ -78,10 +78,14 @@ Der Chatbot implementiert folgende Sicherheitsfunktionen:
 - PHP 8.2 oder höher
 - Moodle 4.1 oder höher
 - OpenAI API-Schlüssel oder Google Gemini API-Schlüssel
-- Optional für PDF-Verarbeitung:
-  - pdftotext (Poppler-Utils)
-  - Smalot/PdfParser PHP-Bibliothek (über Composer installierbar)
-  - PHP Imagick-Erweiterung
+- Für PDF-Textextraktion (mindestens eine der folgenden Optionen):
+  - **pdftotext** (empfohlen, Teil von Poppler-Utils)
+    - Ubuntu/Debian: `apt-get install poppler-utils`
+    - CentOS/RHEL: `yum install poppler-utils`
+    - macOS: `brew install poppler`
+  - Alternative PHP-Bibliotheken:
+    - Smalot/PdfParser: `composer require smalot/pdfparser`
+    - Spatie/PdfToText: `composer require spatie/pdf-to-text`
 
 ## API-Test-Tools
 
@@ -130,6 +134,51 @@ Der Chatbot nutzt ein umfassendes Caching-System, um die Leistung zu verbessern 
 Dieses Caching-System reduziert die Verarbeitungszeit und verbessert die Reaktionsfähigkeit des Chatbots erheblich.
 
 ## Änderungsprotokoll
+
+### Version 3.11.1
+- Behebung von Variablennamensfehlern in der Kontextgenerierung
+- Korrektur der Tippfehler "contex" zu "context" im gesamten Code
+- Verbesserung der Konsistenz in der Variablenverwendung
+- Fehlerbereinigung für "section conten" zu "section content"
+- Sicherstellung der korrekten Funktionalität bei der PDF-Extraktion
+
+### Version 3.11.0
+- Umfassendes Code-Refactoring für bessere Wartbarkeit
+- Entfernung veralteter Codepfade und Fallbacks
+- Optimierung der API-Client-Implementierung
+- Verbesserte Dokumentation im Quellcode
+- Entfernung überflüssiger Leerzeichen und Formatierungskorrekturen
+- Konsolidierung der Providers und Modelle auf die aktuellen Standards
+- Verbesserung der Fehlerbehandlung in der gesamten Codebasis
+
+### Version 3.10.4
+- Verbesserte Benutzeroberfläche für Analytics- und Kontextquellen-Ansichten
+- Öffnen des Analysendashboards in einem neuen Fenster
+- Hinzufügen eines "Fenster schließen"-Buttons zum Analysendashboard
+- Konsistente UI für alle Popup-Fenster (Analysen und Kontextquellen)
+- Verbesserte Darstellung der PDF-Extraktionsoptionen
+- Automatische Erkennung und Anzeige verfügbarer PDF-Extraktionsmethoden
+
+### Version 3.10.3
+- Implementierung einer server-seitigen PDF-Textextraktion
+- Unterstützung für pdftotext (poppler-utils) zur PDF-Extraktion
+- Fallback auf PHP-basierte PDF-Bibliotheken wenn verfügbar
+- Automatische Erkennung verfügbarer PDF-Extraktionsmethoden
+- Verbesserte Fehlerbehandlung und Logging bei der PDF-Verarbeitung
+- Detaillierte Installationsanleitung für PDF-Extraktionstools
+
+### Version 3.10.2
+- Sicherheitsverbesserungen und Härtung gegen XSS-Angriffe
+- Fehlerbehandlung optimiert mit detaillierteren Fehlermeldungen
+
+### Version 3.10.1
+- Verbesserte Kontext-Anzeige in simple_context.php
+- Anpassungen zur Unterstützung von PHP 8.2-8.4
+
+### Version 3.10.0
+- Vollständige Implementierung des Kontext-Systems mit Cache-Unterstützung
+- Anzeige des vollständigen API-Kontexts in der Diagnoseansicht
+- Einstellungsoptionen zur Konfiguration der Kontextquellen
 
 ### Version 3.8.0
 - Implementierung von Lehr-Analysen für anonymisierte Nutzereingaben

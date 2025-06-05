@@ -3,7 +3,7 @@
 /**
  * Analytics dashboard for Chatbot block.
  *
- * @package    block_chatbot
+ * @package    block_chatbo
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -44,7 +44,7 @@ if (!$analytics_manager->is_analytics_enabled()) {
 // Get analytics data
 $analytics_data = $analytics_manager->get_analytics_data($days);
 
-// Prepare page output
+// Prepare page outpu
 echo $OUTPUT->header();
 
 // Display page title and description
@@ -75,8 +75,8 @@ echo $OUTPUT->render($days_selector);
 
 // Total queries
 echo html_writer::tag('h3', get_string('queries_last_days', 'block_chatbot', $days));
-echo html_writer::tag('p', 
-    get_string('total_queries', 'block_chatbot') . ': ' . 
+echo html_writer::tag('p',
+    get_string('total_queries', 'block_chatbot') . ': ' .
     '<strong>' . $analytics_data['total_queries'] . '</strong>'
 );
 
@@ -84,46 +84,54 @@ echo html_writer::tag('p',
 if ($analytics_data['total_queries'] > 0) {
     // Most common queries
     echo html_writer::tag('h3', get_string('most_common_questions', 'block_chatbot'));
-    
+
     $table = new html_table();
     $table->head = array(
         get_string('query', 'block_chatbot'),
         get_string('query_count', 'block_chatbot')
     );
     $table->attributes['class'] = 'table table-striped table-hover';
-    
+
     foreach ($analytics_data['most_common'] as $query_data) {
         $table->data[] = array(
             $query_data['query'],
             $query_data['count']
         );
     }
-    
+
     echo html_writer::table($table);
-    
+
     // Query types chart if there are categorized queries
     if (!empty($analytics_data['by_type'])) {
         echo html_writer::tag('h3', get_string('query_types', 'block_chatbot'));
-        
+
         $chart = new \core\chart_pie();
         $chart->set_title(get_string('query_types', 'block_chatbot'));
-        
+
         $labels = array();
         $values = array();
-        
+
         foreach ($analytics_data['by_type'] as $type => $count) {
             $labels[] = get_string('querytype_' . $type, 'block_chatbot', $type);
             $values[] = $count;
         }
-        
+
         $series = new \core\chart_series(get_string('queries', 'block_chatbot'), $values);
         $chart->add_series($series);
         $chart->set_labels($labels);
-        
+
         echo $OUTPUT->render($chart);
     }
 } else {
     echo $OUTPUT->notification(get_string('no_analytics_data', 'block_chatbot'), 'info');
 }
+
+// Schließen-Button
+echo html_writer::start_div('text-center mt-3');
+echo html_writer::tag('button', 'Fenster schließen', array(
+    'class' => 'btn btn-primary',
+    'onclick' => 'window.close();'
+));
+echo html_writer::end_div();
 
 echo $OUTPUT->footer();

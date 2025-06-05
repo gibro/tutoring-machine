@@ -3,7 +3,7 @@
 /**
  * Chatbot block main class.
  *
- * @package    block_chatbot
+ * @package    block_chatbo
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -30,7 +30,7 @@ class block_chatbot extends block_base {
     public function has_config() {
         return true;
     }
-    
+
     /**
      * Allows multiple instances of the block within a course
      *
@@ -39,7 +39,7 @@ class block_chatbot extends block_base {
     public function instance_allow_multiple() {
         return true;
     }
-    
+
     /**
      * Processes instance configuration after edit save
      *
@@ -48,17 +48,17 @@ class block_chatbot extends block_base {
      * @return bool True if successful
      */
     public function instance_config_save($data, $nolongerused = false) {
-        $data = (object)$data; // Make sure it's an object
+        $data = (object)$data; // Make sure it's an objec
         return parent::instance_config_save($data, $nolongerused);
     }
 
     /**
-     * Get block content
+     * Get block conten
      *
-     * @return object|string Block content
+     * @return object|string Block conten
      */
     public function get_content() {
-        global $CFG, $COURSE, $USER;
+        global $CFG, $COURSE, $USER, $OUTPUT, $DB, $PAGE;
 
         if ($this->content !== null) {
             return $this->content;
@@ -70,22 +70,22 @@ class block_chatbot extends block_base {
 
         // Get logo URL
         $logo_url = $this->get_logo_url();
-        
-        // Get the main color from block config, default to #007bff if not set
+
+        // Get the main color from block config, default to #007bff if not se
         $main_color = !empty($this->config->main_color) ? $this->config->main_color : '#007bff';
 
         // Check if analytics are enabled for this block
         $analytics_enabled = !empty($this->config->enable_analytics) && $this->config->enable_analytics;
         $analytics_notice = '';
-        
+
         if ($analytics_enabled) {
             $analytics_notice = get_string('data_collection_notice', 'block_chatbot');
         }
-        
+
         // Load HTML template with error handling
         $html = $this->load_html_template(
-            $CFG->dirroot . '/blocks/chatbot/templates/body.html', 
-            $assistant_name, 
+            $CFG->dirroot . '/blocks/chatbot/templates/body.html',
+            $assistant_name,
             $logo_url,
             $main_color,
             $analytics_notice
@@ -93,15 +93,37 @@ class block_chatbot extends block_base {
 
         $this->content = new stdClass;
         $this->content->text = $html;
-        
-        // Add analytics link for teachers if analytics are enabled
+
+        // Footer-Links für Block-Funktionen
         $context = context_course::instance($COURSE->id);
+        $footer_links = array();
+
+        // Analytics-Link für Lehrer, wenn Analytics aktiviert sind
         if ($analytics_enabled && has_capability('block/chatbot:viewanalytics', $context)) {
-            $analytics_url = new moodle_url('/blocks/chatbot/analytics.php', 
+            $analytics_url = new moodle_url('/blocks/chatbot/analytics.php',
                 array('id' => $this->instance->id, 'course' => $COURSE->id));
-            $this->content->footer = html_writer::link($analytics_url, 
+            $footer_links[] = html_writer::link($analytics_url,
                 get_string('analytics_dashboard', 'block_chatbot'),
-                array('class' => 'btn btn-secondary btn-sm mt-2'));
+                array('class' => 'btn btn-secondary btn-sm m-1', 'target' => '_blank'));
+        }
+
+        // Link zu einer separaten Seite für Kontextquellen
+        if (has_capability('block/chatbot:view', $context) || has_capability('moodle/course:view', $context)) {
+            // Konstruiere die URL mit dem korrekten Moodle-Mechanismus
+            $url = $CFG->wwwroot . '/blocks/chatbot/simple_context.php';
+            $context_url = new moodle_url($url, array('courseid' => $COURSE->id, 'blockid' => $this->instance->id));
+
+            // Füge den Link zum Footer hinzu
+            $footer_links[] = html_writer::link(
+                $context_url,
+                get_string('contextsources', 'block_chatbot'),
+                array('class' => 'btn btn-secondary btn-sm m-1', 'target' => '_blank')
+            );
+        }
+
+        // Füge Links zum Footer hinzu, wenn vorhanden
+        if (!empty($footer_links)) {
+            $this->content->footer = html_writer::div(implode('', $footer_links), 'd-flex flex-wrap justify-content-center mt-2');
         } else {
             $this->content->footer = '';
         }
@@ -126,32 +148,32 @@ class block_chatbot extends block_base {
      * @param moodle_url $logo_url Logo URL
      * @param string $main_color Main color for the chatbot interface
      * @param string $analytics_notice Notice about analytics data collection
-     * @return string Final HTML content
+     * @return string Final HTML conten
      */
     private function load_html_template($template_path, $assistant_name, $logo_url, $main_color = '#007bff', $analytics_notice = '') {
         global $COURSE;
-        
+
         // Make sure analytics_notice is set to empty string if not provided
         if (empty($analytics_notice)) {
             $analytics_notice = '';
         }
-        
+
         // Check if prompt suggestions are enabled and get the suggestions
         $prompt_suggestions_enabled = !empty($this->config->enable_prompt_suggestions) && $this->config->enable_prompt_suggestions;
         $prompt_suggestions = '';
         if ($prompt_suggestions_enabled && !empty($this->config->prompt_suggestions)) {
             $prompt_suggestions = $this->config->prompt_suggestions;
         }
-        
+
         if (!file_exists($template_path)) {
             return 'Error: body.html not found.';
         }
-        
+
         $template_content = file_get_contents($template_path);
         if ($template_content === false) {
             return 'Error: Could not read body.html template.';
         }
-        
+
         // Replace placeholders
         $html = str_replace('%%CHATBOT_NAME%%', s($assistant_name), $template_content);
         $html = str_replace('%%CHATBOT_LOGO%%', $logo_url, $html);
@@ -163,9 +185,37 @@ class block_chatbot extends block_base {
         $html = str_replace('%%PROMPT_SUGGESTIONS_ENABLED%%', ($prompt_suggestions_enabled ? 'true' : 'false'), $html);
         $html = str_replace('%%PROMPT_SUGGESTIONS%%', s($prompt_suggestions), $html);
         $html = str_replace('%%PROMPT_SUGGESTIONS_BUTTON_TEXT%%', get_string('prompt_suggestions_button_text', 'block_chatbot'), $html);
-        
+
         return $html;
     }
-    
+
     // Analytics logging has been moved to the analytics_logger.php class
+
+    /**
+     * Defines where the block can be added.
+     *
+     * @return array
+     */
+    public function applicable_formats() {
+        return array(
+            'course-view' => true,
+            'site' => true,
+            'mod' => false,
+            'my' => true,
+        );
+    }
+
+    /**
+     * Add custom HTML attributes to the block instance
+     *
+     * @return array
+     */
+    public function html_attributes() {
+        $attributes = parent::html_attributes();
+
+        // Add the block instance id as a data attribute to access in JS
+        $attributes['data-block-id'] = $this->instance->id;
+
+        return $attributes;
+    }
 }

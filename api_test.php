@@ -3,7 +3,7 @@
 /**
  * API Test Script for Chatbot block.
  *
- * @package    block_chatbot
+ * @package    block_chatbo
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -34,7 +34,7 @@ file_put_contents($log_file, "=== Chatbot API Test Log ===\n" . date('Y-m-d H:i:
 // Get configuration
 $config = get_config('block_chatbot');
 
-// Determine which provider to test
+// Determine which provider to tes
 $provider = isset($argv[1]) ? $argv[1] : 'all';
 log_message("Testing provider: $provider");
 
@@ -45,39 +45,39 @@ $user_message = "Say hello and introduce yourself in one sentence.";
 // Test OpenAI
 if ($provider === 'all' || $provider === 'openai') {
     log_message("=== Testing OpenAI API ===");
-    
+
     if (empty($config->openai_apikey)) {
         log_message("ERROR: OpenAI API key not configured");
     } else {
         try {
             log_message("Creating OpenAI client with API key (length: " . strlen($config->openai_apikey) . ")");
             $client = new block_chatbot_openai_client($config->openai_apikey);
-            
+
             $models = ['gpt-4o', 'gpt-4-turbo', 'gpt-4o-mini'];
-            
+
             foreach ($models as $model) {
                 log_message("Testing model: $model");
                 $client->set_model($model);
                 $client->set_max_tokens(100);
                 $client->set_temperature(0.7);
-                
+
                 $messages = [
                     ['role' => 'system', 'content' => $system_message],
                     ['role' => 'user', 'content' => $user_message]
                 ];
-                
+
                 log_message("Sending request to OpenAI API with model $model...");
                 $start_time = microtime(true);
                 $response = $client->get_completion($messages);
                 $time_taken = microtime(true) - $start_time;
-                
+
                 if ($response !== false) {
                     log_message("SUCCESS: Response received in " . round($time_taken, 2) . " seconds");
                     log_message("Response: " . $response);
                 } else {
                     log_message("ERROR: Request failed for model $model");
                 }
-                
+
                 log_message("Finished testing model: $model\n");
             }
         } catch (Exception $e) {
@@ -90,39 +90,39 @@ if ($provider === 'all' || $provider === 'openai') {
 // Test Google
 if ($provider === 'all' || $provider === 'google') {
     log_message("=== Testing Google Gemini API ===");
-    
+
     if (empty($config->google_apikey)) {
         log_message("ERROR: Google API key not configured");
     } else {
         try {
             log_message("Creating Google client with API key (length: " . strlen($config->google_apikey) . ")");
             $client = new block_chatbot_google_client($config->google_apikey);
-            
+
             $models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
-            
+
             foreach ($models as $model) {
                 log_message("Testing model: $model");
                 $client->set_model($model);
                 $client->set_max_tokens(100);
                 $client->set_temperature(0.7);
-                
+
                 $messages = [
                     ['role' => 'system', 'content' => $system_message],
                     ['role' => 'user', 'content' => $user_message]
                 ];
-                
+
                 log_message("Sending request to Google API with model $model...");
                 $start_time = microtime(true);
                 $response = $client->get_completion($messages);
                 $time_taken = microtime(true) - $start_time;
-                
+
                 if ($response !== false) {
                     log_message("SUCCESS: Response received in " . round($time_taken, 2) . " seconds");
                     log_message("Response: " . $response);
                 } else {
                     log_message("ERROR: Request failed for model $model");
                 }
-                
+
                 log_message("Finished testing model: $model\n");
             }
         } catch (Exception $e) {

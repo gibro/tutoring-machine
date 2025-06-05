@@ -3,7 +3,7 @@
 /**
  * Web-based API test script for Chatbot block.
  *
- * @package    block_chatbot
+ * @package    block_chatbo
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -28,7 +28,7 @@ $config = get_config('block_chatbot');
 $openai_key = !empty($config->openai_apikey) ? $config->openai_apikey : '';
 $google_key = !empty($config->google_apikey) ? $config->google_apikey : '';
 
-// Set page layout
+// Set page layou
 $PAGE->set_url(new moodle_url('/blocks/chatbot/api_test_web.php'));
 $PAGE->set_context(context_system::instance());
 $PAGE->set_pagelayout('admin');
@@ -48,7 +48,7 @@ echo '<div class="container">
             </div>
         </div>
     </div>
-    
+
     <div class="row mb-4">
         <div class="col">
             <div class="card">
@@ -57,13 +57,13 @@ echo '<div class="container">
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <strong>OpenAI API Key:</strong> 
+                        <strong>OpenAI API Key:</strong>
                         <span class="badge ' . (empty($openai_key) ? 'badge-danger' : 'badge-success') . '">
                             ' . (empty($openai_key) ? 'Not Configured' : 'Configured') . '
                         </span>
                     </div>
                     <div>
-                        <strong>Google API Key:</strong> 
+                        <strong>Google API Key:</strong>
                         <span class="badge ' . (empty($google_key) ? 'badge-danger' : 'badge-success') . '">
                             ' . (empty($google_key) ? 'Not Configured' : 'Configured') . '
                         </span>
@@ -145,10 +145,10 @@ echo '<script>
 document.addEventListener("DOMContentLoaded", function() {
     // Test OpenAI API
     ' . (!empty($openai_key) ? 'testProvider("openai");' : '') . '
-    
+
     // Test Google API
     ' . (!empty($google_key) ? 'testProvider("google");' : '') . '
-    
+
     function testProvider(provider) {
         fetch("api_test_ajax.php?provider=" + provider, {
             method: "POST",
@@ -162,10 +162,10 @@ document.addEventListener("DOMContentLoaded", function() {
             const resultDiv = document.getElementById(provider + "-result");
             const cardDiv = document.getElementById(provider + "-test");
             const cardHeader = cardDiv.querySelector(".card-header");
-            
+
             // Remove progress bar
             cardDiv.querySelector(".progress").remove();
-            
+
             if (data.success) {
                 cardHeader.className = "card-header bg-success text-white";
                 resultDiv.innerHTML = `
@@ -196,10 +196,10 @@ document.addEventListener("DOMContentLoaded", function() {
             const resultDiv = document.getElementById(provider + "-result");
             const cardDiv = document.getElementById(provider + "-test");
             const cardHeader = cardDiv.querySelector(".card-header");
-            
+
             // Remove progress bar
             cardDiv.querySelector(".progress").remove();
-            
+
             cardHeader.className = "card-header bg-danger text-white";
             resultDiv.innerHTML = `
                 <div class="alert alert-danger">
