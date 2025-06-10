@@ -21,7 +21,55 @@
         overflow: hidden;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         margin-top: 10px;
+        position: relative; /* Für den Expand-Button */
     }
+    
+    /* Fullscreen Modal Styles */
+    .chat-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .chat-modal-content {
+        width: 80%;
+        height: 80%;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        max-width: 1200px;
+    }
+    
+    /* Styling for modal components */
+    #modal-chat-messages {
+        flex: 1;
+        padding: 12px;
+        overflow-y: auto;
+        white-space: pre-line;
+        display: flex;
+        flex-direction: column;
+        scroll-behavior: smooth;
+    }
+    
+    #modal-chat-input {
+        width: 100%;
+    }
+    
+    #modal-chat-input textarea {
+        width: 100%;
+    }
+    
+    /* Fullscreen Toggle Button removed as it's now in the button row */
 
     /* Messages container */
     #chat-messages {
@@ -132,7 +180,7 @@
     }
 
     /* Chat input area */
-    #chat-input {
+    #chat-input, .chat-input {
         display: flex;
         flex-direction: column;
         border-top: 1px solid #ddd;
@@ -142,7 +190,7 @@
         border-bottom-right-radius: 12px;
     }
 
-    #chat-input textarea {
+    #chat-input textarea, .chat-input textarea {
         width: 100%;
         padding: 8px;
         border: none;
@@ -155,12 +203,12 @@
         margin-bottom: 8px;
     }
 
-    #chat-input .button-row {
+    #chat-input .button-row, .chat-input .button-row {
         display: flex;
         justify-content: flex-end;
     }
 
-    #chat-input button {
+    #chat-input button, .chat-input button {
         background: %%MAIN_COLOR%%;
         color: white;
         border: none;
@@ -175,7 +223,7 @@
     }
     
     /* Prompt suggestions */
-    #prompt-suggestions-panel {
+    #prompt-suggestions-panel, .prompt-suggestions-panel {
         display: none;
         position: relative;
         background: white;
@@ -187,7 +235,7 @@
         padding: 10px;
     }
     
-    #prompt-back-button {
+    #prompt-back-button, .prompt-back-button {
         display: none;
         padding: 5px 10px;
         margin-bottom: 10px;
@@ -199,7 +247,7 @@
         text-align: left;
     }
     
-    #prompt-back-button:hover {
+    #prompt-back-button:hover, .prompt-back-button:hover {
         background: #e3e3e3;
     }
     
@@ -268,6 +316,47 @@
                     <path d="M 16 4 C 10.886719 4 6.617188 7.160156 4.875 11.625 L 6.71875 12.375 C 8.175781 8.640625 11.710938 6 16 6 C 19.242188 6 22.132813 7.589844 23.9375 10 L 20 10 L 20 12 L 27 12 L 27 5 L 25 5 L 25 8.09375 C 22.808594 5.582031 19.570313 4 16 4 Z M 25.28125 19.625 C 23.824219 23.359375 20.289063 26 16 26 C 12.722656 26 9.84375 24.386719 8.03125 22 L 12 22 L 12 20 L 5 20 L 5 27 L 7 27 L 7 23.90625 C 9.1875 26.386719 12.394531 28 16 28 C 21.113281 28 25.382813 24.839844 27.125 20.375 Z"></path>
                 </svg>
             </button>
+            <button onclick="toggleFullscreen()" title="Vollbildansicht öffnen">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Fullscreen Modal Container -->
+<div id="chat-modal" class="chat-modal">
+    <div class="chat-modal-content">
+        <div id="modal-chat-messages" class="chat-messages"></div>
+        <div id="modal-analytics-notice" style="display: none; font-size: 12px; color: #666; padding: 4px 8px; text-align: center; background-color: #f8f9fa; border-top: 1px solid #eee;">%%ANALYTICS_NOTICE%%</div>
+        <div id="modal-prompt-suggestions-panel" class="prompt-suggestions-panel">
+            <button id="modal-prompt-back-button" class="prompt-back-button">← Zurück</button>
+            <div id="modal-prompt-suggestions-content" class="prompt-suggestions-content">
+                <!-- Prompt suggestions will be dynamically added here -->
+            </div>
+        </div>
+        <div id="modal-chat-input" class="chat-input">
+            <textarea id="modal-user-input" placeholder="Schreibe eine Nachricht..."></textarea>
+            <div class="button-row">
+                <button onclick="sendModalMessage()">➤</button>
+                <button id="modal-suggestions-button" onclick="toggleModalPromptSuggestions()" style="display: none;">
+                    <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 24 24">
+                        <path d="M7,8h10V6H7V8z M7,12h10v-2H7V12z M7,16h10v-2H7V16z"/>
+                    </svg>
+                </button>
+                <button onclick="resetSession()">
+                    <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 32 32">
+                        <path d="M 16 4 C 10.886719 4 6.617188 7.160156 4.875 11.625 L 6.71875 12.375 C 8.175781 8.640625 11.710938 6 16 6 C 19.242188 6 22.132813 7.589844 23.9375 10 L 20 10 L 20 12 L 27 12 L 27 5 L 25 5 L 25 8.09375 C 22.808594 5.582031 19.570313 4 16 4 Z M 25.28125 19.625 C 23.824219 23.359375 20.289063 26 16 26 C 12.722656 26 9.84375 24.386719 8.03125 22 L 12 22 L 12 20 L 5 20 L 5 27 L 7 27 L 7 23.90625 C 9.1875 26.386719 12.394531 28 16 28 C 21.113281 28 25.382813 24.839844 27.125 20.375 Z"></path>
+                    </svg>
+                </button>
+                <button onclick="closeFullscreen()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -287,6 +376,7 @@
     let promptSuggestionsEnabled = %%PROMPT_SUGGESTIONS_ENABLED%%;
     let promptSuggestions = `%%PROMPT_SUGGESTIONS%%`;
     let promptSuggestionsOpen = false;
+    let isFullscreen = false;
 
     // Chat is embedded in the block, no sizing needed
     
@@ -363,6 +453,7 @@
      */
     function addEventListeners() {
         const userInput = document.getElementById("user-input");
+        const modalUserInput = document.getElementById("modal-user-input");
         
         if (userInput) {
             userInput.addEventListener("keydown", function(event) {
@@ -378,8 +469,168 @@
             });
         }
         
+        if (modalUserInput) {
+            modalUserInput.addEventListener("keydown", function(event) {
+                // Allow growing textarea as content increases
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+                
+                // Send message on Enter without Shift key
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    sendModalMessage();
+                }
+            });
+        }
+        
         // Initialize the chat immediately since it's always visible in the block
         initializeChat();
+    }
+    
+    /**
+     * Toggle fullscreen mode
+     */
+    function toggleFullscreen() {
+        const modal = document.getElementById("chat-modal");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        const normalMessages = document.getElementById("chat-messages");
+        
+        // Toggle fullscreen state
+        isFullscreen = !isFullscreen;
+        
+        if (isFullscreen) {
+            // Copy content from normal chat to modal
+            modalMessages.innerHTML = normalMessages.innerHTML;
+            
+            // Copy analytics notice if visible
+            const analyticsNotice = document.getElementById("analytics-notice");
+            const modalAnalyticsNotice = document.getElementById("modal-analytics-notice");
+            if (analyticsNotice.style.display !== "none") {
+                modalAnalyticsNotice.style.display = analyticsNotice.style.display;
+                modalAnalyticsNotice.textContent = analyticsNotice.textContent;
+            }
+            
+            // Show modal
+            modal.style.display = "flex";
+            
+            // Focus on modal input
+            setTimeout(() => {
+                document.getElementById("modal-user-input").focus();
+            }, 100);
+            
+            // Disable page scrolling
+            document.body.style.overflow = "hidden";
+        }
+        
+        // Scroll to bottom in the active view
+        setTimeout(scrollToBottom, 100);
+    }
+    
+    /**
+     * Close fullscreen mode
+     */
+    function closeFullscreen() {
+        const modal = document.getElementById("chat-modal");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        const normalMessages = document.getElementById("chat-messages");
+        
+        // Copy content from modal to normal chat
+        normalMessages.innerHTML = modalMessages.innerHTML;
+        
+        // Hide modal
+        modal.style.display = "none";
+        isFullscreen = false;
+        
+        // Re-enable page scrolling
+        document.body.style.overflow = "";
+        
+        // Scroll to bottom in normal view
+        setTimeout(scrollToBottom, 100);
+    }
+    
+    /**
+     * Send a message from the modal view
+     */
+    function sendModalMessage() {
+        const modalInputField = document.getElementById("modal-user-input");
+        const message = modalInputField.value.trim();
+        if (!message) return;
+        
+        // Get references to both views
+        const chatMessages = document.getElementById("chat-messages");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        
+        // Create user message HTML
+        const userMessageHtml = `<div class='chat-bubble user-message fade-in'><strong>Du:</strong><br>${message}</div>`;
+        
+        // Add message to both views for synchronization
+        modalMessages.innerHTML += userMessageHtml;
+        chatMessages.innerHTML += userMessageHtml;
+        
+        // Add loading indicator to modal view (we're in modal view now)
+        modalMessages.innerHTML += `<div id="modal-loading" class="loading fade-in"></div>`;
+        
+        // Scroll both views
+        modalMessages.scrollTop = modalMessages.scrollHeight;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Clear input
+        modalInputField.value = "";
+        
+        // Add to conversation history
+        conversationHistory.push({
+            role: "user",
+            content: message
+        });
+        
+        // Save to local storage
+        saveSession();
+        
+        // Send the message to the server
+        sendMessageToServer(message, "modal");
+    }
+    
+    /**
+     * Modified version of sendMessage that uses a common handler
+     */
+    function sendMessage() {
+        const inputField = document.getElementById("user-input");
+        const message = inputField.value.trim();
+        if (!message) return;
+        
+        // Get references to both views
+        const chatMessages = document.getElementById("chat-messages");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        
+        // Create user message HTML
+        const userMessageHtml = `<div class='chat-bubble user-message fade-in'><strong>Du:</strong><br>${message}</div>`;
+        
+        // Add message to normal view
+        chatMessages.innerHTML += userMessageHtml;
+        chatMessages.innerHTML += `<div id="loading" class="loading fade-in"></div>`;
+        
+        // Also update modal view if we're in fullscreen mode
+        if (isFullscreen && modalMessages) {
+            modalMessages.innerHTML += userMessageHtml;
+        }
+        
+        // Scroll both views
+        scrollToBottom();
+        
+        // Clear input
+        inputField.value = "";
+        
+        // Add to conversation history
+        conversationHistory.push({
+            role: "user",
+            content: message
+        });
+        
+        // Save to local storage
+        saveSession();
+        
+        // Send the message to the server
+        sendMessageToServer(message, "normal");
     }
 
     /**
@@ -438,8 +689,15 @@
      * Scroll the chat window to the bottom
      */
     function scrollToBottom() {
+        // Scroll the normal view
         const chatMessages = document.getElementById("chat-messages");
         chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Scroll the modal view if we're in fullscreen mode
+        if (isFullscreen) {
+            const modalMessages = document.getElementById("modal-chat-messages");
+            modalMessages.scrollTop = modalMessages.scrollHeight;
+        }
     }
 
     /**
@@ -485,7 +743,13 @@
     function resetSession() {
         localStorage.removeItem("chatHistory");
         localStorage.removeItem("conversationHistory");
+        
+        // Clear both views
         document.getElementById("chat-messages").innerHTML = "";
+        if (document.getElementById("modal-chat-messages")) {
+            document.getElementById("modal-chat-messages").innerHTML = "";
+        }
+        
         conversationHistory = [];
         
         // Store current analytics status from the global variable
@@ -493,29 +757,24 @@
         
         // Force a new welcome message
         introduceBot(true);
+        
+        // If in fullscreen mode, update modal content as well
+        if (isFullscreen) {
+            const modalMessages = document.getElementById("modal-chat-messages");
+            const normalMessages = document.getElementById("chat-messages");
+            modalMessages.innerHTML = normalMessages.innerHTML;
+        }
     }
 
     /**
      * Send a user message to the server and handle the response
+     * @param {string} message - The message to send
+     * @param {string} view - Which view is active ("normal" or "modal")
      */
-    async function sendMessage() {
-        const inputField = document.getElementById("user-input");
-        const message = inputField.value.trim();
-        if (!message) return;
-
-        const chatMessages = document.getElementById("chat-messages");
-        chatMessages.innerHTML += `<div class='chat-bubble user-message fade-in'><strong>Du:</strong><br>${message}</div>`;
-        chatMessages.innerHTML += `<div id="loading" class="loading fade-in"></div>`;
-        scrollToBottom();
-        inputField.value = "";
+    async function sendMessageToServer(message, view) {
+        const normalMessages = document.getElementById("chat-messages");
+        const modalMessages = document.getElementById("modal-chat-messages");
         
-        conversationHistory.push({
-            role: "user",
-            content: message
-        });
-        
-        saveSession();
-
         try {
             // Prepare form data for request
             const formData = new FormData();
@@ -527,9 +786,17 @@
                 formData.append('sesskey', M.cfg.sesskey);
             } else {
                 // Show error if sesskey is not available
-                chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Sicherheitstoken (sesskey) fehlt. Bitte lade die Seite neu.</div>`;
+                const errorMessage = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Sicherheitstoken (sesskey) fehlt. Bitte lade die Seite neu.</div>`;
+                
+                normalMessages.innerHTML += errorMessage;
+                if (view === "modal") {
+                    modalMessages.innerHTML += errorMessage;
+                    document.getElementById("modal-loading").remove();
+                } else {
+                    document.getElementById("loading").remove();
+                }
+                
                 scrollToBottom();
-                document.getElementById("loading").remove();
                 return;
             }
             
@@ -555,17 +822,37 @@
                 credentials: 'same-origin' // Ensure cookies are sent with the request
             });
 
-            document.getElementById("loading").remove();
+            // Remove loading indicators
+            if (view === "modal") {
+                document.getElementById("modal-loading").remove();
+            } else {
+                document.getElementById("loading").remove();
+            }
             
             // Check for HTTP errors
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             
-            await handleServerResponse(response);
+            await handleServerResponse(response, view);
         } catch (error) {
-            document.getElementById("loading").remove();
-            chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Verbindungsproblem: ${error.message}</div>`;
+            // Remove loading indicators
+            if (view === "modal") {
+                if (document.getElementById("modal-loading")) {
+                    document.getElementById("modal-loading").remove();
+                }
+            } else {
+                if (document.getElementById("loading")) {
+                    document.getElementById("loading").remove();
+                }
+            }
+            
+            const errorMessage = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Verbindungsproblem: ${error.message}</div>`;
+            normalMessages.innerHTML += errorMessage;
+            if (view === "modal") {
+                modalMessages.innerHTML += errorMessage;
+            }
+            
             scrollToBottom();
             saveSession();
         }
@@ -574,9 +861,11 @@
     /**
      * Handle the server response
      * @param {Response} response - The fetch response object
+     * @param {string} view - Which view is active ("normal" or "modal")
      */
-    async function handleServerResponse(response) {
-        const chatMessages = document.getElementById("chat-messages");
+    async function handleServerResponse(response, view) {
+        const normalMessages = document.getElementById("chat-messages");
+        const modalMessages = document.getElementById("modal-chat-messages");
         const responseText = await response.text();
         let data;
         
@@ -587,22 +876,42 @@
             if (responseText && responseText.trim().length > 0) {
                 const plainTextResponse = responseText.trim();
                 const formattedMessage = formatBotResponse(plainTextResponse);
-                chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Debug:</strong><br>${formattedMessage}</div>`;
+                const errorHtml = `<div class='chat-bubble error-message fade-in'><strong>Debug:</strong><br>${formattedMessage}</div>`;
+                
+                // Update both views
+                normalMessages.innerHTML += errorHtml;
+                if (view === "modal") {
+                    modalMessages.innerHTML += errorHtml;
+                }
                 
                 conversationHistory.push({
                     role: "assistant",
                     content: plainTextResponse
                 });
             } else {
-                chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Die Server-Antwort konnte nicht verarbeitet werden.</div>`;
+                const errorHtml = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Die Server-Antwort konnte nicht verarbeitet werden.</div>`;
+                
+                // Update both views
+                normalMessages.innerHTML += errorHtml;
+                if (view === "modal") {
+                    modalMessages.innerHTML += errorHtml;
+                }
             }
             saveConversationHistory();
+            scrollToBottom();
             return;
         }
         
         // Check for API error
         if (data.error) {
-            chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>${data.message || 'Ein Fehler ist aufgetreten.'}</div>`;
+            const errorHtml = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>${data.message || 'Ein Fehler ist aufgetreten.'}</div>`;
+            
+            // Update both views
+            normalMessages.innerHTML += errorHtml;
+            if (view === "modal") {
+                modalMessages.innerHTML += errorHtml;
+            }
+            
             scrollToBottom();
             saveSession();
             return;
@@ -611,8 +920,13 @@
         if (data.response) {
             // Format the response text
             let formattedResponse = formatBotResponse(data.response);
+            const botMessageHtml = `<div class='chat-bubble bot-message fade-in'><strong>${assistantName}:</strong><br>${formattedResponse}</div>`;
             
-            chatMessages.innerHTML += `<div class='chat-bubble bot-message fade-in'><strong>${assistantName}:</strong><br>${formattedResponse}</div>`;
+            // Update both views
+            normalMessages.innerHTML += botMessageHtml;
+            if (view === "modal") {
+                modalMessages.innerHTML += botMessageHtml;
+            }
             
             // Add assistant response to conversation history
             if (data.lastMessage) {
@@ -624,7 +938,13 @@
                 });
             }
         } else {
-            chatMessages.innerHTML += `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Hm, da scheint was schiefgelaufen zu sein. Versuch's nochmal!</div>`;
+            const errorHtml = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Hm, da scheint was schiefgelaufen zu sein. Versuch's nochmal!</div>`;
+            
+            // Update both views
+            normalMessages.innerHTML += errorHtml;
+            if (view === "modal") {
+                modalMessages.innerHTML += errorHtml;
+            }
         }
         
         scrollToBottom();
@@ -768,12 +1088,16 @@
             return;
         }
         
-        // Show suggestions button
+        // Show suggestions buttons
         document.getElementById('suggestions-button').style.display = 'block';
+        document.getElementById('modal-suggestions-button').style.display = 'block';
         
-        // Setup back button handler
+        // Setup back button handlers
         const backButton = document.getElementById('prompt-back-button');
         backButton.addEventListener('click', navigateBackToCategories);
+        
+        const modalBackButton = document.getElementById('modal-prompt-back-button');
+        modalBackButton.addEventListener('click', navigateBackToModalCategories);
         
         // Parse and organize suggestions
         parsePromptSuggestions();
@@ -841,6 +1165,67 @@
     }
     
     /**
+     * Parse prompt suggestions for modal view
+     */
+    function parseModalPromptSuggestions() {
+        const suggestionsContent = document.getElementById('modal-prompt-suggestions-content');
+        suggestionsContent.innerHTML = ''; // Clear existing content
+        
+        // Parse suggestions
+        const suggestionLines = promptSuggestions.split('\n').filter(line => line.trim() !== '');
+        
+        // Check if we have categories (lines starting with #)
+        const hasCategories = suggestionLines.some(line => line.trim().startsWith('#'));
+        
+        if (hasCategories) {
+            // Process hierarchical structure
+            let currentCategory = null;
+            let categoryPrompts = {};
+            
+            // First pass: identify categories and their prompts
+            suggestionLines.forEach(line => {
+                const trimmedLine = line.trim();
+                
+                if (trimmedLine.startsWith('#')) {
+                    // This is a category header
+                    currentCategory = trimmedLine.substring(1).trim();
+                    if (!categoryPrompts[currentCategory]) {
+                        categoryPrompts[currentCategory] = [];
+                    }
+                } else if (currentCategory && trimmedLine) {
+                    // This is a prompt under the current category
+                    categoryPrompts[currentCategory].push(trimmedLine);
+                }
+            });
+            
+            // Create category elements
+            for (const category in categoryPrompts) {
+                const categoryElem = document.createElement('div');
+                categoryElem.className = 'prompt-category';
+                categoryElem.textContent = category;
+                categoryElem.dataset.category = category;
+                categoryElem.onclick = function() {
+                    showModalCategoryPrompts(category, categoryPrompts[category]);
+                };
+                suggestionsContent.appendChild(categoryElem);
+            }
+        } else {
+            // No categories, display flat list of suggestions
+            suggestionLines.forEach(suggestion => {
+                if (suggestion.trim()) {
+                    const suggestionElem = document.createElement('div');
+                    suggestionElem.className = 'prompt-suggestion';
+                    suggestionElem.textContent = suggestion.trim();
+                    suggestionElem.onclick = function() {
+                        useModalPromptSuggestion(suggestion.trim());
+                    };
+                    suggestionsContent.appendChild(suggestionElem);
+                }
+            });
+        }
+    }
+    
+    /**
      * Show prompts for a specific category
      */
     function showCategoryPrompts(category, prompts) {
@@ -873,6 +1258,38 @@
     }
     
     /**
+     * Show prompts for a specific category in modal view
+     */
+    function showModalCategoryPrompts(category, prompts) {
+        const suggestionsContent = document.getElementById('modal-prompt-suggestions-content');
+        const backButton = document.getElementById('modal-prompt-back-button');
+        
+        // Clear current content
+        suggestionsContent.innerHTML = '';
+        
+        // Show back button
+        backButton.style.display = 'block';
+        
+        // Add category title
+        const categoryTitle = document.createElement('div');
+        categoryTitle.style.fontWeight = 'bold';
+        categoryTitle.style.marginBottom = '10px';
+        categoryTitle.textContent = category;
+        suggestionsContent.appendChild(categoryTitle);
+        
+        // Add prompts for this category
+        prompts.forEach(prompt => {
+            const promptElem = document.createElement('div');
+            promptElem.className = 'prompt-suggestion';
+            promptElem.textContent = prompt;
+            promptElem.onclick = function() {
+                useModalPromptSuggestion(prompt);
+            };
+            suggestionsContent.appendChild(promptElem);
+        });
+    }
+    
+    /**
      * Navigate back to the categories view
      */
     function navigateBackToCategories() {
@@ -881,6 +1298,17 @@
         
         // Reparse and show categories
         parsePromptSuggestions();
+    }
+    
+    /**
+     * Navigate back to the categories view in modal
+     */
+    function navigateBackToModalCategories() {
+        const backButton = document.getElementById('modal-prompt-back-button');
+        backButton.style.display = 'none';
+        
+        // Reparse and show categories
+        parseModalPromptSuggestions();
     }
     
     /**
@@ -902,12 +1330,43 @@
     }
     
     /**
+     * Toggle the visibility of prompt suggestions panel in modal view
+     */
+    function toggleModalPromptSuggestions() {
+        const panel = document.getElementById('modal-prompt-suggestions-panel');
+        promptSuggestionsOpen = !promptSuggestionsOpen;
+        
+        if (promptSuggestionsOpen) {
+            panel.style.display = 'block';
+            // Reset to top level view when opening
+            const backButton = document.getElementById('modal-prompt-back-button');
+            backButton.style.display = 'none';
+            parseModalPromptSuggestions();
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+    
+    /**
      * Use a prompt suggestion
      */
     function usePromptSuggestion(suggestion) {
         const inputField = document.getElementById('user-input');
         inputField.value = suggestion;
         togglePromptSuggestions(); // Hide suggestions panel
+        
+        // Focus on the input field and move cursor to the end
+        inputField.focus();
+        inputField.selectionStart = inputField.selectionEnd = inputField.value.length;
+    }
+    
+    /**
+     * Use a prompt suggestion in modal view
+     */
+    function useModalPromptSuggestion(suggestion) {
+        const inputField = document.getElementById('modal-user-input');
+        inputField.value = suggestion;
+        toggleModalPromptSuggestions(); // Hide suggestions panel
         
         // Focus on the input field and move cursor to the end
         inputField.focus();

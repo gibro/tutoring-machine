@@ -21,6 +21,15 @@ class block_chatbot extends block_base {
     public function init() {
         $this->title = get_string('pluginname', 'block_chatbot');
     }
+    
+    /**
+     * Default title
+     */
+    public function specialization() {
+        if (isset($this->config->title)) {
+            $this->title = $this->config->title;
+        }
+    }
 
     /**
      * Signal that this block has global configuration settings
