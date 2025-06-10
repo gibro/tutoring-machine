@@ -1,6 +1,8 @@
 <?php
 // German language strings for the Chatbot block.
 $string['pluginname']         = 'Chatbot';
+$string['chatbot:addinstance'] = 'Einen neuen Chatbot-Block hinzuf체gen';
+$string['chatbot:myaddinstance'] = 'Einen neuen Chatbot-Block zum Dashboard hinzuf체gen';
 $string['assistantname']      = 'Assistent*innen-Name';
 $string['assistantnamedesc']  = 'Gebe den Namen ein, der im Chat als Assistent angezeigt wird.';
 $string['courselogo']         = 'Kursspezifisches Logo';
@@ -32,6 +34,10 @@ $string['use_h5p_help'] = 'Wenn aktiviert, werden die Inhalte aller H5P-Aktivit�
 $string['use_pdfs'] = 'PDF-Dokumente einbeziehen';
 $string['use_pdfs_desc'] = 'Inhalte aus PDF-Dokumenten des Kurses als Kontext f체r Antworten verwenden.';
 $string['use_pdfs_help'] = 'Wenn aktiviert, werden die Texte aller PDF-Dokumente im Kurs extrahiert und f체r die Beantwortung von Fragen verwendet.';
+
+$string['use_office'] = 'Office-Dokumente einbeziehen';
+$string['use_office_desc'] = 'Inhalte aus Word-, Excel- und PowerPoint-Dokumenten des Kurses als Kontext f체r Antworten verwenden.';
+$string['use_office_help'] = 'Wenn aktiviert, werden die Texte aller Microsoft Office-Dokumente (Word, Excel, PowerPoint) im Kurs extrahiert und f체r die Beantwortung von Fragen verwendet.';
 
 $string['use_forums'] = 'Foren einbeziehen';
 $string['use_forums_desc'] = 'Inhalte aus Forenbeitr채gen des Kurses als Kontext f체r Antworten verwenden.';

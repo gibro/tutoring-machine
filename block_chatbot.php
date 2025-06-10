@@ -94,39 +94,8 @@ class block_chatbot extends block_base {
         $this->content = new stdClass;
         $this->content->text = $html;
 
-        // Footer-Links für Block-Funktionen
-        $context = context_course::instance($COURSE->id);
-        $footer_links = array();
-
-        // Analytics-Link für Lehrer, wenn Analytics aktiviert sind
-        if ($analytics_enabled && has_capability('block/chatbot:viewanalytics', $context)) {
-            $analytics_url = new moodle_url('/blocks/chatbot/analytics.php',
-                array('id' => $this->instance->id, 'course' => $COURSE->id));
-            $footer_links[] = html_writer::link($analytics_url,
-                get_string('analytics_dashboard', 'block_chatbot'),
-                array('class' => 'btn btn-secondary btn-sm m-1', 'target' => '_blank'));
-        }
-
-        // Link zu einer separaten Seite für Kontextquellen
-        if (has_capability('block/chatbot:view', $context) || has_capability('moodle/course:view', $context)) {
-            // Konstruiere die URL mit dem korrekten Moodle-Mechanismus
-            $url = $CFG->wwwroot . '/blocks/chatbot/simple_context.php';
-            $context_url = new moodle_url($url, array('courseid' => $COURSE->id, 'blockid' => $this->instance->id));
-
-            // Füge den Link zum Footer hinzu
-            $footer_links[] = html_writer::link(
-                $context_url,
-                get_string('contextsources', 'block_chatbot'),
-                array('class' => 'btn btn-secondary btn-sm m-1', 'target' => '_blank')
-            );
-        }
-
-        // Füge Links zum Footer hinzu, wenn vorhanden
-        if (!empty($footer_links)) {
-            $this->content->footer = html_writer::div(implode('', $footer_links), 'd-flex flex-wrap justify-content-center mt-2');
-        } else {
-            $this->content->footer = '';
-        }
+        // Kein Footer mehr benötigt, da alle Links in die Einstellungen verschoben wurden
+        $this->content->footer = '';
 
         return $this->content;
     }

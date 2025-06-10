@@ -135,13 +135,6 @@ Dieses Caching-System reduziert die Verarbeitungszeit und verbessert die Reaktio
 
 ## Änderungsprotokoll
 
-### Version 3.11.1
-- Behebung von Variablennamensfehlern in der Kontextgenerierung
-- Korrektur der Tippfehler "contex" zu "context" im gesamten Code
-- Verbesserung der Konsistenz in der Variablenverwendung
-- Fehlerbereinigung für "section conten" zu "section content"
-- Sicherstellung der korrekten Funktionalität bei der PDF-Extraktion
-
 ### Version 3.11.0
 - Umfassendes Code-Refactoring für bessere Wartbarkeit
 - Entfernung veralteter Codepfade und Fallbacks

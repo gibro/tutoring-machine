@@ -1,6 +1,8 @@
 <?php
 // English language strings for the Chatbot block.
 $string['pluginname']         = 'Chatbot';
+$string['chatbot:addinstance'] = 'Add a new Chatbot block';
+$string['chatbot:myaddinstance'] = 'Add a new Chatbot block to Dashboard';
 $string['assistantname']      = 'Assistantname';
 $string['assistantnamedesc']  = 'Enter the name that is displayed in the chat as Assistant.';
 $string['courselogo']         = 'Course-specific Logo';
@@ -42,6 +44,10 @@ $string['use_h5p_help'] = 'When enabled, the content from all H5P activities in 
 $string['use_pdfs'] = 'Include PDF Documents';
 $string['use_pdfs_desc'] = 'Use content from PDF documents as context for responses.';
 $string['use_pdfs_help'] = 'When enabled, the text from all PDF documents in the course will be extracted and used to answer questions.';
+
+$string['use_office'] = 'Include Office Documents';
+$string['use_office_desc'] = 'Use content from Word, Excel and PowerPoint documents as context for responses.';
+$string['use_office_help'] = 'When enabled, the text from all Microsoft Office documents (Word, Excel, PowerPoint) in the course will be extracted and used to answer questions.';
 
 $string['use_forums'] = 'Include Forums';
 $string['use_forums_desc'] = 'Use content from forum discussions as context for responses.';
@@ -157,7 +163,7 @@ $string['retention_3months'] = '3 months';
 $string['retention_6months'] = '6 months';
 $string['retention_1year'] = '1 year';
 
-$string['analytics_dashboard'] = 'Analytics Dashboard';
+$string['analytics_dashboard'] = 'Open Analytics Dashboard';
 $string['analytics_dashboard_desc'] = 'Shows statistics about the most frequently asked questions in the course.';
 $string['no_analytics_data'] = 'No analytics data available. Enable teaching analytics and wait for learners to use the chatbot.';
 $string['most_common_questions'] = 'Most Common Questions';

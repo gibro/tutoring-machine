@@ -60,6 +60,15 @@ $definitions = [
         'staticacceleration' => true,
         'staticaccelerationsize' => 20, // Store up to 20 H5P activities in memory
     ],
+    
+    // Office content cache
+    'office_content' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => false, // Complex data (for database storage)
+        'ttl' => 604800, // Time to live - 1 week (same as PDF)
+        'staticacceleration' => false, // Don't store in memory due to size
+    ],
 
     // Miscellaneous content cache (forums, quizzes, books, etc.)
     'misc_content' => [

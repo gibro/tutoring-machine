@@ -20,6 +20,7 @@ class block_chatbot_cache_manager {
      * Cache types
      */
     const CACHE_TYPE_PDF = 'pdf_content';
+    const CACHE_TYPE_OFFICE = 'office_content'; // For Word, Excel, PowerPoint
     const CACHE_TYPE_COURSE = 'course_content';
     const CACHE_TYPE_PAGE = 'page_content';
     const CACHE_TYPE_GLOSSARY = 'glossary_content';
@@ -63,7 +64,7 @@ class block_chatbot_cache_manager {
         $metadata['timestamp'] = time();
 
         // For database-backed caches, store metadata with the data
-        if ($type == self::CACHE_TYPE_PDF) {
+        if ($type == self::CACHE_TYPE_PDF || $type == self::CACHE_TYPE_OFFICE) {
             $cache_data = [
                 'data' => $data,
                 'metadata' => $metadata
@@ -94,7 +95,8 @@ class block_chatbot_cache_manager {
         if ($ttl === null) {
             switch ($type) {
                 case self::CACHE_TYPE_PDF:
-                    $ttl = self::PDF_TTL;
+                case self::CACHE_TYPE_OFFICE:
+                    $ttl = self::PDF_TTL; // Use same TTL as PDF for Office documents
                     break;
                 case self::CACHE_TYPE_COURSE:
                     $ttl = self::COURSE_TTL;
@@ -110,8 +112,8 @@ class block_chatbot_cache_manager {
         }
 
         // For DB caches, check timestamp in metadata
-        if ($type == self::CACHE_TYPE_PDF) {
-            if (!isset($cached['metadata']) || !isset($cached['metadata']['timestamp'])) {
+        if ($type == self::CACHE_TYPE_PDF || $type == self::CACHE_TYPE_OFFICE) {
+            if (!is_array($cached) || !isset($cached['metadata']) || !isset($cached['metadata']['timestamp'])) {
                 return false;
             }
             return (time() - $cached['metadata']['timestamp']) < $ttl;
@@ -176,6 +178,18 @@ class block_chatbot_cache_manager {
         $key = self::get_pdf_content_key($contenthash);
         return self::invalidate(self::CACHE_TYPE_PDF, $key);
     }
+    
+    /**
+     * Invalidate Office document content cache
+     *
+     * @param string $contenthash The content hash of the Office file
+     * @param string $type The document type (word, excel, powerpoint)
+     * @return bool Success or failure
+     */
+    public static function invalidate_office_cache($contenthash, $type) {
+        $key = self::get_office_content_key($contenthash, $type);
+        return self::invalidate(self::CACHE_TYPE_OFFICE, $key);
+    }
 
     /**
      * Invalidate course content cache
@@ -207,8 +221,8 @@ class block_chatbot_cache_manager {
      * @return cache_application|object Cache instance
      */
     private static function get_cache_for_type($type) {
-        // For PDF content, use the database cache
-        if ($type == self::CACHE_TYPE_PDF) {
+        // For PDF and Office content, use the database cache since they may be large
+        if ($type == self::CACHE_TYPE_PDF || $type == self::CACHE_TYPE_OFFICE) {
             return new block_chatbot_db_cache();
         }
 
@@ -244,6 +258,17 @@ class block_chatbot_cache_manager {
      */
     public static function get_pdf_content_key($contenthash) {
         return "pdf_{$contenthash}";
+    }
+    
+    /**
+     * Generate a cache key for Office document content
+     *
+     * @param string $contenthash Content hash of the file
+     * @param string $type Document type (word, excel, powerpoint)
+     * @return string Cache key
+     */
+    public static function get_office_content_key($contenthash, $type) {
+        return "office_{$type}_{$contenthash}";
     }
 
     /**
@@ -289,7 +314,7 @@ class block_chatbot_cache_manager {
 }
 
 /**
- * Database-backed cache implementation for PDF conten
+ * Database-backed cache implementation for document content
  *
  * This is used when we need to store large amounts of data
  * that might exceed the size limits of Moodle's caching API
@@ -305,7 +330,17 @@ class block_chatbot_db_cache {
         global $DB;
 
         try {
-            $record = $DB->get_record('block_chatbot_pdf_cache', ['contenthash' => $key]);
+            // Determine which table to use based on key prefix
+            if (strpos($key, 'pdf_') === 0) {
+                $table = 'block_chatbot_pdf_cache';
+            } else if (strpos($key, 'office_') === 0) {
+                $table = 'block_chatbot_office_cache';
+            } else {
+                // Default to PDF cache table for backward compatibility
+                $table = 'block_chatbot_pdf_cache';
+            }
+            
+            $record = $DB->get_record($table, ['contenthash' => $key]);
             if (!$record) {
                 return false;
             }
@@ -318,7 +353,7 @@ class block_chatbot_db_cache {
                 ]
             ];
         } catch (Exception $e) {
-            error_log("Error getting PDF cache: " . $e->getMessage());
+            error_log("Error getting document cache: " . $e->getMessage());
             return false;
         }
     }
@@ -337,9 +372,19 @@ class block_chatbot_db_cache {
             // Extract data and metadata
             $content = $data['data'];
             $metadata = $data['metadata'];
+            
+            // Determine which table to use based on key prefix
+            if (strpos($key, 'pdf_') === 0) {
+                $table = 'block_chatbot_pdf_cache';
+            } else if (strpos($key, 'office_') === 0) {
+                $table = 'block_chatbot_office_cache';
+            } else {
+                // Default to PDF cache table for backward compatibility
+                $table = 'block_chatbot_pdf_cache';
+            }
 
             // Check if entry already exists
-            $existing = $DB->get_record('block_chatbot_pdf_cache', ['contenthash' => $key]);
+            $existing = $DB->get_record($table, ['contenthash' => $key]);
 
             $record = new stdClass();
             $record->contenthash = $key;
@@ -350,13 +395,13 @@ class block_chatbot_db_cache {
             if ($existing) {
                 // Update existing record
                 $record->id = $existing->id;
-                return $DB->update_record('block_chatbot_pdf_cache', $record);
+                return $DB->update_record($table, $record);
             } else {
                 // Insert new record
-                return $DB->insert_record('block_chatbot_pdf_cache', $record) ? true : false;
+                return $DB->insert_record($table, $record) ? true : false;
             }
         } catch (Exception $e) {
-            error_log("Error saving PDF cache: " . $e->getMessage());
+            error_log("Error saving document cache: " . $e->getMessage());
             return false;
         }
     }
@@ -371,9 +416,19 @@ class block_chatbot_db_cache {
         global $DB;
 
         try {
-            return $DB->delete_records('block_chatbot_pdf_cache', ['contenthash' => $key]);
+            // Determine which table to use based on key prefix
+            if (strpos($key, 'pdf_') === 0) {
+                $table = 'block_chatbot_pdf_cache';
+            } else if (strpos($key, 'office_') === 0) {
+                $table = 'block_chatbot_office_cache';
+            } else {
+                // Default to PDF cache table for backward compatibility
+                $table = 'block_chatbot_pdf_cache';
+            }
+            
+            return $DB->delete_records($table, ['contenthash' => $key]);
         } catch (Exception $e) {
-            error_log("Error deleting PDF cache: " . $e->getMessage());
+            error_log("Error deleting document cache: " . $e->getMessage());
             return false;
         }
     }
@@ -387,9 +442,17 @@ class block_chatbot_db_cache {
         global $DB;
 
         try {
-            return $DB->delete_records('block_chatbot_pdf_cache');
+            $result1 = $DB->delete_records('block_chatbot_pdf_cache');
+            $result2 = true;
+            
+            // Check if office cache table exists before attempting to purge it
+            if ($DB->get_manager()->table_exists('block_chatbot_office_cache')) {
+                $result2 = $DB->delete_records('block_chatbot_office_cache');
+            }
+            
+            return $result1 && $result2;
         } catch (Exception $e) {
-            error_log("Error purging PDF cache: " . $e->getMessage());
+            error_log("Error purging document cache: " . $e->getMessage());
             return false;
         }
     }

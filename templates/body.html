@@ -10,93 +10,17 @@
         font-family: "Segoe UI", Roboto, Arial, sans-serif;
     }
     
-    /* Chat widget (floating button) */
-    #chat-widget {
-        position: fixed;
-        bottom: 10px;
-        right: 10px;
-        width: 140px;
-        height: 108px;
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        font-size: 24px;
-        font-weight: bold;
-        z-index: 9999;
-        transition: transform 0.2s ease-in-out;
-    }
-    
-    #chat-widget:hover {
-        transform: scale(1.1);
-    }
-
-    /* Chat box container */
-    #chat-box {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 25%;
-        max-width: 550px;
-        min-width: 340px;
-        height: 500px;
+    /* Chat container for the block */
+    #chat-container {
+        width: 100%;
+        height: 450px;
         background: white;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        border-radius: 12px;
-        display: none;
+        border-radius: 8px;
+        display: flex;
         flex-direction: column;
-        z-index: 9999;
-        transform: translateY(20px);
-        opacity: 0;
-        transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-        resize: both;
         overflow: hidden;
-    }
-
-    #chat-box.active {
-        display: flex;
-        transform: translateY(0);
-        opacity: 1;
-    }
-
-    /* Chat header */
-    #chat-header {
-        background: %%MAIN_COLOR%%;
-        color: white;
-        padding: 12px;
-        text-align: center;
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
-        font-weight: bold;
-        position: relative;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    #chat-header .chat-title {
-        flex-grow: 1;
-        text-align: center;
-    }
-    
-    #chat-header .chat-controls {
-        display: flex;
-        gap: 10px;
-    }
-
-    #chat-header .size-control {
-        cursor: pointer;
-        display: inline-block;
-        margin-left: 5px;
-        width: 16px;
-        height: 16px;
-        text-align: center;
-    }
-    
-    #chat-header .close-button {
-        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-top: 10px;
     }
 
     /* Messages container */
@@ -253,10 +177,7 @@
     /* Prompt suggestions */
     #prompt-suggestions-panel {
         display: none;
-        position: absolute;
-        bottom: 60px;
-        left: 0;
-        right: 0;
+        position: relative;
         background: white;
         border-top: 1px solid #ddd;
         max-height: 200px;
@@ -323,18 +244,8 @@
     }
 </style>
 
-<!-- Chat Widget HTML Structure -->
-<div id="chat-widget"><img src="%%CHATBOT_LOGO%%" alt="Logo"></div>
-<div id="chat-box">
-    <div id="chat-header">
-        <div class="chat-title">%%CHATBOT_NAME%%</div>
-        <div class="chat-controls">
-            <span class="size-control" id="size-sm" title="Klein">S</span>
-            <span class="size-control" id="size-md" title="Mittel">M</span>
-            <span class="size-control" id="size-lg" title="Groß">L</span>
-            <span class="close-button" onclick="toggleChat()">✖</span>
-        </div>
-    </div>
+<!-- Chat Interface HTML Structure (Embedded in Block) -->
+<div id="chat-container">
     <div id="chat-messages"></div>
     <div id="analytics-notice" style="display: none; font-size: 12px; color: #666; padding: 4px 8px; text-align: center; background-color: #f8f9fa; border-top: 1px solid #eee;">%%ANALYTICS_NOTICE%%</div>
     <div id="prompt-suggestions-panel">
@@ -377,13 +288,7 @@
     let promptSuggestions = `%%PROMPT_SUGGESTIONS%%`;
     let promptSuggestionsOpen = false;
 
-    // Global variables for chat box sizing
-    let chatSizes = {
-        'sm': { width: '25%', height: '500px', minWidth: '340px', maxWidth: '550px' },
-        'md': { width: '35%', height: '600px', minWidth: '400px', maxWidth: '700px' },
-        'lg': { width: '45%', height: '700px', minWidth: '450px', maxWidth: '900px' }
-    };
-    let currentSize = 'sm';
+    // Chat is embedded in the block, no sizing needed
     
     // Event listeners and initialization
     document.addEventListener('DOMContentLoaded', initChatbot);
@@ -393,6 +298,8 @@
      */
     function initChatbot() {
         addEventListeners();
+        showAnalyticsNotice();
+        initPromptSuggestions();
         
         // Check analytics status and force reset if needed
         const needsReset = checkAnalyticsStatus();
@@ -402,9 +309,6 @@
             loadSession();
         }
         
-        // Load saved size preference if it exists
-        loadSizePreference();
-        
         setTimeout(scrollToBottom, 100);
         showAnalyticsNotice();
         
@@ -412,59 +316,9 @@
         if (promptSuggestionsEnabled) {
             initPromptSuggestions();
         }
-        
-        // Initialize size controls
-        initSizeControls();
     }
     
-    /**
-     * Initialize size control buttons
-     */
-    function initSizeControls() {
-        document.getElementById('size-sm').addEventListener('click', function() {
-            resizeChatBox('sm');
-        });
-        
-        document.getElementById('size-md').addEventListener('click', function() {
-            resizeChatBox('md');
-        });
-        
-        document.getElementById('size-lg').addEventListener('click', function() {
-            resizeChatBox('lg');
-        });
-    }
-    
-    /**
-     * Resize the chat box
-     */
-    function resizeChatBox(size) {
-        if (!chatSizes[size]) return;
-        
-        const chatBox = document.getElementById('chat-box');
-        
-        // Apply new dimensions
-        chatBox.style.width = chatSizes[size].width;
-        chatBox.style.height = chatSizes[size].height;
-        chatBox.style.minWidth = chatSizes[size].minWidth;
-        chatBox.style.maxWidth = chatSizes[size].maxWidth;
-        
-        // Save the current size
-        currentSize = size;
-        localStorage.setItem('chatBoxSize', size);
-        
-        // Scroll to bottom after resize
-        setTimeout(scrollToBottom, 100);
-    }
-    
-    /**
-     * Load saved size preference
-     */
-    function loadSizePreference() {
-        const savedSize = localStorage.getItem('chatBoxSize');
-        if (savedSize && chatSizes[savedSize]) {
-            resizeChatBox(savedSize);
-        }
-    }
+    // Size control functions removed as chat is now embedded in block
     
     /**
      * Check if analytics status has changed
@@ -508,12 +362,7 @@
      * Add event listeners to UI elements
      */
     function addEventListeners() {
-        const chatWidget = document.getElementById("chat-widget");
         const userInput = document.getElementById("user-input");
-        
-        if (chatWidget) {
-            chatWidget.addEventListener("click", toggleChat);
-        }
         
         if (userInput) {
             userInput.addEventListener("keydown", function(event) {
@@ -528,28 +377,18 @@
                 }
             });
         }
+        
+        // Initialize the chat immediately since it's always visible in the block
+        initializeChat();
     }
 
     /**
-     * Toggle the chat interface visibility
+     * Initialize the chat interface
      */
-    function toggleChat() {
-        const chatBox = document.getElementById("chat-box");
-        if (chatBox.classList.contains("active")) {
-            chatBox.classList.remove("active");
-            chatBox.style.opacity = "0";
-            setTimeout(() => chatBox.style.display = "none", 300);
-        } else {
-            chatBox.style.display = "flex";
-            setTimeout(() => {
-                chatBox.style.opacity = "1";
-                chatBox.classList.add("active");
-            }, 10);
-            
-            // Check if analytics status has changed and force reset if needed
-            const needsReset = checkAnalyticsStatus();
-            introduceBot(needsReset);
-        }
+    function initializeChat() {
+        // Check if analytics status has changed and force reset if needed
+        const needsReset = checkAnalyticsStatus();
+        introduceBot(needsReset);
     }
 
     /**

@@ -33,6 +33,14 @@ class block_chatbot_content_extractor {
     /** @var object $modinfo Course module information */
     private $modinfo;
 
+    // MIME types for Office documents
+    const MIMETYPE_DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    const MIMETYPE_DOC = 'application/msword';
+    const MIMETYPE_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const MIMETYPE_XLS = 'application/vnd.ms-excel';
+    const MIMETYPE_PPTX = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    const MIMETYPE_PPT = 'application/vnd.ms-powerpoint';
+
     /**
      * Constructor
      *
@@ -56,6 +64,7 @@ class block_chatbot_content_extractor {
             'use_internet' => false,
             'use_h5p' => true,
             'use_pdfs' => true,
+            'use_office' => true, // New option for Office documents
             'use_forums' => true,
             'use_quizzes' => true,
             'use_books' => true,
@@ -179,6 +188,17 @@ class block_chatbot_content_extractor {
                 $sections['pdfs'] = [
                     'title' => get_string('use_pdfs', 'block_chatbot'),
                     'content' => $pdf_context
+                ];
+            }
+        }
+        
+        // Process Office documents (Word, Excel, PowerPoint)
+        if ($this->config['use_office']) {
+            $office_context = $this->extract_office_documents();
+            if (!empty($office_context)) {
+                $sections['office'] = [
+                    'title' => get_string('use_office', 'block_chatbot'),
+                    'content' => $office_context
                 ];
             }
         }
@@ -324,8 +344,9 @@ class block_chatbot_content_extractor {
                 return !empty($this->config['use_glossaries']);
             case 'hvp':
                 return !empty($this->config['use_h5p']);
-            case 'resource': // Für PDF-Dokumente
-                return !empty($this->config['use_pdfs']);
+            case 'resource': // Für PDF-Dokumente und Office-Dokumente
+                // Note: We'll check specific MIME types in the extraction methods
+                return !empty($this->config['use_pdfs']) || !empty($this->config['use_office']);
             case 'forum':
                 return !empty($this->config['use_forums']);
             case 'quiz':
@@ -860,6 +881,709 @@ class block_chatbot_content_extractor {
         
         error_log("No PHP PDF extraction methods available");
         return '';
+    }
+    
+    /**
+     * Extract content from Office documents (Word, Excel, PowerPoint)
+     *
+     * @return string Formatted content from Office documents
+     */
+    private function extract_office_documents() {
+        global $DB;
+
+        $office_context = '';
+
+        // Get course modules of type 'resource'
+        $resources = $this->modinfo->get_instances_of('resource');
+
+        // Loop through each resource
+        foreach ($resources as $resource_instance) {
+            // Skip if not visible to user or excluded by configuration
+            if (!$resource_instance->uservisible || !$this->should_include_activity($resource_instance)) {
+                continue;
+            }
+
+            // Get resource record
+            $resource = $DB->get_record('resource', ['id' => $resource_instance->instance], '*', MUST_EXIST);
+            if (!$resource) {
+                continue;
+            }
+
+            // Set cmid for context resolution
+            $resource->cmid = $resource_instance->id;
+
+            // Get the file
+            $file = $this->extract_resource_file($resource);
+            if (!$file) {
+                continue;
+            }
+            
+            // Check if it's an Office document
+            $mimetype = $file->get_mimetype();
+            $doc_type = '';
+            
+            if ($mimetype === self::MIMETYPE_DOCX || $mimetype === self::MIMETYPE_DOC) {
+                $doc_type = 'word';
+            } else if ($mimetype === self::MIMETYPE_XLSX || $mimetype === self::MIMETYPE_XLS) {
+                $doc_type = 'excel';
+            } else if ($mimetype === self::MIMETYPE_PPTX || $mimetype === self::MIMETYPE_PPT) {
+                $doc_type = 'powerpoint';
+            } else {
+                // Not an Office document
+                continue;
+            }
+
+            // Extract Office document content
+            $office_content = $this->extract_office_content($file, $doc_type);
+            if (!empty($office_content)) {
+                $office_context .= "### {$this->get_doc_type_name($doc_type)}: {$resource->name}\n";
+                $office_context .= $office_content . "\n\n";
+            }
+        }
+
+        return $office_context;
+    }
+    
+    /**
+     * Get the human-readable document type name
+     *
+     * @param string $doc_type The document type (word, excel, powerpoint)
+     * @return string Human-readable document type
+     */
+    private function get_doc_type_name($doc_type) {
+        switch ($doc_type) {
+            case 'word':
+                return 'Word-Dokument';
+            case 'excel':
+                return 'Excel-Tabelle';
+            case 'powerpoint':
+                return 'PowerPoint-Präsentation';
+            default:
+                return 'Office-Dokument';
+        }
+    }
+    
+    /**
+     * Extract text content from an Office document
+     *
+     * @param stored_file $file The Office document file stored in Moodle
+     * @param string $doc_type The document type (word, excel, powerpoint)
+     * @return string The extracted text
+     */
+    private function extract_office_content($file, $doc_type) {
+        global $CFG;
+        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+
+        // Check cache first
+        $content_hash = $file->get_contenthash();
+        $timemodified = $file->get_timemodified();
+        
+        // Try to get from cache using the cache manager
+        $cache_key = block_chatbot_cache_manager::get_office_content_key($content_hash, $doc_type);
+        $cached_item = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_OFFICE, $cache_key);
+
+        if ($cached_item && is_array($cached_item)) {
+            // Check if cache is valid (not expired and file hasn't been modified)
+            if (isset($cached_item['data']) && isset($cached_item['metadata'])) {
+                $cached_data = $cached_item['data'];
+                $metadata = $cached_item['metadata'];
+                
+                if (isset($metadata['timemodified']) && $metadata['timemodified'] >= $timemodified) {
+                    error_log("Using cached Office content for " . $file->get_filename());
+                    return $cached_data;
+                }
+            }
+        }
+
+        // Not in cache or cache outdated, extract from Office document
+        error_log("Extracting content from Office document " . $file->get_filename());
+
+        // Create a temporary file to save the document
+        $tempdir = $CFG->tempdir . '/chatbot';
+        if (!is_dir($tempdir)) {
+            mkdir($tempdir, 0777, true);
+        }
+
+        $tempfile = $tempdir . '/' . $content_hash . '.' . $this->get_file_extension($doc_type);
+        $text = '';
+
+        try {
+            // Save the document to the temporary file
+            $file->copy_content_to($tempfile);
+
+            // Use different extraction methods based on document type
+            if ($doc_type === 'word') {
+                $text = $this->extract_word_document($tempfile);
+            } else if ($doc_type === 'excel') {
+                $text = $this->extract_excel_document($tempfile);
+            } else if ($doc_type === 'powerpoint') {
+                $text = $this->extract_powerpoint_document($tempfile);
+            }
+
+            // If all methods fail, return a message
+            if (empty($text)) {
+                $text = "[Extraktion nicht möglich. Die Serverkonfiguration unterstützt keine Textextraktion für {$this->get_doc_type_name($doc_type)}.]";
+            }
+
+            // Truncate if too long (max 10000 chars)
+            if (strlen($text) > 10000) {
+                $text = substr($text, 0, 10000) . "...\n[Inhalt gekürzt, zu lang für vollständige Einbeziehung]";
+            }
+
+            // Save to cache with the cache manager
+            if (!empty($text)) {
+                $metadata = [
+                    'timemodified' => $timemodified,
+                    'filename' => $file->get_filename()
+                ];
+
+                block_chatbot_cache_manager::set(
+                    block_chatbot_cache_manager::CACHE_TYPE_OFFICE,
+                    $cache_key,
+                    $text,
+                    $metadata
+                );
+            }
+
+            return $text;
+        } catch (Exception $e) {
+            error_log("Error extracting Office content: " . $e->getMessage());
+            return "[Fehler bei der Extraktion des Inhalts: " . $e->getMessage() . "]";
+        } finally {
+            // Clean up
+            if (file_exists($tempfile)) {
+                unlink($tempfile);
+            }
+        }
+    }
+    
+    /**
+     * Get the file extension for the document type
+     *
+     * @param string $doc_type The document type (word, excel, powerpoint)
+     * @return string The file extension
+     */
+    private function get_file_extension($doc_type) {
+        switch ($doc_type) {
+            case 'word':
+                return 'docx';
+            case 'excel':
+                return 'xlsx';
+            case 'powerpoint':
+                return 'pptx';
+            default:
+                return 'bin';
+        }
+    }
+    
+    /**
+     * Extract text from a Word document
+     *
+     * @param string $tempfile Path to the temporary Word file
+     * @return string Extracted text
+     */
+    private function extract_word_document($tempfile) {
+        error_log("Attempting to extract text from Word document: " . $tempfile);
+        
+        // Check for basic file readability
+        if (!is_readable($tempfile)) {
+            error_log("Word file is not readable: " . $tempfile);
+            return '';
+        }
+        
+        // Try using PhpOffice/PhpWord
+        if (class_exists('\PhpOffice\PhpWord\IOFactory')) {
+            error_log("PhpOffice/PhpWord class found, attempting to use it");
+            try {
+                $phpWord = \PhpOffice\PhpWord\IOFactory::load($tempfile);
+                $text = '';
+                
+                // Extract text from each section
+                $sections = $phpWord->getSections();
+                foreach ($sections as $section) {
+                    $elements = $section->getElements();
+                    foreach ($elements as $element) {
+                        if (method_exists($element, 'getText')) {
+                            $text .= $element->getText() . "\n";
+                        } else if (method_exists($element, 'getElements')) {
+                            $subElements = $element->getElements();
+                            foreach ($subElements as $subElement) {
+                                if (method_exists($subElement, 'getText')) {
+                                    $text .= $subElement->getText() . "\n";
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (!empty($text)) {
+                    error_log("Word document text extracted using PhpOffice/PhpWord");
+                    return $text;
+                } else {
+                    error_log("PhpOffice/PhpWord returned empty text");
+                }
+            } catch (Exception $e) {
+                error_log("PhpOffice/PhpWord error: " . $e->getMessage());
+            }
+        } else {
+            error_log("PhpOffice/PhpWord class not found");
+        }
+        
+        error_log("Trying external tools for Word extraction");
+        // Try using command-line tools
+        $externalText = $this->extract_office_with_external_tool($tempfile, 'word');
+        
+        if (!empty($externalText)) {
+            error_log("Successfully extracted Word text using external tools");
+            return $externalText;
+        } else {
+            error_log("Failed to extract Word text using external tools");
+        }
+        
+        error_log("All Word extraction methods failed");
+        return '';
+    }
+    
+    /**
+     * Extract text from an Excel document
+     *
+     * @param string $tempfile Path to the temporary Excel file
+     * @return string Extracted text
+     */
+    private function extract_excel_document($tempfile) {
+        // Try using PhpOffice/PhpSpreadsheet
+        if (class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+            try {
+                $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($tempfile);
+                $text = '';
+                
+                // Extract text from each worksheet
+                foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
+                    $text .= "Tabellenblatt: " . $worksheet->getTitle() . "\n";
+                    
+                    foreach ($worksheet->getRowIterator() as $row) {
+                        $rowText = '';
+                        $cellIterator = $row->getCellIterator();
+                        $cellIterator->setIterateOnlyExistingCells(false);
+                        
+                        foreach ($cellIterator as $cell) {
+                            $rowText .= $cell->getValue() . "\t";
+                        }
+                        
+                        if (trim($rowText) !== '') {
+                            $text .= trim($rowText) . "\n";
+                        }
+                    }
+                    
+                    $text .= "\n";
+                }
+                
+                if (!empty($text)) {
+                    error_log("Excel document text extracted using PhpOffice/PhpSpreadsheet");
+                    return $text;
+                }
+            } catch (Exception $e) {
+                error_log("PhpOffice/PhpSpreadsheet error: " . $e->getMessage());
+            }
+        }
+        
+        // Try using command-line tools
+        return $this->extract_office_with_external_tool($tempfile, 'excel');
+    }
+    
+    /**
+     * Extract text from a PowerPoint document
+     *
+     * @param string $tempfile Path to the temporary PowerPoint file
+     * @return string Extracted text
+     */
+    private function extract_powerpoint_document($tempfile) {
+        error_log("Attempting to extract text from PowerPoint document: " . $tempfile);
+        
+        // Check for basic file readability
+        if (!is_readable($tempfile)) {
+            error_log("PowerPoint file is not readable: " . $tempfile);
+            return '';
+        }
+        
+        // Try using PhpOffice/PhpPresentation
+        if (class_exists('\PhpOffice\PhpPresentation\IOFactory')) {
+            error_log("PhpOffice/PhpPresentation class found, attempting to use it");
+            try {
+                $presentation = \PhpOffice\PhpPresentation\IOFactory::load($tempfile);
+                $text = '';
+                
+                // Extract text from each slide
+                $slideCount = $presentation->getSlideCount();
+                error_log("PowerPoint has " . $slideCount . " slides");
+                
+                for ($i = 0; $i < $slideCount; $i++) {
+                    $slide = $presentation->getSlide($i);
+                    $text .= "Folie " . ($i+1) . ":\n";
+                    
+                    // Extract text from shapes
+                    $shapes = $slide->getShapeCollection();
+                    error_log("Slide " . ($i+1) . " has " . count($shapes) . " shapes");
+                    
+                    foreach ($shapes as $shape) {
+                        if ($shape instanceof \PhpOffice\PhpPresentation\Shape\RichText) {
+                            $paragraphs = $shape->getParagraphs();
+                            foreach ($paragraphs as $paragraph) {
+                                $richTexts = $paragraph->getRichTextElements();
+                                foreach ($richTexts as $richText) {
+                                    $text .= $richText->getText() . " ";
+                                }
+                                $text .= "\n";
+                            }
+                        }
+                    }
+                    
+                    $text .= "\n";
+                }
+                
+                if (!empty($text)) {
+                    error_log("PowerPoint document text extracted using PhpOffice/PhpPresentation");
+                    return $text;
+                } else {
+                    error_log("PhpOffice/PhpPresentation returned empty text");
+                }
+            } catch (Exception $e) {
+                error_log("PhpOffice/PhpPresentation error: " . $e->getMessage());
+            }
+        } else {
+            error_log("PhpOffice/PhpPresentation class not found");
+        }
+        
+        error_log("Trying external tools for PowerPoint extraction");
+        // Try using command-line tools
+        $externalText = $this->extract_office_with_external_tool($tempfile, 'powerpoint');
+        
+        if (!empty($externalText)) {
+            error_log("Successfully extracted PowerPoint text using external tools");
+            return $externalText;
+        } else {
+            error_log("Failed to extract PowerPoint text using external tools");
+        }
+        
+        error_log("All PowerPoint extraction methods failed");
+        return '';
+    }
+    
+    /**
+     * Extract text from Office documents using external tools
+     *
+     * @param string $tempfile Path to the temporary Office file
+     * @param string $doc_type The document type (word, excel, powerpoint)
+     * @return string Extracted text
+     */
+    private function extract_office_with_external_tool($tempfile, $doc_type) {
+        error_log("Attempting to extract {$doc_type} document using external tools");
+        
+        // Try using Apache Tika if available
+        $tika_path = $this->find_tika_jar();
+        if (!empty($tika_path)) {
+            error_log("Found Apache Tika at: " . $tika_path);
+            
+            if (function_exists('exec')) {
+                if (is_readable($tempfile)) {
+                    $safe_tempfile = escapeshellarg($tempfile);
+                    $safe_tika_path = escapeshellarg($tika_path);
+                    
+                    // Execute tika with -t option to get plain text
+                    $command = "java -jar {$safe_tika_path} -t {$safe_tempfile}";
+                    error_log("Executing Tika command: " . $command);
+                    
+                    $output_array = [];
+                    exec($command, $output_array, $return_var);
+                    
+                    if ($return_var === 0) {
+                        if (!empty($output_array)) {
+                            $text = implode("\n", $output_array);
+                            error_log("Successfully extracted {$doc_type} text using Apache Tika");
+                            return $text;
+                        } else {
+                            error_log("Tika command succeeded but returned empty output");
+                        }
+                    } else {
+                        error_log("Tika command failed with return code: " . $return_var);
+                    }
+                } else {
+                    error_log("Temp file not readable for Tika: " . $tempfile);
+                }
+            } else {
+                error_log("exec() function is not available for Tika");
+            }
+        } else {
+            error_log("Apache Tika not found on system");
+        }
+        
+        // Try using simple file-based extraction for Word documents (.docx)
+        if ($doc_type === 'word' && class_exists('ZipArchive') && substr($tempfile, -5) === '.docx') {
+            error_log("Attempting direct .docx extraction using ZipArchive");
+            try {
+                $text = $this->extract_docx_without_library($tempfile);
+                if (!empty($text)) {
+                    error_log("Successfully extracted Word text using direct ZIP method");
+                    return $text;
+                } else {
+                    error_log("Direct ZIP extraction returned empty text");
+                }
+            } catch (Exception $e) {
+                error_log("Direct ZIP extraction error: " . $e->getMessage());
+            }
+        }
+        
+        // Try using simple file-based extraction for PowerPoint documents (.pptx)
+        if ($doc_type === 'powerpoint' && class_exists('ZipArchive') && substr($tempfile, -5) === '.pptx') {
+            error_log("Attempting direct .pptx extraction using ZipArchive");
+            try {
+                $text = $this->extract_pptx_without_library($tempfile);
+                if (!empty($text)) {
+                    error_log("Successfully extracted PowerPoint text using direct ZIP method");
+                    return $text;
+                } else {
+                    error_log("Direct ZIP extraction returned empty text for PowerPoint");
+                }
+            } catch (Exception $e) {
+                error_log("Direct PowerPoint ZIP extraction error: " . $e->getMessage());
+            }
+        }
+        
+        // Try using LibreOffice if available
+        $libreoffice_path = $this->find_libreoffice_binary();
+        if (!empty($libreoffice_path)) {
+            error_log("Found LibreOffice at: " . $libreoffice_path);
+            
+            if (function_exists('exec')) {
+                if (is_readable($tempfile)) {
+                    // Create a temporary directory for the converted file
+                    $tempoutdir = sys_get_temp_dir() . '/chatbot_' . uniqid();
+                    if (mkdir($tempoutdir)) {
+                        error_log("Created temp directory for LibreOffice output: " . $tempoutdir);
+                        
+                        $safe_tempfile = escapeshellarg($tempfile);
+                        $safe_tempoutdir = escapeshellarg($tempoutdir);
+                        $safe_libreoffice_path = escapeshellarg($libreoffice_path);
+                        
+                        // Convert to text using LibreOffice
+                        $command = "{$safe_libreoffice_path} --headless --convert-to txt:Text --outdir {$safe_tempoutdir} {$safe_tempfile}";
+                        error_log("Executing LibreOffice command: " . $command);
+                        
+                        $output_array = [];
+                        exec($command, $output_array, $return_var);
+                        error_log("LibreOffice command output: " . print_r($output_array, true));
+                        
+                        // Get the converted text file name
+                        $base_name = basename($tempfile);
+                        $txt_file = $tempoutdir . '/' . pathinfo($base_name, PATHINFO_FILENAME) . '.txt';
+                        error_log("Looking for converted text file at: " . $txt_file);
+                        
+                        if ($return_var === 0) {
+                            if (file_exists($txt_file)) {
+                                $text = file_get_contents($txt_file);
+                                // Clean up
+                                unlink($txt_file);
+                                rmdir($tempoutdir);
+                                
+                                if (!empty($text)) {
+                                    error_log("Successfully extracted {$doc_type} text using LibreOffice");
+                                    return $text;
+                                } else {
+                                    error_log("LibreOffice conversion succeeded but text file was empty");
+                                }
+                            } else {
+                                error_log("LibreOffice command succeeded but output file not found");
+                            }
+                        } else {
+                            error_log("LibreOffice command failed with return code: " . $return_var);
+                        }
+                        
+                        // Clean up
+                        if (file_exists($tempoutdir)) {
+                            rmdir($tempoutdir);
+                        }
+                    } else {
+                        error_log("Failed to create temp directory for LibreOffice output: " . $tempoutdir);
+                    }
+                } else {
+                    error_log("Temp file not readable for LibreOffice: " . $tempfile);
+                }
+            } else {
+                error_log("exec() function is not available for LibreOffice");
+            }
+        } else {
+            error_log("LibreOffice not found on system");
+        }
+        
+        // If we get here, no extraction method was successful
+        error_log("All external extraction methods failed for {$doc_type} document");
+        return '';
+    }
+    
+    /**
+     * Extract text from a .docx file using PHP's ZipArchive class
+     * This provides a fallback when no libraries or external tools are available
+     *
+     * @param string $tempfile Path to the temporary .docx file
+     * @return string Extracted text
+     */
+    private function extract_docx_without_library($tempfile) {
+        $text = '';
+        
+        // Check if ZipArchive class is available
+        if (!class_exists('ZipArchive')) {
+            error_log("ZipArchive class is not available for .docx extraction");
+            return '';
+        }
+        
+        // Open the .docx file as a ZIP archive
+        $zip = new ZipArchive();
+        if ($zip->open($tempfile) !== true) {
+            error_log("Failed to open .docx as ZIP: " . $tempfile);
+            return '';
+        }
+        
+        // Look for the main document content
+        $entry_name = 'word/document.xml';
+        if (($index = $zip->locateName($entry_name)) !== false) {
+            // Read the XML content
+            $content = $zip->getFromIndex($index);
+            
+            // Simple XML parsing to extract text
+            $content = str_replace('</w:p>', "\n", $content); // Add newlines
+            $content = preg_replace('/<.*?>/', '', $content); // Remove XML tags
+            $text = html_entity_decode($content);
+        } else {
+            error_log("Could not find document.xml in the .docx file");
+        }
+        
+        $zip->close();
+        return trim($text);
+    }
+    
+    /**
+     * Extract text from a .pptx file using PHP's ZipArchive class
+     * This provides a fallback when no libraries or external tools are available
+     *
+     * @param string $tempfile Path to the temporary .pptx file
+     * @return string Extracted text
+     */
+    private function extract_pptx_without_library($tempfile) {
+        $text = '';
+        $slides = [];
+        
+        // Check if ZipArchive class is available
+        if (!class_exists('ZipArchive')) {
+            error_log("ZipArchive class is not available for .pptx extraction");
+            return '';
+        }
+        
+        // Open the .pptx file as a ZIP archive
+        $zip = new ZipArchive();
+        if ($zip->open($tempfile) !== true) {
+            error_log("Failed to open .pptx as ZIP: " . $tempfile);
+            return '';
+        }
+        
+        // Find all slide XML files
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $entry_name = $zip->getNameIndex($i);
+            
+            // Look for slide content files
+            if (preg_match('|ppt/slides/slide([0-9]+)\.xml|', $entry_name, $matches)) {
+                $slide_num = (int)$matches[1];
+                
+                // Get the content of the slide
+                $content = $zip->getFromName($entry_name);
+                if ($content !== false) {
+                    // Extract text content
+                    $slide_text = '';
+                    
+                    // Extract text from text runs (<a:t>text content</a:t>)
+                    preg_match_all('|<a:t[^>]*>(.*?)</a:t>|s', $content, $text_matches);
+                    foreach ($text_matches[1] as $text_content) {
+                        $slide_text .= $text_content . " ";
+                    }
+                    
+                    // Store slide with its number for proper ordering
+                    $slides[$slide_num] = trim($slide_text);
+                }
+            }
+        }
+        
+        $zip->close();
+        
+        // Sort slides by number and combine text
+        ksort($slides);
+        foreach ($slides as $slide_num => $slide_text) {
+            if (!empty($slide_text)) {
+                $text .= "Folie " . $slide_num . ":\n" . $slide_text . "\n\n";
+            }
+        }
+        
+        return trim($text);
+    }
+    
+    /**
+     * Find the Apache Tika JAR file on the system
+     * 
+     * @return string|null Path to Tika JAR or null if not found
+     */
+    private function find_tika_jar() {
+        // Check common installation locations
+        $possible_paths = [
+            '/usr/local/bin/tika-app.jar',
+            '/usr/bin/tika-app.jar',
+            '/opt/tika/tika-app.jar',
+            '/opt/homebrew/bin/tika-app.jar'
+        ];
+        
+        foreach ($possible_paths as $path) {
+            if (file_exists($path) && is_readable($path)) {
+                return $path;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Find the LibreOffice binary on the system
+     * 
+     * @return string|null Path to LibreOffice binary or null if not found
+     */
+    private function find_libreoffice_binary() {
+        // Check if libreoffice is available in PATH
+        if (function_exists('exec')) {
+            @exec('which libreoffice', $output_array, $return_var);
+            if ($return_var === 0 && !empty($output_array[0])) {
+                return $output_array[0];
+            }
+            
+            // Also check for soffice (LibreOffice's alternative binary name)
+            @exec('which soffice', $output_array, $return_var);
+            if ($return_var === 0 && !empty($output_array[0])) {
+                return $output_array[0];
+            }
+        }
+        
+        // Check common installation locations
+        $possible_paths = [
+            '/usr/bin/libreoffice',
+            '/usr/bin/soffice',
+            '/usr/local/bin/libreoffice',
+            '/usr/local/bin/soffice',
+            '/opt/libreoffice/program/soffice',
+            '/Applications/LibreOffice.app/Contents/MacOS/soffice'
+        ];
+        
+        foreach ($possible_paths as $path) {
+            if (file_exists($path) && is_executable($path)) {
+                return $path;
+            }
+        }
+        
+        return null;
     }
     /**
      * Extract content from forum discussions with caching

@@ -116,6 +116,32 @@ function xmldb_block_chatbot_upgrade($oldversion) {
         // Update version number
         upgrade_block_savepoint(true, 2025063016, 'chatbot');
     }
+    
+    if ($oldversion < 2025063103) {
+        // Create Office documents cache table
+        $table = new xmldb_table('block_chatbot_office_cache');
+
+        // Add fields
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('contenthash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('timecached', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('content', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null);
+
+        // Add keys
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+
+        // Add indexes
+        $table->add_index('contenthash', XMLDB_INDEX_UNIQUE, ['contenthash']);
+
+        // Create the table
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Update version number
+        upgrade_block_savepoint(true, 2025063103, 'chatbot');
+    }
 
     return true;
 }

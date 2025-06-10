@@ -1,6 +1,8 @@
 <?php
 // German language strings for the Chatbot block.
 $string['pluginname']         = 'Chatbot';
+$string['chatbot:addinstance'] = 'Einen neuen Chatbot-Block hinzufügen';
+$string['chatbot:myaddinstance'] = 'Einen neuen Chatbot-Block zum Dashboard hinzufügen';
 $string['assistantname']      = 'Assistantname';
 $string['assistantnamedesc']  = 'Geben Sie den Namen ein, der im Chat als Assistant angezeigt wird.';
 $string['courselogo']         = 'Kursspezifisches Logo';
@@ -43,6 +45,10 @@ $string['use_h5p_help'] = 'Wenn aktiviert, werden die Inhalte aller H5P-Aktivit�
 $string['use_pdfs'] = 'PDF-Dokumente einbeziehen';
 $string['use_pdfs_desc'] = 'Inhalte aus PDF-Dokumenten des Kurses als Kontext für Antworten verwenden.';
 $string['use_pdfs_help'] = 'Wenn aktiviert, werden die Texte aller PDF-Dokumente im Kurs extrahiert und für die Beantwortung von Fragen verwendet.';
+
+$string['use_office'] = 'Office-Dokumente einbeziehen';
+$string['use_office_desc'] = 'Inhalte aus Word-, Excel- und PowerPoint-Dokumenten des Kurses als Kontext für Antworten verwenden.';
+$string['use_office_help'] = 'Wenn aktiviert, werden die Texte aller Microsoft Office-Dokumente (Word, Excel, PowerPoint) im Kurs extrahiert und für die Beantwortung von Fragen verwendet.';
 
 $string['use_forums'] = 'Foren einbeziehen';
 $string['use_forums_desc'] = 'Inhalte aus Forenbeiträgen des Kurses als Kontext für Antworten verwenden.';
@@ -158,7 +164,7 @@ $string['retention_3months'] = '3 Monate';
 $string['retention_6months'] = '6 Monate';
 $string['retention_1year'] = '1 Jahr';
 
-$string['analytics_dashboard'] = 'Analysen-Dashboard';
+$string['analytics_dashboard'] = 'Analysen-Dashboard öffnen';
 $string['analytics_dashboard_desc'] = 'Zeigt Statistiken zu den am häufigsten gestellten Fragen im Kurs.';
 $string['no_analytics_data'] = 'Keine Analysedaten verfügbar. Aktivieren Sie die Lehr-Analysen und warten Sie, bis Lernende den Chatbot genutzt haben.';
 $string['most_common_questions'] = 'Häufigste Fragen';

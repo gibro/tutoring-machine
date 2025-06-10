@@ -159,7 +159,7 @@ class block_chatbot_analytics_manager {
         $result['total_queries'] = $DB->count_records_sql($sql, $params);
 
         // Get most common queries
-        $sql = "SELECT query, COUNT(*) as coun
+        $sql = "SELECT query, COUNT(*) as count
                 FROM {block_chatbot_analytics}
                 WHERE courseid = :courseid AND blockinstanceid = :blockinstanceid
                 AND timecreated > :timethreshold
@@ -171,12 +171,12 @@ class block_chatbot_analytics_manager {
         foreach ($common_queries as $query) {
             $result['most_common'][] = array(
                 'query' => $query->query,
-                'count' => $query->coun
+                'count' => $query->count
             );
         }
 
         // Get query types distribution
-        $sql = "SELECT querytype, COUNT(*) as coun
+        $sql = "SELECT querytype, COUNT(*) as count
                 FROM {block_chatbot_analytics}
                 WHERE courseid = :courseid AND blockinstanceid = :blockinstanceid
                 AND timecreated > :timethreshold AND querytype IS NOT NULL

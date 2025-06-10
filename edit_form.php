@@ -78,6 +78,14 @@ class block_chatbot_edit_form extends block_edit_form {
         // Kontext-Einstellungen
         $mform->addElement('header', 'context_settings', 'Kontext');
         
+        // Kontextquellen anzeigen - Link
+        global $COURSE;
+        $url = new moodle_url('/blocks/chatbot/simple_context.php', 
+            array('courseid' => $COURSE->id, 'blockid' => $this->block->instance->id));
+        $context_link = html_writer::link($url, get_string('contextsources', 'block_chatbot'), 
+            array('class' => 'btn btn-secondary mb-3', 'target' => '_blank'));
+        $mform->addElement('static', 'context_sources_link', 'Kontextquellen anzeigen', $context_link);
+        
         // Internetsuche
         $mform->addElement('advcheckbox', 'config_use_internet', 'Internetsuche', 
             'Darf der Chatbot bei Fragen, die nicht durch den Kurskontext beantwortet werden können, auf Internetwissen zurückgreifen?', 
@@ -231,6 +239,15 @@ class block_chatbot_edit_form extends block_edit_form {
             $retention_options);
         $mform->setDefault('config_analytics_retention', 30); // Default to 1 month
         $mform->disabledIf('config_analytics_retention', 'config_enable_analytics', 'neq', 1);
+        
+        // Analysen-Dashboard-Button
+        global $COURSE;
+        $url = new moodle_url('/blocks/chatbot/analytics.php', 
+            array('id' => $this->block->instance->id, 'course' => $COURSE->id));
+        $analytics_link = html_writer::link($url, get_string('analytics_dashboard', 'block_chatbot'), 
+            array('class' => 'btn btn-primary mb-3', 'target' => '_blank'));
+        $mform->addElement('static', 'analytics_dashboard_link', '', $analytics_link);
+        $mform->disabledIf('analytics_dashboard_link', 'config_enable_analytics', 'neq', 1);
 
         // Prompt suggestions section header
         $mform->addElement('header', 'prompt_suggestions_section', get_string('prompt_suggestions', 'block_chatbot'));
