@@ -69,7 +69,7 @@
         width: 100%;
     }
     
-    /* Fullscreen Toggle Button removed as it's now in the button row */
+    /* Styles for messaging components */
 
     /* Messages container */
     #chat-messages {
@@ -282,10 +282,6 @@
     }
 
     /* Animations */
-    #fade-in {
-        animation: fadeIn 0.5s ease-in-out;
-    }
-
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
@@ -378,8 +374,6 @@
     let promptSuggestionsOpen = false;
     let isFullscreen = false;
 
-    // Chat is embedded in the block, no sizing needed
-    
     // Event listeners and initialization
     document.addEventListener('DOMContentLoaded', initChatbot);
     
@@ -389,7 +383,6 @@
     function initChatbot() {
         addEventListeners();
         showAnalyticsNotice();
-        initPromptSuggestions();
         
         // Check analytics status and force reset if needed
         const needsReset = checkAnalyticsStatus();
@@ -400,15 +393,12 @@
         }
         
         setTimeout(scrollToBottom, 100);
-        showAnalyticsNotice();
         
         // Initialize prompt suggestions if enabled
         if (promptSuggestionsEnabled) {
             initPromptSuggestions();
         }
     }
-    
-    // Size control functions removed as chat is now embedded in block
     
     /**
      * Check if analytics status has changed
@@ -549,88 +539,86 @@
     }
     
     /**
+     * Common function to handle sending messages
+     * @param {string} message - The message to send
+     * @param {string} mode - "normal" or "modal"
+     */
+    function handleSendMessage(message, mode) {
+        if (!message.trim()) return;
+        
+        // Get references to both views
+        const chatMessages = document.getElementById("chat-messages");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        
+        // Sanitize the message for security
+        const safeMessage = sanitizeHTML(message);
+        
+        // Create user message HTML
+        const userMessageHtml = `<div class='chat-bubble user-message fade-in'><strong>Du:</strong><br>${safeMessage}</div>`;
+        
+        // Update the view that triggered the message
+        if (mode === "modal") {
+            // Add message to both views for synchronization
+            modalMessages.innerHTML += userMessageHtml;
+            chatMessages.innerHTML += userMessageHtml;
+            
+            // Add loading indicator to modal view
+            modalMessages.innerHTML += `<div id="modal-loading" class="loading fade-in"></div>`;
+            
+            // Scroll both views
+            modalMessages.scrollTop = modalMessages.scrollHeight;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        } else {
+            // Add message to normal view
+            chatMessages.innerHTML += userMessageHtml;
+            chatMessages.innerHTML += `<div id="loading" class="loading fade-in"></div>`;
+            
+            // Also update modal view if we're in fullscreen mode
+            if (isFullscreen && modalMessages) {
+                modalMessages.innerHTML += userMessageHtml;
+            }
+            
+            // Scroll both views
+            scrollToBottom();
+        }
+        
+        // Add to conversation history
+        conversationHistory.push({
+            role: "user",
+            content: message // Original message for API
+        });
+        
+        // Save to local storage
+        saveSession();
+        
+        // Send the message to the server
+        sendMessageToServer(message, mode);
+    }
+    
+    /**
      * Send a message from the modal view
      */
     function sendModalMessage() {
         const modalInputField = document.getElementById("modal-user-input");
         const message = modalInputField.value.trim();
-        if (!message) return;
         
-        // Get references to both views
-        const chatMessages = document.getElementById("chat-messages");
-        const modalMessages = document.getElementById("modal-chat-messages");
-        
-        // Create user message HTML
-        const userMessageHtml = `<div class='chat-bubble user-message fade-in'><strong>Du:</strong><br>${message}</div>`;
-        
-        // Add message to both views for synchronization
-        modalMessages.innerHTML += userMessageHtml;
-        chatMessages.innerHTML += userMessageHtml;
-        
-        // Add loading indicator to modal view (we're in modal view now)
-        modalMessages.innerHTML += `<div id="modal-loading" class="loading fade-in"></div>`;
-        
-        // Scroll both views
-        modalMessages.scrollTop = modalMessages.scrollHeight;
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        // Clear input
-        modalInputField.value = "";
-        
-        // Add to conversation history
-        conversationHistory.push({
-            role: "user",
-            content: message
-        });
-        
-        // Save to local storage
-        saveSession();
-        
-        // Send the message to the server
-        sendMessageToServer(message, "modal");
+        if (message) {
+            handleSendMessage(message, "modal");
+            modalInputField.value = ""; // Clear input
+        }
     }
     
     /**
-     * Modified version of sendMessage that uses a common handler
+     * Send a message from the normal view
      */
     function sendMessage() {
         const inputField = document.getElementById("user-input");
         const message = inputField.value.trim();
-        if (!message) return;
         
-        // Get references to both views
-        const chatMessages = document.getElementById("chat-messages");
-        const modalMessages = document.getElementById("modal-chat-messages");
-        
-        // Create user message HTML
-        const userMessageHtml = `<div class='chat-bubble user-message fade-in'><strong>Du:</strong><br>${message}</div>`;
-        
-        // Add message to normal view
-        chatMessages.innerHTML += userMessageHtml;
-        chatMessages.innerHTML += `<div id="loading" class="loading fade-in"></div>`;
-        
-        // Also update modal view if we're in fullscreen mode
-        if (isFullscreen && modalMessages) {
-            modalMessages.innerHTML += userMessageHtml;
+        if (message) {
+            handleSendMessage(message, "normal");
+            inputField.value = ""; // Clear input
         }
-        
-        // Scroll both views
-        scrollToBottom();
-        
-        // Clear input
-        inputField.value = "";
-        
-        // Add to conversation history
-        conversationHistory.push({
-            role: "user",
-            content: message
-        });
-        
-        // Save to local storage
-        saveSession();
-        
-        // Send the message to the server
-        sendMessageToServer(message, "normal");
     }
 
     /**
@@ -651,14 +639,12 @@
         
         // Always show welcome message if forced or first time
         if (forceReset || conversationHistory.length === 0) {
-            // Analytics status is now determined from the global variable
-            // which is set directly from PHP based on whether analytics are enabled
-            
+            // Analytics status is determined from the global variable
             // Set welcome message based on analytics status
             let welcomeMessage = "Hey! Schön, dass du hier bist. Ich bin dein Freund und Lern-Begleiter. Frag mich einfach, wenn du Hilfe brauchst! 😊";
             
+            // Alternative welcome message for when analytics is enabled
             if (analyticsEnabled) {
-                // Hard-coded analytics notice text since the placeholder doesn't seem to get replaced properly
                 welcomeMessage = "Hey! Schön, dass du hier bist. Ich bin dein Lern-Begleiter. Deine Referentinnen oder/und Referenten haben die Chat-Analyse aktiviert, um aus deinen Fragen zu lernen, welche Inhalte zusätzliche Nachfragen erzeugt haben. Die Analyse findet anonym statt und ist nie auf dich zurückführbar. Stelle also alle Fragen, und denk daran, es gibt keine dummen Fragen ;-).";
             }
             
@@ -668,13 +654,15 @@
                 conversationHistory = [];
             }
             
-            const formattedMessage = formatBotResponse(welcomeMessage);
+            // Sanitize for security
+            const safeWelcomeMessage = sanitizeHTML(welcomeMessage);
+            const formattedMessage = formatBotResponse(safeWelcomeMessage);
             
-            chatMessages.innerHTML += `<div class='chat-bubble bot-message fade-in'><strong>${assistantName}:</strong><br>${formattedMessage}</div>`;
+            chatMessages.innerHTML += `<div class='chat-bubble bot-message fade-in'><strong>${sanitizeHTML(assistantName)}:</strong><br>${formattedMessage}</div>`;
             
             conversationHistory.push({
                 role: "assistant",
-                content: welcomeMessage
+                content: welcomeMessage // Original message for API
             });
             
             saveConversationHistory();
@@ -774,6 +762,8 @@
     async function sendMessageToServer(message, view) {
         const normalMessages = document.getElementById("chat-messages");
         const modalMessages = document.getElementById("modal-chat-messages");
+        const isModal = view === "modal";
+        const loadingId = isModal ? "modal-loading" : "loading";
         
         try {
             // Prepare form data for request
@@ -788,32 +778,45 @@
                 // Show error if sesskey is not available
                 const errorMessage = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Sicherheitstoken (sesskey) fehlt. Bitte lade die Seite neu.</div>`;
                 
+                // Update both views
                 normalMessages.innerHTML += errorMessage;
-                if (view === "modal") {
+                if (isModal && modalMessages) {
                     modalMessages.innerHTML += errorMessage;
-                    document.getElementById("modal-loading").remove();
-                } else {
-                    document.getElementById("loading").remove();
                 }
                 
+                // Remove loading indicators
+                removeLoadingIndicator(loadingId);
                 scrollToBottom();
                 return;
             }
             
-            // Add block ID if available
-            const blockId = %%BLOCK_ID%%;
-            if (blockId) {
-                formData.append('blockid', blockId);
+            // Add block ID if available (with validation)
+            try {
+                const blockId = %%BLOCK_ID%%;
+                if (blockId && !isNaN(parseInt(blockId))) {
+                    formData.append('blockid', blockId);
+                }
+            } catch (e) {
+                console.error("Error with block ID:", e);
             }
             
-            // Add course ID if available
-            const courseId = M.cfg.courseId;
-            if (courseId) {
-                formData.append('courseid', courseId);
+            // Add course ID if available (with validation)
+            try {
+                if (typeof M !== 'undefined' && M.cfg && M.cfg.courseId && !isNaN(parseInt(M.cfg.courseId))) {
+                    formData.append('courseid', M.cfg.courseId);
+                }
+            } catch (e) {
+                console.error("Error with course ID:", e);
+            }
+            
+            // Get base URL from Moodle or use relative path
+            let apiUrl = "/blocks/chatbot/chatbot.php";
+            if (typeof M !== 'undefined' && M.cfg && M.cfg.wwwroot) {
+                apiUrl = M.cfg.wwwroot + "/blocks/chatbot/chatbot.php";
             }
             
             // Send request to server
-            const response = await fetch("/blocks/chatbot/chatbot.php", {
+            const response = await fetch(apiUrl, {
                 method: "POST",
                 headers: {
                     "X-Requested-With": "XMLHttpRequest"
@@ -823,11 +826,7 @@
             });
 
             // Remove loading indicators
-            if (view === "modal") {
-                document.getElementById("modal-loading").remove();
-            } else {
-                document.getElementById("loading").remove();
-            }
+            removeLoadingIndicator(loadingId);
             
             // Check for HTTP errors
             if (!response.ok) {
@@ -837,24 +836,31 @@
             await handleServerResponse(response, view);
         } catch (error) {
             // Remove loading indicators
-            if (view === "modal") {
-                if (document.getElementById("modal-loading")) {
-                    document.getElementById("modal-loading").remove();
-                }
-            } else {
-                if (document.getElementById("loading")) {
-                    document.getElementById("loading").remove();
-                }
-            }
+            removeLoadingIndicator(loadingId);
             
-            const errorMessage = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Verbindungsproblem: ${error.message}</div>`;
+            // Create sanitized error message
+            const safeErrorMessage = sanitizeHTML(error.message);
+            const errorMessage = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Verbindungsproblem: ${safeErrorMessage}</div>`;
+            
+            // Update both views
             normalMessages.innerHTML += errorMessage;
-            if (view === "modal") {
+            if (isModal && modalMessages) {
                 modalMessages.innerHTML += errorMessage;
             }
             
             scrollToBottom();
             saveSession();
+        }
+    }
+    
+    /**
+     * Helper function to safely remove loading indicators
+     * @param {string} loadingId - The ID of the loading element to remove
+     */
+    function removeLoadingIndicator(loadingId) {
+        const loadingElement = document.getElementById(loadingId);
+        if (loadingElement) {
+            loadingElement.remove();
         }
     }
     
@@ -1105,9 +1111,15 @@
     
     /**
      * Parse prompt suggestions and detect categories if present
+     * @param {string} mode - "normal" or "modal"
      */
-    function parsePromptSuggestions() {
-        const suggestionsContent = document.getElementById('prompt-suggestions-content');
+    function parsePromptSuggestionsHelper(mode) {
+        const isModal = mode === "modal";
+        const contentId = isModal ? 'modal-prompt-suggestions-content' : 'prompt-suggestions-content';
+        const suggestionsContent = document.getElementById(contentId);
+        
+        if (!suggestionsContent) return;
+        
         suggestionsContent.innerHTML = ''; // Clear existing content
         
         // Parse suggestions
@@ -1143,9 +1155,18 @@
                 categoryElem.className = 'prompt-category';
                 categoryElem.textContent = category;
                 categoryElem.dataset.category = category;
-                categoryElem.onclick = function() {
-                    showCategoryPrompts(category, categoryPrompts[category]);
-                };
+                
+                // Use the appropriate function based on mode
+                if (isModal) {
+                    categoryElem.onclick = function() {
+                        showCategoryPromptsHelper(category, categoryPrompts[category], "modal");
+                    };
+                } else {
+                    categoryElem.onclick = function() {
+                        showCategoryPromptsHelper(category, categoryPrompts[category], "normal");
+                    };
+                }
+                
                 suggestionsContent.appendChild(categoryElem);
             }
         } else {
@@ -1155,82 +1176,53 @@
                     const suggestionElem = document.createElement('div');
                     suggestionElem.className = 'prompt-suggestion';
                     suggestionElem.textContent = suggestion.trim();
-                    suggestionElem.onclick = function() {
-                        usePromptSuggestion(suggestion.trim());
-                    };
+                    
+                    // Use the appropriate function based on mode
+                    if (isModal) {
+                        suggestionElem.onclick = function() {
+                            usePromptSuggestionHelper(suggestion.trim(), "modal");
+                        };
+                    } else {
+                        suggestionElem.onclick = function() {
+                            usePromptSuggestionHelper(suggestion.trim(), "normal");
+                        };
+                    }
+                    
                     suggestionsContent.appendChild(suggestionElem);
                 }
             });
         }
+    }
+    
+    /**
+     * Parse prompt suggestions for normal view
+     */
+    function parsePromptSuggestions() {
+        parsePromptSuggestionsHelper("normal");
     }
     
     /**
      * Parse prompt suggestions for modal view
      */
     function parseModalPromptSuggestions() {
-        const suggestionsContent = document.getElementById('modal-prompt-suggestions-content');
-        suggestionsContent.innerHTML = ''; // Clear existing content
-        
-        // Parse suggestions
-        const suggestionLines = promptSuggestions.split('\n').filter(line => line.trim() !== '');
-        
-        // Check if we have categories (lines starting with #)
-        const hasCategories = suggestionLines.some(line => line.trim().startsWith('#'));
-        
-        if (hasCategories) {
-            // Process hierarchical structure
-            let currentCategory = null;
-            let categoryPrompts = {};
-            
-            // First pass: identify categories and their prompts
-            suggestionLines.forEach(line => {
-                const trimmedLine = line.trim();
-                
-                if (trimmedLine.startsWith('#')) {
-                    // This is a category header
-                    currentCategory = trimmedLine.substring(1).trim();
-                    if (!categoryPrompts[currentCategory]) {
-                        categoryPrompts[currentCategory] = [];
-                    }
-                } else if (currentCategory && trimmedLine) {
-                    // This is a prompt under the current category
-                    categoryPrompts[currentCategory].push(trimmedLine);
-                }
-            });
-            
-            // Create category elements
-            for (const category in categoryPrompts) {
-                const categoryElem = document.createElement('div');
-                categoryElem.className = 'prompt-category';
-                categoryElem.textContent = category;
-                categoryElem.dataset.category = category;
-                categoryElem.onclick = function() {
-                    showModalCategoryPrompts(category, categoryPrompts[category]);
-                };
-                suggestionsContent.appendChild(categoryElem);
-            }
-        } else {
-            // No categories, display flat list of suggestions
-            suggestionLines.forEach(suggestion => {
-                if (suggestion.trim()) {
-                    const suggestionElem = document.createElement('div');
-                    suggestionElem.className = 'prompt-suggestion';
-                    suggestionElem.textContent = suggestion.trim();
-                    suggestionElem.onclick = function() {
-                        useModalPromptSuggestion(suggestion.trim());
-                    };
-                    suggestionsContent.appendChild(suggestionElem);
-                }
-            });
-        }
+        parsePromptSuggestionsHelper("modal");
     }
     
     /**
-     * Show prompts for a specific category
+     * Helper function to show prompts for a specific category
+     * @param {string} category - The category name 
+     * @param {Array} prompts - The list of prompts in this category
+     * @param {string} mode - "normal" or "modal"
      */
-    function showCategoryPrompts(category, prompts) {
-        const suggestionsContent = document.getElementById('prompt-suggestions-content');
-        const backButton = document.getElementById('prompt-back-button');
+    function showCategoryPromptsHelper(category, prompts, mode) {
+        const isModal = mode === "modal";
+        const contentId = isModal ? 'modal-prompt-suggestions-content' : 'prompt-suggestions-content';
+        const backButtonId = isModal ? 'modal-prompt-back-button' : 'prompt-back-button';
+        
+        const suggestionsContent = document.getElementById(contentId);
+        const backButton = document.getElementById(backButtonId);
+        
+        if (!suggestionsContent || !backButton) return;
         
         // Clear current content
         suggestionsContent.innerHTML = '';
@@ -1250,126 +1242,158 @@
             const promptElem = document.createElement('div');
             promptElem.className = 'prompt-suggestion';
             promptElem.textContent = prompt;
-            promptElem.onclick = function() {
-                usePromptSuggestion(prompt);
-            };
+            
+            // Use the appropriate function based on mode
+            if (isModal) {
+                promptElem.onclick = function() {
+                    usePromptSuggestionHelper(prompt, "modal");
+                };
+            } else {
+                promptElem.onclick = function() {
+                    usePromptSuggestionHelper(prompt, "normal");
+                };
+            }
+            
             suggestionsContent.appendChild(promptElem);
         });
+    }
+    
+    /**
+     * Show prompts for a specific category in normal view
+     */
+    function showCategoryPrompts(category, prompts) {
+        showCategoryPromptsHelper(category, prompts, "normal");
     }
     
     /**
      * Show prompts for a specific category in modal view
      */
     function showModalCategoryPrompts(category, prompts) {
-        const suggestionsContent = document.getElementById('modal-prompt-suggestions-content');
-        const backButton = document.getElementById('modal-prompt-back-button');
-        
-        // Clear current content
-        suggestionsContent.innerHTML = '';
-        
-        // Show back button
-        backButton.style.display = 'block';
-        
-        // Add category title
-        const categoryTitle = document.createElement('div');
-        categoryTitle.style.fontWeight = 'bold';
-        categoryTitle.style.marginBottom = '10px';
-        categoryTitle.textContent = category;
-        suggestionsContent.appendChild(categoryTitle);
-        
-        // Add prompts for this category
-        prompts.forEach(prompt => {
-            const promptElem = document.createElement('div');
-            promptElem.className = 'prompt-suggestion';
-            promptElem.textContent = prompt;
-            promptElem.onclick = function() {
-                useModalPromptSuggestion(prompt);
-            };
-            suggestionsContent.appendChild(promptElem);
-        });
+        showCategoryPromptsHelper(category, prompts, "modal");
     }
     
     /**
-     * Navigate back to the categories view
+     * Helper function to navigate back to categories
+     * @param {string} mode - "normal" or "modal"
      */
-    function navigateBackToCategories() {
-        const backButton = document.getElementById('prompt-back-button');
+    function navigateBackToCategoriesHelper(mode) {
+        const isModal = mode === "modal";
+        const backButtonId = isModal ? 'modal-prompt-back-button' : 'prompt-back-button';
+        const backButton = document.getElementById(backButtonId);
+        
+        if (!backButton) return;
+        
         backButton.style.display = 'none';
         
         // Reparse and show categories
-        parsePromptSuggestions();
+        if (isModal) {
+            parseModalPromptSuggestions();
+        } else {
+            parsePromptSuggestions();
+        }
+    }
+    
+    /**
+     * Navigate back to the categories view in normal view
+     */
+    function navigateBackToCategories() {
+        navigateBackToCategoriesHelper("normal");
     }
     
     /**
      * Navigate back to the categories view in modal
      */
     function navigateBackToModalCategories() {
-        const backButton = document.getElementById('modal-prompt-back-button');
-        backButton.style.display = 'none';
-        
-        // Reparse and show categories
-        parseModalPromptSuggestions();
+        navigateBackToCategoriesHelper("modal");
     }
     
     /**
-     * Toggle the visibility of prompt suggestions panel
+     * Helper function to toggle the visibility of prompt suggestions panel
+     * @param {string} mode - "normal" or "modal"
      */
-    function togglePromptSuggestions() {
-        const panel = document.getElementById('prompt-suggestions-panel');
+    function togglePromptSuggestionsHelper(mode) {
+        const isModal = mode === "modal";
+        const panelId = isModal ? 'modal-prompt-suggestions-panel' : 'prompt-suggestions-panel';
+        const backButtonId = isModal ? 'modal-prompt-back-button' : 'prompt-back-button';
+        
+        const panel = document.getElementById(panelId);
+        const backButton = document.getElementById(backButtonId);
+        
+        if (!panel) return;
+        
         promptSuggestionsOpen = !promptSuggestionsOpen;
         
         if (promptSuggestionsOpen) {
             panel.style.display = 'block';
             // Reset to top level view when opening
-            const backButton = document.getElementById('prompt-back-button');
-            backButton.style.display = 'none';
-            parsePromptSuggestions();
+            if (backButton) {
+                backButton.style.display = 'none';
+            }
+            
+            // Parse suggestions for the appropriate view
+            if (isModal) {
+                parseModalPromptSuggestions();
+            } else {
+                parsePromptSuggestions();
+            }
         } else {
             panel.style.display = 'none';
         }
+    }
+    
+    /**
+     * Toggle the visibility of prompt suggestions panel in normal view
+     */
+    function togglePromptSuggestions() {
+        togglePromptSuggestionsHelper("normal");
     }
     
     /**
      * Toggle the visibility of prompt suggestions panel in modal view
      */
     function toggleModalPromptSuggestions() {
-        const panel = document.getElementById('modal-prompt-suggestions-panel');
-        promptSuggestionsOpen = !promptSuggestionsOpen;
-        
-        if (promptSuggestionsOpen) {
-            panel.style.display = 'block';
-            // Reset to top level view when opening
-            const backButton = document.getElementById('modal-prompt-back-button');
-            backButton.style.display = 'none';
-            parseModalPromptSuggestions();
-        } else {
-            panel.style.display = 'none';
-        }
+        togglePromptSuggestionsHelper("modal");
     }
     
     /**
-     * Use a prompt suggestion
+     * Helper function to use a prompt suggestion
+     * @param {string} suggestion - The suggestion text
+     * @param {string} mode - "normal" or "modal" 
      */
-    function usePromptSuggestion(suggestion) {
-        const inputField = document.getElementById('user-input');
+    function usePromptSuggestionHelper(suggestion, mode) {
+        const isModal = mode === "modal";
+        const inputId = isModal ? 'modal-user-input' : 'user-input';
+        
+        const inputField = document.getElementById(inputId);
+        
+        if (!inputField) return;
+        
+        // Set the suggestion text
         inputField.value = suggestion;
-        togglePromptSuggestions(); // Hide suggestions panel
+        
+        // Hide suggestions panel
+        if (isModal) {
+            toggleModalPromptSuggestions();
+        } else {
+            togglePromptSuggestions();
+        }
         
         // Focus on the input field and move cursor to the end
         inputField.focus();
         inputField.selectionStart = inputField.selectionEnd = inputField.value.length;
+    }
+    
+    /**
+     * Use a prompt suggestion in normal view
+     */
+    function usePromptSuggestion(suggestion) {
+        usePromptSuggestionHelper(suggestion, "normal");
     }
     
     /**
      * Use a prompt suggestion in modal view
      */
     function useModalPromptSuggestion(suggestion) {
-        const inputField = document.getElementById('modal-user-input');
-        inputField.value = suggestion;
-        toggleModalPromptSuggestions(); // Hide suggestions panel
-        
-        // Focus on the input field and move cursor to the end
-        inputField.focus();
-        inputField.selectionStart = inputField.selectionEnd = inputField.value.length;
+        usePromptSuggestionHelper(suggestion, "modal");
     }
 </script>
