@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Web-based API test script for Chatbot block.
+ * Web-based API test script for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -21,19 +21,19 @@ require_capability('moodle/site:config', context_system::instance());
 // }
 
 // Include API client class
-require_once($CFG->dirroot . '/blocks/chatbot/classes/api_client.php');
+require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/api_client.php');
 
 // Get API keys from Moodle config
-$config = get_config('block_chatbot');
+$config = get_config('block_tutoring_machine');
 $openai_key = !empty($config->openai_apikey) ? $config->openai_apikey : '';
 $google_key = !empty($config->google_apikey) ? $config->google_apikey : '';
 
 // Set page layou
-$PAGE->set_url(new moodle_url('/blocks/chatbot/api_test_web.php'));
+$PAGE->set_url(new moodle_url('/blocks/tutoring_machine/api_test_web.php'));
 $PAGE->set_context(context_system::instance());
 $PAGE->set_pagelayout('admin');
-$PAGE->set_title('Chatbot API Test');
-$PAGE->set_heading('Chatbot API Test');
+$PAGE->set_title('Tutoring Machine API Test');
+$PAGE->set_heading('Tutoring Machine API Test');
 
 echo $OUTPUT->header();
 
@@ -133,7 +133,7 @@ echo '<div class="row">
                         <li>Error logs for more detailed information</li>
                     </ul>
                     <p>For more details, you can also run the command-line test script:</p>
-                    <pre>php blocks/chatbot/api_test.php</pre>
+                    <pre>php blocks/tutoring_machine/api_test.php</pre>
                 </div>
             </div>
         </div>

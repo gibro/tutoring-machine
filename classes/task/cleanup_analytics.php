@@ -3,16 +3,16 @@
 /**
  * Scheduled task for cleaning up old analytics data.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace block_chatbot\task;
+namespace block_tutoring_machine\task;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/blocks/chatbot/classes/analytics_manager.php');
+require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/analytics_manager.php');
 
 /**
  * Task to clean up old analytics data.
@@ -24,7 +24,7 @@ class cleanup_analytics extends \core\task\scheduled_task {
      * @return string
      */
     public function get_name() {
-        return get_string('task_cleanup_analytics', 'block_chatbot');
+        return get_string('task_cleanup_analytics', 'block_tutoring_machine');
     }
 
     /**
@@ -33,11 +33,11 @@ class cleanup_analytics extends \core\task\scheduled_task {
     public function execute() {
         global $DB;
 
-        mtrace('Starting cleanup of old chatbot analytics data...');
+        mtrace('Starting cleanup of old Tutoring Machine analytics data...');
 
-        // Get all chatbot block instances
-        $blocks = $DB->get_records('block_instances', ['blockname' => 'chatbot']);
-        mtrace('Found ' . count($blocks) . ' chatbot blocks');
+        // Get all Tutoring Machine block instances
+        $blocks = $DB->get_records('block_instances', ['blockname' => 'tutoring_machine']);
+        mtrace('Found ' . count($blocks) . ' Tutoring Machine blocks');
 
         $total_deleted = 0;
 
@@ -47,7 +47,7 @@ class cleanup_analytics extends \core\task\scheduled_task {
             $blockid = $block->id;
 
             // Create analytics manager
-            $analytics_manager = new \block_chatbot_analytics_manager($courseid, $blockid);
+            $analytics_manager = new \block_tutoring_machine_analytics_manager($courseid, $blockid);
 
             // Skip if analytics not enabled
             if (!$analytics_manager->is_analytics_enabled()) {

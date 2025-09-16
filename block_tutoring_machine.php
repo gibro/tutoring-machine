@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Chatbot block main class.
+ * Tutoring Machine block main class.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -11,15 +11,15 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Chatbot block class definition
+ * Tutoring Machine block class definition
  */
-class block_chatbot extends block_base {
+class block_tutoring_machine extends block_base {
 
     /**
      * Initialize block
      */
     public function init() {
-        $this->title = get_string('pluginname', 'block_chatbot');
+        $this->title = get_string('pluginname', 'block_tutoring_machine');
     }
     
     /**
@@ -74,8 +74,8 @@ class block_chatbot extends block_base {
         }
 
         // Get assistant name from plugin settings
-        $config = get_config('block_chatbot');
-        $assistant_name = !empty($config->assistantname) ? $config->assistantname : 'Chatbot';
+        $config = get_config('block_tutoring_machine');
+        $assistant_name = !empty($config->assistantname) ? $config->assistantname : 'Tutoring Machine';
 
         // Get logo URL
         $logo_url = $this->get_logo_url();
@@ -88,12 +88,12 @@ class block_chatbot extends block_base {
         $analytics_notice = '';
 
         if ($analytics_enabled) {
-            $analytics_notice = get_string('data_collection_notice', 'block_chatbot');
+            $analytics_notice = get_string('data_collection_notice', 'block_tutoring_machine');
         }
 
         // Load HTML template with error handling
         $html = $this->load_html_template(
-            $CFG->dirroot . '/blocks/chatbot/templates/body.html',
+            $CFG->dirroot . '/blocks/tutoring_machine/templates/body.html',
             $assistant_name,
             $logo_url,
             $main_color,
@@ -115,7 +115,7 @@ class block_chatbot extends block_base {
      * @return moodle_url Logo URL
      */
     private function get_logo_url() {
-        return new moodle_url('/blocks/chatbot/pix/widget-logo.png');
+        return new moodle_url('/blocks/tutoring_machine/pix/widget-logo.png');
     }
 
     /**
@@ -124,7 +124,7 @@ class block_chatbot extends block_base {
      * @param string $template_path Path to HTML template
      * @param string $assistant_name Assistant name
      * @param moodle_url $logo_url Logo URL
-     * @param string $main_color Main color for the chatbot interface
+     * @param string $main_color Main color for the Tutoring Machine interface
      * @param string $analytics_notice Notice about analytics data collection
      * @return string Final HTML conten
      */
@@ -162,7 +162,7 @@ class block_chatbot extends block_base {
         $html = str_replace('%%ANALYTICS_ENABLED%%', (!empty($analytics_notice) ? 'true' : 'false'), $html);
         $html = str_replace('%%PROMPT_SUGGESTIONS_ENABLED%%', ($prompt_suggestions_enabled ? 'true' : 'false'), $html);
         $html = str_replace('%%PROMPT_SUGGESTIONS%%', s($prompt_suggestions), $html);
-        $html = str_replace('%%PROMPT_SUGGESTIONS_BUTTON_TEXT%%', get_string('prompt_suggestions_button_text', 'block_chatbot'), $html);
+        $html = str_replace('%%PROMPT_SUGGESTIONS_BUTTON_TEXT%%', get_string('prompt_suggestions_button_text', 'block_tutoring_machine'), $html);
 
         return $html;
     }

@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Simple context viewer for Chatbot block.
+ * Simple context viewer for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -29,23 +29,23 @@ require_login($course);
 $block_config = null;
 if ($blockid) {
     $block_record = $DB->get_record('block_instances', array('id' => $blockid), '*');
-    if ($block_record && $block_record->blockname == 'chatbot') {
+    if ($block_record && $block_record->blockname == 'tutoring_machine') {
         $block_config = unserialize(base64_decode($block_record->configdata));
     }
 }
 
 // Basic page setup
-$PAGE->set_url('/blocks/chatbot/simple_context.php', array('courseid' => $courseid, 'blockid' => $blockid));
+$PAGE->set_url('/blocks/tutoring_machine/simple_context.php', array('courseid' => $courseid, 'blockid' => $blockid));
 $PAGE->set_context($context);
-$PAGE->set_heading(get_string('pluginname', 'block_chatbot') . ': ' . $course->fullname);
-$PAGE->set_title(get_string('contextsources', 'block_chatbot'));
+$PAGE->set_heading(get_string('pluginname', 'block_tutoring_machine') . ': ' . $course->fullname);
+$PAGE->set_title(get_string('contextsources', 'block_tutoring_machine'));
 
 // Output page
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('contextsources', 'block_chatbot'));
+echo $OUTPUT->heading(get_string('contextsources', 'block_tutoring_machine'));
 
 // Display the active context sources
-require_once($CFG->dirroot . '/blocks/chatbot/classes/content_extractor.php');
+require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/content_extractor.php');
 
 // Kursmodule laden (für die selektive Aktivitätsauswahl)
 $modinfo = get_fast_modinfo($course);
@@ -201,7 +201,7 @@ echo html_writer::div('Vollständiger API-Kontext', 'card-header');
 echo html_writer::start_div('card-body');
 
 // Zeige den vollständigen Kontext an, der an die API übertragen wird
-require_once($CFG->dirroot . '/blocks/chatbot/classes/content_extractor.php');
+require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/content_extractor.php');
 
 try {
     // Force cache update by adding a timestamp to URL if specific activities are enabled
@@ -209,8 +209,8 @@ try {
         $_GET['cache_buster'] = time();
     }
     
-    // Extrahiere den Kontext, wie es der Chatbot tun würde
-    $extractor = new block_chatbot_content_extractor($course->id, $block_config);
+    // Extrahiere den Kontext, wie es die Tutoring Machine tun würde
+    $extractor = new block_tutoring_machine_content_extractor($course->id, $block_config);
     $full_context = $extractor->get_context();
     
     // Informationen über die selektive Aktivitätsauswahl

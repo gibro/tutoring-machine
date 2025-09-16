@@ -1,10 +1,10 @@
-# Moodle Chatbot Block
+# Moodle Tutoring Machine Block
 
-Ein Block für Moodle, der einen KI-basierten Chatbot zur Unterstützung von Lernenden bereitstellt. Der Chatbot kann Fragen zum Kursinhalt basierend auf verschiedenen Kursressourcen beantworten.
+Ein Block für Moodle, der eine KI-basierte Tutoring Machine zur Unterstützung von Lernenden bereitstellt. Die Tutoring Machine kann Fragen zum Kursinhalt basierend auf verschiedenen Kursressourcen beantworten.
 
 ## Installation
 
-1. Entpacken Sie das Plugin in das `/blocks/chatbot`-Verzeichnis Ihrer Moodle-Installation.
+1. Entpacken Sie das Plugin in das `/blocks/tutoring_machine`-Verzeichnis Ihrer Moodle-Installation.
 2. Navigieren Sie zu "Website-Administration" > "Mitteilungen" > "Benachrichtigungen aktualisieren".
 3. Folgen Sie dem Installationsprozess und bestätigen Sie die Installation.
 
@@ -13,10 +13,10 @@ Ein Block für Moodle, der einen KI-basierten Chatbot zur Unterstützung von Ler
 Das Plugin kann über die Blockeinstellungen in jeder Kursseite konfiguriert werden:
 
 1. Schalten Sie den Bearbeitungsmodus ein.
-2. Fügen Sie den "Chatbot"-Block hinzu.
+2. Fügen Sie den "Tutoring Machine"-Block hinzu.
 3. Klicken Sie auf das Zahnrad-Symbol und wählen Sie "Block konfigurieren".
 4. Passen Sie die Einstellungen nach Bedarf an:
-   - **Chatbot-Anweisungen**: Geben Sie spezielle Anweisungen für den Chatbot ein
+   - **Tutoring Machine-Anweisungen**: Geben Sie spezielle Anweisungen für die Tutoring Machine ein
    - **Hauptfarbe**: Wählen Sie die Hauptfarbe für die Benutzeroberfläche
    - **Kontextquellen**: Wählen Sie, welche Kursressourcen als Kontext verwendet werden sollen:
      - Textseiten
@@ -36,7 +36,7 @@ Das Chat-Widget verwendet ein Standard-Logo, das Sie folgendermaßen anpassen k�
 
 2. Ersetzen Sie die Datei im Plugin-Verzeichnis:
    ```
-   /blocks/chatbot/pix/widget-logo.png
+   /blocks/tutoring_machine/pix/widget-logo.png
    ```
 
 3. Löschen Sie den Browser-Cache, damit das neue Logo angezeigt wird.
@@ -45,7 +45,7 @@ Das Chat-Widget verwendet ein Standard-Logo, das Sie folgendermaßen anpassen k�
 
 ## Globale Einstellungen
 
-Globale Einstellungen für den Chatbot können unter "Website-Administration" > "Plugins" > "Blöcke" > "Chatbot" konfiguriert werden:
+Globale Einstellungen für die Tutoring Machine können unter "Website-Administration" > "Plugins" > "Blöcke" > "Tutoring Machine" konfiguriert werden:
 
 - **Assistantname**: Der Name, der im Chat-Interface angezeigt wird
 - **OpenAI API-Schlüssel**: Ihr OpenAI API-Schlüssel für die Verbindung mit OpenAI-Modellen
@@ -56,7 +56,7 @@ Globale Einstellungen für den Chatbot können unter "Website-Administration" > 
 
 ## Unterstützte Kursressourcen
 
-Der Chatbot kann folgende Kursressourcen als Kontext verwenden:
+Die Tutoring Machine kann folgende Kursressourcen als Kontext verwenden:
 
 - Textseiten (Moodle Page-Aktivitäten)
 - Glossare und deren Einträge
@@ -65,7 +65,7 @@ Der Chatbot kann folgende Kursressourcen als Kontext verwenden:
 
 ## Sicherheitsfunktionen
 
-Der Chatbot implementiert folgende Sicherheitsfunktionen:
+Die Tutoring Machine implementiert folgende Sicherheitsfunktionen:
 
 - **Eingabevalidierung**: Alle Benutzereingaben werden geprüft und bereinigt
 - **CSRF-Schutz**: Verhinderung von Cross-Site Request Forgery durch Session-Key-Validierung
@@ -96,7 +96,7 @@ Zur Überprüfung der API-Verbindungen stehen zwei Test-Tools zur Verfügung:
 Der Kommandozeilen-Test kann über die Moodle-Wurzel ausgeführt werden:
 
 ```
-php blocks/chatbot/api_test.php [provider]
+php blocks/tutoring_machine/api_test.php [provider]
 ```
 
 Wobei `[provider]` einer der folgenden Werte sein kann:
@@ -104,14 +104,14 @@ Wobei `[provider]` einer der folgenden Werte sein kann:
 - `google` - Test nur für Google Gemini API
 - `all` - Test für alle konfigurierten APIs (Standard)
 
-Die Ergebnisse werden sowohl in der Konsole ausgegeben als auch in einer Logdatei im Verzeichnis `blocks/chatbot/logs/` gespeichert.
+Die Ergebnisse werden sowohl in der Konsole ausgegeben als auch in einer Logdatei im Verzeichnis `blocks/tutoring_machine/logs/` gespeichert.
 
 ### Web-basierter Test
 
 Der web-basierte Test kann über folgende URL aufgerufen werden:
 
 ```
-https://ihre-moodle-url/blocks/chatbot/api_test_web.php
+https://ihre-moodle-url/blocks/tutoring_machine/api_test_web.php
 ```
 
 Dieser Test bietet eine benutzerfreundliche Oberfläche zur Überprüfung der API-Verbindungen und ist nur für Administratoren im Entwicklungsmodus verfügbar.
@@ -124,14 +124,14 @@ Dieser Test bietet eine benutzerfreundliche Oberfläche zur Überprüfung der AP
 
 ## Caching-System
 
-Der Chatbot nutzt ein umfassendes Caching-System, um die Leistung zu verbessern und die Anzahl der API-Aufrufe zu reduzieren:
+Die Tutoring Machine nutzt ein umfassendes Caching-System, um die Leistung zu verbessern und die Anzahl der API-Aufrufe zu reduzieren:
 
 - **PDF-Caching**: Extrahierte PDF-Inhalte werden in der Datenbank gespeichert (TTL: 1 Woche)
 - **Kursinhalt-Caching**: Vollständiger extrahierter Kurskontext wird im Moodle Cache gespeichert (TTL: 12 Stunden)
 - **Ressourcen-Caching**: Einzelne Ressourcen (Seiten, Glossare, H5P) werden separat gecacht (TTL: 24 Stunden)
 - **Automatische Cache-Invalidierung**: Cache-Einträge werden automatisch ungültig, wenn Kursinhalte aktualisiert werden
 
-Dieses Caching-System reduziert die Verarbeitungszeit und verbessert die Reaktionsfähigkeit des Chatbots erheblich.
+Dieses Caching-System reduziert die Verarbeitungszeit und verbessert die Reaktionsfähigkeit der Tutoring Machine erheblich.
 
 ## Änderungsprotokoll
 

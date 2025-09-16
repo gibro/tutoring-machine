@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Content extractor class for Chatbot block.
+ * Content extractor class for Tutoring Machine block.
  *
- * @package    block_chatbot
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -11,7 +11,7 @@
 defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot.'/lib/modinfolib.php');
 require_once($CFG->dirroot.'/lib/filelib.php');
-require_once($CFG->dirroot.'/blocks/chatbot/lib.php');
+require_once($CFG->dirroot.'/blocks/tutoring_machine/lib.php');
 
 /**
  * Class to extract content from course resources for use as context
@@ -20,7 +20,7 @@ require_once($CFG->dirroot.'/blocks/chatbot/lib.php');
  * glossaries, PDFs, forums, etc. and provides it as a structured context for the AI.
  * It includes a robust caching system to improve performance.
  */
-class block_chatbot_content_extractor {
+class block_tutoring_machine_content_extractor {
     /** @var object $course The course object */
     private $course;
 
@@ -112,20 +112,20 @@ class block_chatbot_content_extractor {
      */
     public function get_context() {
         global $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         // Cache-Key immer generieren, unabhängig davon, ob wir ihn jetzt verwenden
-        $cache_key = block_chatbot_cache_manager::get_course_content_key($this->course->id, $this->config);
+        $cache_key = block_tutoring_machine_cache_manager::get_course_content_key($this->course->id, $this->config);
         
         // Überprüfe, ob ein Cache-Buster in der URL ist
         $skip_cache = isset($_GET['cache_buster']);
 
         if (!$skip_cache) {
             // Try to get from cache
-            $cached_context = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_COURSE, $cache_key);
+            $cached_context = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_COURSE, $cache_key);
     
             // Return cached context if it's valid
-            if ($cached_context && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_COURSE, $cache_key)) {
+            if ($cached_context && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_COURSE, $cache_key)) {
                 // Check if we need to update the information sources instructions
                 if ((strpos($cached_context, '# Internetsuche') !== false && !$this->config['use_internet']) ||
                     (strpos($cached_context, '# WICHTIG: Strikte Informationsquellen') !== false && $this->config['use_internet'])) {
@@ -153,7 +153,7 @@ class block_chatbot_content_extractor {
             $pages_context = $this->extract_text_pages();
             if (!empty($pages_context)) {
                 $sections['textpages'] = [
-                    'title' => get_string('use_textpages', 'block_chatbot'),
+                    'title' => get_string('use_textpages', 'block_tutoring_machine'),
                     'content' => $pages_context
                 ];
             }
@@ -164,7 +164,7 @@ class block_chatbot_content_extractor {
             $glossaries_context = $this->extract_glossaries();
             if (!empty($glossaries_context)) {
                 $sections['glossaries'] = [
-                    'title' => get_string('use_glossaries', 'block_chatbot'),
+                    'title' => get_string('use_glossaries', 'block_tutoring_machine'),
                     'content' => $glossaries_context
                 ];
             }
@@ -175,7 +175,7 @@ class block_chatbot_content_extractor {
             $h5p_context = $this->extract_h5p_activities();
             if (!empty($h5p_context)) {
                 $sections['h5p'] = [
-                    'title' => get_string('use_h5p', 'block_chatbot'),
+                    'title' => get_string('use_h5p', 'block_tutoring_machine'),
                     'content' => $h5p_context
                 ];
             }
@@ -186,7 +186,7 @@ class block_chatbot_content_extractor {
             $pdf_context = $this->extract_pdf_documents();
             if (!empty($pdf_context)) {
                 $sections['pdfs'] = [
-                    'title' => get_string('use_pdfs', 'block_chatbot'),
+                    'title' => get_string('use_pdfs', 'block_tutoring_machine'),
                     'content' => $pdf_context
                 ];
             }
@@ -197,7 +197,7 @@ class block_chatbot_content_extractor {
             $office_context = $this->extract_office_documents();
             if (!empty($office_context)) {
                 $sections['office'] = [
-                    'title' => get_string('use_office', 'block_chatbot'),
+                    'title' => get_string('use_office', 'block_tutoring_machine'),
                     'content' => $office_context
                 ];
             }
@@ -208,7 +208,7 @@ class block_chatbot_content_extractor {
             $forums_context = $this->extract_forum_discussions();
             if (!empty($forums_context)) {
                 $sections['forums'] = [
-                    'title' => get_string('use_forums', 'block_chatbot'),
+                    'title' => get_string('use_forums', 'block_tutoring_machine'),
                     'content' => $forums_context
                 ];
             }
@@ -219,7 +219,7 @@ class block_chatbot_content_extractor {
             $quizzes_context = $this->extract_quiz_questions();
             if (!empty($quizzes_context)) {
                 $sections['quizzes'] = [
-                    'title' => get_string('use_quizzes', 'block_chatbot'),
+                    'title' => get_string('use_quizzes', 'block_tutoring_machine'),
                     'content' => $quizzes_context
                 ];
             }
@@ -230,7 +230,7 @@ class block_chatbot_content_extractor {
             $books_context = $this->extract_book_chapters();
             if (!empty($books_context)) {
                 $sections['books'] = [
-                    'title' => get_string('use_books', 'block_chatbot'),
+                    'title' => get_string('use_books', 'block_tutoring_machine'),
                     'content' => $books_context
                 ];
             }
@@ -241,7 +241,7 @@ class block_chatbot_content_extractor {
             $assignments_context = $this->extract_assignments();
             if (!empty($assignments_context)) {
                 $sections['assignments'] = [
-                    'title' => get_string('use_assignments', 'block_chatbot'),
+                    'title' => get_string('use_assignments', 'block_tutoring_machine'),
                     'content' => $assignments_context
                 ];
             }
@@ -252,7 +252,7 @@ class block_chatbot_content_extractor {
             $labels_context = $this->extract_labels();
             if (!empty($labels_context)) {
                 $sections['labels'] = [
-                    'title' => get_string('use_labels', 'block_chatbot'),
+                    'title' => get_string('use_labels', 'block_tutoring_machine'),
                     'content' => $labels_context
                 ];
             }
@@ -263,7 +263,7 @@ class block_chatbot_content_extractor {
             $urls_context = $this->extract_urls();
             if (!empty($urls_context)) {
                 $sections['urls'] = [
-                    'title' => get_string('use_urls', 'block_chatbot'),
+                    'title' => get_string('use_urls', 'block_tutoring_machine'),
                     'content' => $urls_context
                 ];
             }
@@ -274,7 +274,7 @@ class block_chatbot_content_extractor {
             $lessons_context = $this->extract_lessons();
             if (!empty($lessons_context)) {
                 $sections['lessons'] = [
-                    'title' => get_string('use_lessons', 'block_chatbot'),
+                    'title' => get_string('use_lessons', 'block_tutoring_machine'),
                     'content' => $lessons_context
                 ];
             }
@@ -316,7 +316,7 @@ class block_chatbot_content_extractor {
         }
 
         // Cache the generated contex
-        block_chatbot_cache_manager::set(block_chatbot_cache_manager::CACHE_TYPE_COURSE, $cache_key, $context);
+        block_tutoring_machine_cache_manager::set(block_tutoring_machine_cache_manager::CACHE_TYPE_COURSE, $cache_key, $context);
 
         return $context;
     }
@@ -374,7 +374,7 @@ class block_chatbot_content_extractor {
      */
     private function extract_text_pages() {
         global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         $pages_context = '';
 
@@ -385,11 +385,11 @@ class block_chatbot_content_extractor {
             }
 
             // Check cache firs
-            $cache_key = block_chatbot_cache_manager::get_page_content_key($page_instance->instance);
-            $cached_content = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_PAGE, $cache_key);
+            $cache_key = block_tutoring_machine_cache_manager::get_page_content_key($page_instance->instance);
+            $cached_content = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_PAGE, $cache_key);
 
             // If valid cache exists, use i
-            if ($cached_content && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_PAGE, $cache_key)) {
+            if ($cached_content && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_PAGE, $cache_key)) {
                 $pages_context .= $cached_content;
                 continue;
             }
@@ -402,9 +402,9 @@ class block_chatbot_content_extractor {
                 $page_content .= strip_tags($page->content) . "\n\n";
 
                 // Store in cache
-                block_chatbot_cache_manager::set(
-                    block_chatbot_cache_manager::CACHE_TYPE_PAGE,
-                    block_chatbot_cache_manager::get_page_content_key($page->id),
+                block_tutoring_machine_cache_manager::set(
+                    block_tutoring_machine_cache_manager::CACHE_TYPE_PAGE,
+                    block_tutoring_machine_cache_manager::get_page_content_key($page->id),
                     $page_content,
                     ['timemodified' => $page->timemodified]
                 );
@@ -424,7 +424,7 @@ class block_chatbot_content_extractor {
      */
     private function extract_glossaries() {
         global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         $glossaries_context = '';
 
@@ -435,11 +435,11 @@ class block_chatbot_content_extractor {
             }
 
             // Check cache firs
-            $cache_key = block_chatbot_cache_manager::get_glossary_content_key($glossary_instance->instance);
-            $cached_content = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_GLOSSARY, $cache_key);
+            $cache_key = block_tutoring_machine_cache_manager::get_glossary_content_key($glossary_instance->instance);
+            $cached_content = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_GLOSSARY, $cache_key);
 
             // If valid cache exists, use i
-            if ($cached_content && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_GLOSSARY, $cache_key)) {
+            if ($cached_content && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_GLOSSARY, $cache_key)) {
                 $glossaries_context .= $cached_content;
                 continue;
             }
@@ -461,9 +461,9 @@ class block_chatbot_content_extractor {
                 $glossary_content .= "\n";
 
                 // Store in cache with timemodified and entry count as metadata
-                block_chatbot_cache_manager::set(
-                    block_chatbot_cache_manager::CACHE_TYPE_GLOSSARY,
-                    block_chatbot_cache_manager::get_glossary_content_key($glossary->id),
+                block_tutoring_machine_cache_manager::set(
+                    block_tutoring_machine_cache_manager::CACHE_TYPE_GLOSSARY,
+                    block_tutoring_machine_cache_manager::get_glossary_content_key($glossary->id),
                     $glossary_content,
                     [
                         'timemodified' => $glossary->timemodified,
@@ -486,7 +486,7 @@ class block_chatbot_content_extractor {
      */
     private function extract_h5p_activities() {
         global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         $h5p_context = '';
 
@@ -517,11 +517,11 @@ class block_chatbot_content_extractor {
             }
 
             // Check cache firs
-            $cache_key = block_chatbot_cache_manager::get_h5p_content_key($h5p_instance->instance);
-            $cached_content = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_H5P, $cache_key);
+            $cache_key = block_tutoring_machine_cache_manager::get_h5p_content_key($h5p_instance->instance);
+            $cached_content = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_H5P, $cache_key);
 
             // If valid cache exists, use i
-            if ($cached_content && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_H5P, $cache_key)) {
+            if ($cached_content && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_H5P, $cache_key)) {
                 $h5p_context .= $cached_content;
                 continue;
             }
@@ -572,9 +572,9 @@ class block_chatbot_content_extractor {
                 $h5p_content .= "\n";
 
                 // Store in cache with timemodified as metadata
-                block_chatbot_cache_manager::set(
-                    block_chatbot_cache_manager::CACHE_TYPE_H5P,
-                    block_chatbot_cache_manager::get_h5p_content_key($h5p->id),
+                block_tutoring_machine_cache_manager::set(
+                    block_tutoring_machine_cache_manager::CACHE_TYPE_H5P,
+                    block_tutoring_machine_cache_manager::get_h5p_content_key($h5p->id),
                     $h5p_content,
                     [
                         'timemodified' => $h5p->timemodified
@@ -665,15 +665,15 @@ class block_chatbot_content_extractor {
      */
     private function extract_pdf_content($file) {
         global $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         // Check cache firs
         $content_hash = $file->get_contenthash();
         $timemodified = $file->get_timemodified();
 
         // Try to get from cache using the cache manager
-        $cache_key = block_chatbot_cache_manager::get_pdf_content_key($content_hash);
-        $cached_item = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_PDF, $cache_key);
+        $cache_key = block_tutoring_machine_cache_manager::get_pdf_content_key($content_hash);
+        $cached_item = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_PDF, $cache_key);
 
         if ($cached_item) {
             // Check if cache is valid (not expired and file hasn't been modified)
@@ -690,7 +690,7 @@ class block_chatbot_content_extractor {
         error_log("Extracting content from PDF " . $file->get_filename());
 
         // Create a temporary file to save the PDF
-        $tempdir = $CFG->tempdir . '/chatbot';
+        $tempdir = $CFG->tempdir . '/tutoring_machine';
         if (!is_dir($tempdir)) {
             mkdir($tempdir, 0777, true);
         }
@@ -727,9 +727,9 @@ class block_chatbot_content_extractor {
                     'filename' => $file->get_filename()
                 ];
 
-                block_chatbot_cache_manager::set(
-                    block_chatbot_cache_manager::CACHE_TYPE_PDF,
-                    block_chatbot_cache_manager::get_pdf_content_key($content_hash),
+                block_tutoring_machine_cache_manager::set(
+                    block_tutoring_machine_cache_manager::CACHE_TYPE_PDF,
+                    block_tutoring_machine_cache_manager::get_pdf_content_key($content_hash),
                     $text,
                     $metadata
                 );
@@ -972,15 +972,15 @@ class block_chatbot_content_extractor {
      */
     private function extract_office_content($file, $doc_type) {
         global $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         // Check cache first
         $content_hash = $file->get_contenthash();
         $timemodified = $file->get_timemodified();
         
         // Try to get from cache using the cache manager
-        $cache_key = block_chatbot_cache_manager::get_office_content_key($content_hash, $doc_type);
-        $cached_item = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_OFFICE, $cache_key);
+        $cache_key = block_tutoring_machine_cache_manager::get_office_content_key($content_hash, $doc_type);
+        $cached_item = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_OFFICE, $cache_key);
 
         if ($cached_item && is_array($cached_item)) {
             // Check if cache is valid (not expired and file hasn't been modified)
@@ -999,7 +999,7 @@ class block_chatbot_content_extractor {
         error_log("Extracting content from Office document " . $file->get_filename());
 
         // Create a temporary file to save the document
-        $tempdir = $CFG->tempdir . '/chatbot';
+        $tempdir = $CFG->tempdir . '/tutoring_machine';
         if (!is_dir($tempdir)) {
             mkdir($tempdir, 0777, true);
         }
@@ -1037,8 +1037,8 @@ class block_chatbot_content_extractor {
                     'filename' => $file->get_filename()
                 ];
 
-                block_chatbot_cache_manager::set(
-                    block_chatbot_cache_manager::CACHE_TYPE_OFFICE,
+                block_tutoring_machine_cache_manager::set(
+                    block_tutoring_machine_cache_manager::CACHE_TYPE_OFFICE,
                     $cache_key,
                     $text,
                     $metadata
@@ -1357,7 +1357,7 @@ class block_chatbot_content_extractor {
             if (function_exists('exec')) {
                 if (is_readable($tempfile)) {
                     // Create a temporary directory for the converted file
-                    $tempoutdir = sys_get_temp_dir() . '/chatbot_' . uniqid();
+                    $tempoutdir = sys_get_temp_dir() . '/tutoring_machine_' . uniqid();
                     if (mkdir($tempoutdir)) {
                         error_log("Created temp directory for LibreOffice output: " . $tempoutdir);
                         
@@ -1592,7 +1592,7 @@ class block_chatbot_content_extractor {
      */
     private function extract_forum_discussions() {
         global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         $forum_context = '';
 
@@ -1622,11 +1622,11 @@ class block_chatbot_content_extractor {
             }
 
             // Check cache firs
-            $cache_key = block_chatbot_cache_manager::get_generic_content_key('forum', $forum_instance->instance);
-            $cached_content = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key);
+            $cache_key = block_tutoring_machine_cache_manager::get_generic_content_key('forum', $forum_instance->instance);
+            $cached_content = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key);
 
             // If valid cache exists, use i
-            if ($cached_content && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
+            if ($cached_content && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
                 $forum_context .= $cached_content;
                 continue;
             }
@@ -1671,8 +1671,8 @@ class block_chatbot_content_extractor {
                 $forum_content .= "\n";
 
                 // Store in cache
-                block_chatbot_cache_manager::set(
-                    block_chatbot_cache_manager::CACHE_TYPE_MISC,
+                block_tutoring_machine_cache_manager::set(
+                    block_tutoring_machine_cache_manager::CACHE_TYPE_MISC,
                     $cache_key,
                     $forum_content,
                     [
@@ -1696,7 +1696,7 @@ class block_chatbot_content_extractor {
      */
     private function extract_quiz_questions() {
         global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         $quiz_context = '';
 
@@ -1726,11 +1726,11 @@ class block_chatbot_content_extractor {
             }
 
             // Check cache firs
-            $cache_key = block_chatbot_cache_manager::get_generic_content_key('quiz', $quiz_instance->instance);
-            $cached_content = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key);
+            $cache_key = block_tutoring_machine_cache_manager::get_generic_content_key('quiz', $quiz_instance->instance);
+            $cached_content = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key);
 
             // If valid cache exists, use i
-            if ($cached_content && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
+            if ($cached_content && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
                 $quiz_context .= $cached_content;
                 continue;
             }
@@ -1783,8 +1783,8 @@ class block_chatbot_content_extractor {
                 $quiz_content .= "\n";
 
                 // Store in cache
-                block_chatbot_cache_manager::set(
-                    block_chatbot_cache_manager::CACHE_TYPE_MISC,
+                block_tutoring_machine_cache_manager::set(
+                    block_tutoring_machine_cache_manager::CACHE_TYPE_MISC,
                     $cache_key,
                     $quiz_content,
                     [
@@ -1808,7 +1808,7 @@ class block_chatbot_content_extractor {
      */
     private function extract_book_chapters() {
         global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         $book_context = '';
 
@@ -1838,11 +1838,11 @@ class block_chatbot_content_extractor {
             }
 
             // Check cache firs
-            $cache_key = block_chatbot_cache_manager::get_generic_content_key('book', $book_instance->instance);
-            $cached_content = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key);
+            $cache_key = block_tutoring_machine_cache_manager::get_generic_content_key('book', $book_instance->instance);
+            $cached_content = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key);
 
             // If valid cache exists, use i
-            if ($cached_content && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
+            if ($cached_content && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
                 $book_context .= $cached_content;
                 continue;
             }
@@ -1880,8 +1880,8 @@ class block_chatbot_content_extractor {
                 }
 
                 // Store in cache
-                block_chatbot_cache_manager::set(
-                    block_chatbot_cache_manager::CACHE_TYPE_MISC,
+                block_tutoring_machine_cache_manager::set(
+                    block_tutoring_machine_cache_manager::CACHE_TYPE_MISC,
                     $cache_key,
                     $book_content,
                     [
@@ -1905,7 +1905,7 @@ class block_chatbot_content_extractor {
      */
     private function extract_assignments() {
         global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         $assignments_context = '';
 
@@ -1935,11 +1935,11 @@ class block_chatbot_content_extractor {
             }
 
             // Check cache firs
-            $cache_key = block_chatbot_cache_manager::get_generic_content_key('assign', $assign_instance->instance);
-            $cached_content = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key);
+            $cache_key = block_tutoring_machine_cache_manager::get_generic_content_key('assign', $assign_instance->instance);
+            $cached_content = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key);
 
             // If valid cache exists, use i
-            if ($cached_content && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
+            if ($cached_content && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
                 $assignments_context .= $cached_content;
                 continue;
             }
@@ -1966,8 +1966,8 @@ class block_chatbot_content_extractor {
                 $assign_content .= "\n";
 
                 // Store in cache
-                block_chatbot_cache_manager::set(
-                    block_chatbot_cache_manager::CACHE_TYPE_MISC,
+                block_tutoring_machine_cache_manager::set(
+                    block_tutoring_machine_cache_manager::CACHE_TYPE_MISC,
                     $cache_key,
                     $assign_content,
                     [
@@ -1990,7 +1990,7 @@ class block_chatbot_content_extractor {
      */
     private function extract_labels() {
         global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         $labels_context = '';
 
@@ -2043,11 +2043,11 @@ class block_chatbot_content_extractor {
 
             foreach ($section['labels'] as $label_instance) {
                 // Check cache firs
-                $cache_key = block_chatbot_cache_manager::get_generic_content_key('label', $label_instance->instance);
-                $cached_content = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key);
+                $cache_key = block_tutoring_machine_cache_manager::get_generic_content_key('label', $label_instance->instance);
+                $cached_content = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key);
 
                 // If valid cache exists, use i
-                if ($cached_content && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
+                if ($cached_content && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
                     $section_content .= $cached_content;
                     continue;
                 }
@@ -2059,8 +2059,8 @@ class block_chatbot_content_extractor {
                     $label_content = "- Hinweis: " . strip_tags($label->intro) . "\n";
 
                     // Store in cache
-                    block_chatbot_cache_manager::set(
-                        block_chatbot_cache_manager::CACHE_TYPE_MISC,
+                    block_tutoring_machine_cache_manager::set(
+                        block_tutoring_machine_cache_manager::CACHE_TYPE_MISC,
                         $cache_key,
                         $label_content,
                         [
@@ -2087,7 +2087,7 @@ class block_chatbot_content_extractor {
      */
     private function extract_urls() {
         global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         $urls_context = '';
 
@@ -2140,11 +2140,11 @@ class block_chatbot_content_extractor {
 
             foreach ($section['urls'] as $url_instance) {
                 // Check cache firs
-                $cache_key = block_chatbot_cache_manager::get_generic_content_key('url', $url_instance->instance);
-                $cached_content = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key);
+                $cache_key = block_tutoring_machine_cache_manager::get_generic_content_key('url', $url_instance->instance);
+                $cached_content = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key);
 
                 // If valid cache exists, use i
-                if ($cached_content && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
+                if ($cached_content && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
                     $section_content .= $cached_content;
                     continue;
                 }
@@ -2161,8 +2161,8 @@ class block_chatbot_content_extractor {
                     }
 
                     // Store in cache
-                    block_chatbot_cache_manager::set(
-                        block_chatbot_cache_manager::CACHE_TYPE_MISC,
+                    block_tutoring_machine_cache_manager::set(
+                        block_tutoring_machine_cache_manager::CACHE_TYPE_MISC,
                         $cache_key,
                         $url_content,
                         [
@@ -2189,7 +2189,7 @@ class block_chatbot_content_extractor {
      */
     private function extract_lessons() {
         global $DB, $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
         $lessons_context = '';
 
@@ -2219,11 +2219,11 @@ class block_chatbot_content_extractor {
             }
 
             // Check cache firs
-            $cache_key = block_chatbot_cache_manager::get_generic_content_key('lesson', $lesson_instance->instance);
-            $cached_content = block_chatbot_cache_manager::get(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key);
+            $cache_key = block_tutoring_machine_cache_manager::get_generic_content_key('lesson', $lesson_instance->instance);
+            $cached_content = block_tutoring_machine_cache_manager::get(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key);
 
             // If valid cache exists, use i
-            if ($cached_content && block_chatbot_cache_manager::is_valid(block_chatbot_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
+            if ($cached_content && block_tutoring_machine_cache_manager::is_valid(block_tutoring_machine_cache_manager::CACHE_TYPE_MISC, $cache_key)) {
                 $lessons_context .= $cached_content;
                 continue;
             }
@@ -2270,8 +2270,8 @@ class block_chatbot_content_extractor {
                 $lesson_content .= "\n";
 
                 // Store in cache
-                block_chatbot_cache_manager::set(
-                    block_chatbot_cache_manager::CACHE_TYPE_MISC,
+                block_tutoring_machine_cache_manager::set(
+                    block_tutoring_machine_cache_manager::CACHE_TYPE_MISC,
                     $cache_key,
                     $lesson_content,
                     [

@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Direct API test for Chatbot block.
+ * Direct API test for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -14,10 +14,10 @@ require_login();
 require_capability('moodle/site:config', context_system::instance());
 
 // Include API client class
-require_once($CFG->dirroot . '/blocks/chatbot/classes/api_client.php');
+require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/api_client.php');
 
 // Get API key from configuration
-$config = get_config('block_chatbot');
+$config = get_config('block_tutoring_machine');
 $api_key = isset($config->openai_apikey) ? $config->openai_apikey : '';
 
 if (empty($api_key)) {
@@ -99,7 +99,7 @@ echo "<pre>";
 
 try {
     // Create API clien
-    $client = new block_chatbot_openai_client($api_key);
+    $client = new block_tutoring_machine_openai_client($api_key);
     $client->set_model('gpt-3.5-turbo');
     $client->set_max_tokens(20);
 

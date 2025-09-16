@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Analytics manager for Chatbot block.
+ * Analytics manager for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -11,12 +11,12 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Class to manage teaching analytics for the chatbot.
+ * Class to manage teaching analytics for the Tutoring Machine.
  *
  * This class handles the storage, retrieval, and analysis of anonymized
  * user queries for teaching analytics purposes.
  */
-class block_chatbot_analytics_manager {
+class block_tutoring_machine_analytics_manager {
     /** @var int $courseid The course ID */
     protected $courseid;
 
@@ -113,7 +113,7 @@ class block_chatbot_analytics_manager {
 
         // Insert the record
         try {
-            $DB->insert_record('block_chatbot_analytics', $record);
+            $DB->insert_record('block_tutoring_machine_analytics', $record);
             return true;
         } catch (Exception $e) {
             debugging('Error logging query for analytics: ' . $e->getMessage(), DEBUG_DEVELOPER);
@@ -147,7 +147,7 @@ class block_chatbot_analytics_manager {
         $time_threshold = time() - ($days * 24 * 60 * 60);
 
         // Get total number of queries
-        $sql = "SELECT COUNT(*) FROM {block_chatbot_analytics}
+        $sql = "SELECT COUNT(*) FROM {block_tutoring_machine_analytics}
                 WHERE courseid = :courseid AND blockinstanceid = :blockinstanceid
                 AND timecreated > :timethreshold";
         $params = array(
@@ -160,7 +160,7 @@ class block_chatbot_analytics_manager {
 
         // Get most common queries
         $sql = "SELECT query, COUNT(*) as count
-                FROM {block_chatbot_analytics}
+                FROM {block_tutoring_machine_analytics}
                 WHERE courseid = :courseid AND blockinstanceid = :blockinstanceid
                 AND timecreated > :timethreshold
                 GROUP BY query
@@ -177,7 +177,7 @@ class block_chatbot_analytics_manager {
 
         // Get query types distribution
         $sql = "SELECT querytype, COUNT(*) as count
-                FROM {block_chatbot_analytics}
+                FROM {block_tutoring_machine_analytics}
                 WHERE courseid = :courseid AND blockinstanceid = :blockinstanceid
                 AND timecreated > :timethreshold AND querytype IS NOT NULL
                 GROUP BY querytype
@@ -209,7 +209,7 @@ class block_chatbot_analytics_manager {
             'timethreshold' => $time_threshold
         );
 
-        $sql = "DELETE FROM {block_chatbot_analytics}
+        $sql = "DELETE FROM {block_tutoring_machine_analytics}
                 WHERE courseid = :courseid AND blockinstanceid = :blockinstanceid
                 AND timecreated < :timethreshold";
 

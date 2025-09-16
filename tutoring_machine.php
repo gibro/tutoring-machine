@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * AJAX handler for the Chatbot block.
+ * AJAX handler for the Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -37,14 +37,14 @@ if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
 // Stricter implementation to require sesskey for all requests
 if (!isset($_POST['sesskey']) && !isset($_GET['sesskey'])) {
     header('HTTP/1.0 403 Forbidden');
-    $error = ['error' => true, 'message' => get_string('csrfcheck', 'block_chatbot')];
+    $error = ['error' => true, 'message' => get_string('csrfcheck', 'block_tutoring_machine')];
     echo json_encode($error);
     exit;
 }
 
 if (!confirm_sesskey()) {
     header('HTTP/1.0 403 Forbidden');
-    $error = ['error' => true, 'message' => get_string('csrfcheck', 'block_chatbot')];
+    $error = ['error' => true, 'message' => get_string('csrfcheck', 'block_tutoring_machine')];
     echo json_encode($error);
     exit;
 }
@@ -53,10 +53,10 @@ defined('MOODLE_INTERNAL') || die();
 
 try {
     // Get and validate request parameters
-    $message = block_chatbot_message_processor::get_message_from_request();
-    $conversation_history = block_chatbot_message_processor::get_conversation_history_from_request();
-    $course_id = block_chatbot_message_processor::get_course_id_from_request();
-    $block_id = block_chatbot_message_processor::get_block_id_from_request();
+    $message = block_tutoring_machine_message_processor::get_message_from_request();
+    $conversation_history = block_tutoring_machine_message_processor::get_conversation_history_from_request();
+    $course_id = block_tutoring_machine_message_processor::get_course_id_from_request();
+    $block_id = block_tutoring_machine_message_processor::get_block_id_from_request();
 
     // Validate the message
     if (empty($message)) {
@@ -69,7 +69,7 @@ try {
     }
 
     // Get metaprompt if available for this block instance
-    $metaprompt = block_chatbot_message_processor::get_metaprompt($block_id);
+    $metaprompt = block_tutoring_machine_message_processor::get_metaprompt($block_id);
 
     // Get API keys from plugin settings
     $api_key = get_api_key();
@@ -87,13 +87,13 @@ try {
             if (!empty($block_id)) {
                 global $DB;
                 $block_record = $DB->get_record('block_instances', ['id' => $block_id], '*');
-                if ($block_record && $block_record->blockname === 'chatbot') {
+                if ($block_record && $block_record->blockname === 'tutoring_machine') {
                     $block_config = unserialize(base64_decode($block_record->configdata));
                 }
             }
 
             // Extract course conten
-            $extractor = new block_chatbot_content_extractor($course_id, $block_config);
+            $extractor = new block_tutoring_machine_content_extractor($course_id, $block_config);
             $course_content = $extractor->get_context();
 
             if (!empty($course_content)) {
@@ -200,7 +200,7 @@ try {
     ];
 
     // Get system configuration
-    $config = get_config('block_chatbot');
+    $config = get_config('block_tutoring_machine');
 
     // Get model to use (block settings override global settings)
     $model_to_use = !empty($config->default_model) ? $config->default_model : 'openai:gpt-4o';
@@ -209,7 +209,7 @@ try {
     if (!empty($block_id)) {
         global $DB;
         $block_record = $DB->get_record('block_instances', ['id' => $block_id], '*');
-        if ($block_record && $block_record->blockname === 'chatbot') {
+        if ($block_record && $block_record->blockname === 'tutoring_machine') {
             $block_config = unserialize(base64_decode($block_record->configdata));
             if (!empty($block_config->ai_model)) {
                 $model_to_use = $block_config->ai_model;
@@ -223,10 +223,10 @@ try {
         error_log("[CHATBOT DEBUG] Using model: " . $model_to_use);
         error_log("[CHATBOT DEBUG] API key length: " . (strlen($api_key) > 0 ? strlen($api_key) : "Empty"));
 
-        $client = block_chatbot_api_client::create($api_key, $model_to_use);
+        $client = block_tutoring_machine_api_client::create($api_key, $model_to_use);
     } catch (Exception $e) {
         error_log("[CHATBOT ERROR] Failed to create API client: " . $e->getMessage());
-        throw new moodle_exception('apiconnectionerror', 'block_chatbot');
+        throw new moodle_exception('apiconnectionerror', 'block_tutoring_machine');
     }
 
     // Set parameters if configured
@@ -264,17 +264,17 @@ try {
         // Check for errors
         if ($response_text === false) {
             error_log("[CHATBOT ERROR] API returned false response");
-            throw new moodle_exception('apiconnectionerror', 'block_chatbot');
+            throw new moodle_exception('apiconnectionerror', 'block_tutoring_machine');
         }
     } catch (Exception $e) {
         error_log("[CHATBOT ERROR] Exception during API request: " . $e->getMessage());
-        throw new moodle_exception('apiconnectionerror', 'block_chatbot');
+        throw new moodle_exception('apiconnectionerror', 'block_tutoring_machine');
     }
 
     // Process and truncate response
     try {
         error_log("[CHATBOT DEBUG] Processing response text (length: " . strlen($response_text) . ")");
-        $processor = new block_chatbot_message_processor($response_text);
+        $processor = new block_tutoring_machine_message_processor($response_text);
         $processor->truncate_response();
         $response_text = $processor->get_response_text();
         $last_message = $processor->get_assistant_message();
@@ -312,34 +312,34 @@ try {
     if (!empty($course_id) && !empty($block_id)) {
         try {
             require_once(__DIR__ . '/classes/analytics_logger.php');
-            block_chatbot_analytics_logger::log_query($message, $course_id, $block_id, $model_to_use);
+            block_tutoring_machine_analytics_logger::log_query($message, $course_id, $block_id, $model_to_use);
         } catch (Exception $analytics_error) {
             // Just log the error but don't interrupt the main flow
         }
     }
 
     // Send response
-    block_chatbot_message_processor::send_response($response_text, $last_message);
+    block_tutoring_machine_message_processor::send_response($response_text, $last_message);
 
 } catch (moodle_exception $e) {
     // For critical errors, keep minimal logging
-    error_log("Chatbot error: " . $e->getMessage());
+    error_log("Tutoring Machine error: " . $e->getMessage());
 
     // Provide more helpful error message based on error type
     $error_type = $e->getMessage();
 
     if ($error_type === 'apiconnectionerror') {
-        block_chatbot_message_processor::send_response("Es tut mir leid, aber die Verbindung zum KI-Dienst konnte nicht hergestellt werden. Bitte überprüfe die API-Schlüssel in den Einstellungen und ob die ausgewählte KI (OpenAI, Google, Anthropic) verfügbar ist. Details für Administratoren wurden in die Moodle-Logs geschrieben.");
+        block_tutoring_machine_message_processor::send_response("Es tut mir leid, aber die Verbindung zum KI-Dienst konnte nicht hergestellt werden. Bitte überprüfe die API-Schlüssel in den Einstellungen und ob die ausgewählte KI (OpenAI, Google, Anthropic) verfügbar ist. Details für Administratoren wurden in die Moodle-Logs geschrieben.");
     } else if ($error_type === 'noapikey') {
-        block_chatbot_message_processor::send_response("Es wurde kein API-Schlüssel für den ausgewählten KI-Dienst konfiguriert. Bitte kontaktiere den Administrator, um den API-Schlüssel für den gewählten Anbieter einzurichten.");
+        block_tutoring_machine_message_processor::send_response("Es wurde kein API-Schlüssel für den ausgewählten KI-Dienst konfiguriert. Bitte kontaktiere den Administrator, um den API-Schlüssel für den gewählten Anbieter einzurichten.");
     } else {
-        block_chatbot_message_processor::send_response("Es tut mir leid, aber ich konnte deine Anfrage nicht verarbeiten: " . $e->getMessage() . "\n\nBitte kontaktiere den Administrator, wenn dieser Fehler weiterhin auftritt.");
+        block_tutoring_machine_message_processor::send_response("Es tut mir leid, aber ich konnte deine Anfrage nicht verarbeiten: " . $e->getMessage() . "\n\nBitte kontaktiere den Administrator, wenn dieser Fehler weiterhin auftritt.");
     }
     exit;
 } catch (Exception $e) {
     // For unexpected errors, keep minimal logging
-    error_log("Unexpected error in chatbot: " . $e->getMessage());
-    block_chatbot_message_processor::send_response("Es tut mir leid, aber ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später noch einmal oder kontaktiere den Administrator. Details für Administratoren wurden in die Moodle-Logs geschrieben.");
+    error_log("Unexpected error in Tutoring Machine: " . $e->getMessage());
+    block_tutoring_machine_message_processor::send_response("Es tut mir leid, aber ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später noch einmal oder kontaktiere den Administrator. Details für Administratoren wurden in die Moodle-Logs geschrieben.");
     exit;
 }
 
@@ -351,7 +351,7 @@ try {
  */
 function get_api_key() {
     // Get configuration
-    $config = get_config('block_chatbot');
+    $config = get_config('block_tutoring_machine');
 
     // Get the default provider
     $default_provider = isset($config->default_provider) ? $config->default_provider : 'openai';
@@ -394,7 +394,7 @@ function get_api_key() {
     }
 
     // If still no key available, throw exception
-    throw new moodle_exception('noapikey', 'block_chatbot');
+    throw new moodle_exception('noapikey', 'block_tutoring_machine');
 }
 
 /**
@@ -414,22 +414,22 @@ function check_rate_limit() {
     $now = time();
 
     // Initialize request history in session if not se
-    if (!isset($SESSION->chatbot_requests)) {
-        $SESSION->chatbot_requests = [];
+    if (!isset($SESSION->tutoring_machine_requests)) {
+        $SESSION->tutoring_machine_requests = [];
     }
 
     // Remove old requests outside the time window
-    $SESSION->chatbot_requests = array_filter($SESSION->chatbot_requests, function($timestamp) use ($now, $time_window) {
+    $SESSION->tutoring_machine_requests = array_filter($SESSION->tutoring_machine_requests, function($timestamp) use ($now, $time_window) {
         return ($now - $timestamp) < $time_window;
     });
 
     // Check if user has exceeded rate limi
-    if (count($SESSION->chatbot_requests) >= $max_requests) {
+    if (count($SESSION->tutoring_machine_requests) >= $max_requests) {
         return false;
     }
 
     // Add current request to the lis
-    $SESSION->chatbot_requests[] = $now;
+    $SESSION->tutoring_machine_requests[] = $now;
 
     return true;
 }

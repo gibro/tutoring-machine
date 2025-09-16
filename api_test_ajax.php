@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * AJAX handler for API test script for Chatbot block.
+ * AJAX handler for API test script for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -19,7 +19,7 @@ require_capability('moodle/site:config', context_system::instance());
 // }
 
 // Include API client class
-require_once($CFG->dirroot . '/blocks/chatbot/classes/api_client.php');
+require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/api_client.php');
 
 // Get provider parameter
 $provider = required_param('provider', PARAM_ALPHA);
@@ -28,7 +28,7 @@ $provider = required_param('provider', PARAM_ALPHA);
 header('Content-Type: application/json');
 
 // Get API keys from Moodle config
-$config = get_config('block_chatbot');
+$config = get_config('block_tutoring_machine');
 
 // Test messages to send to the APIs
 $test_messages = [
@@ -49,7 +49,7 @@ switch ($provider) {
             echo json_encode(['success' => false, 'error' => 'OpenAI API key is not configured']);
         } else {
             try {
-                $client = new block_chatbot_openai_client($config->openai_apikey);
+                $client = new block_tutoring_machine_openai_client($config->openai_apikey);
                 $client->set_model('gpt-4o');
                 $client->set_max_tokens(100);
                 $client->set_temperature(0.7);
@@ -72,7 +72,7 @@ switch ($provider) {
             echo json_encode(['success' => false, 'error' => 'Google API key is not configured']);
         } else {
             try {
-                $client = new block_chatbot_google_client($config->google_apikey);
+                $client = new block_tutoring_machine_google_client($config->google_apikey);
                 $client->set_model('gemini-1.5-pro');
                 $client->set_max_tokens(100);
                 $client->set_temperature(0.7);

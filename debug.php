@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Debugging tool for Chatbot block
+ * Debugging tool for Tutoring Machine block
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -13,7 +13,7 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Diagnostic functions for Chatbo
  */
-class block_chatbot_diagnostics {
+class block_tutoring_machine_diagnostics {
     /** @var string $log_file Path to the log file */
     private static $log_file = null;
 
@@ -29,7 +29,7 @@ class block_chatbot_diagnostics {
 
         // Create or truncate log file
         self::$log_file = $log_dir . '/debug_' . date('Y-m-d_H-i-s') . '.log';
-        file_put_contents(self::$log_file, "=== Chatbot Debug Log ===\n" . date('Y-m-d H:i:s') . "\n\n");
+        file_put_contents(self::$log_file, "=== Tutoring Machine Debug Log ===\n" . date('Y-m-d H:i:s') . "\n\n");
     }
 
     /**
@@ -60,7 +60,7 @@ class block_chatbot_diagnostics {
      */
     public static function test_api_connectivity() {
         global $CFG;
-        require_once($CFG->dirroot . '/blocks/chatbot/classes/api_client.php');
+        require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/api_client.php');
 
         $results = [
             'openai' => ['status' => 'Not tested', 'message' => ''],
@@ -69,13 +69,13 @@ class block_chatbot_diagnostics {
         ];
 
         // Get configuration
-        $config = get_config('block_chatbot');
+        $config = get_config('block_tutoring_machine');
 
         // Test OpenAI connectivity
         if (!empty($config->openai_apikey)) {
             self::log("Testing OpenAI API connectivity...");
             try {
-                $client = new block_chatbot_openai_client($config->openai_apikey);
+                $client = new block_tutoring_machine_openai_client($config->openai_apikey);
                 $client->set_model('gpt-4o');
                 $client->set_max_tokens(50);
 
@@ -111,7 +111,7 @@ class block_chatbot_diagnostics {
         if (!empty($config->google_apikey)) {
             self::log("Testing Google Gemini API connectivity...");
             try {
-                $client = new block_chatbot_google_client($config->google_apikey);
+                $client = new block_tutoring_machine_google_client($config->google_apikey);
                 $client->set_model('gemini-2.5-pro');
                 $client->set_max_tokens(50);
 
@@ -157,7 +157,7 @@ class block_chatbot_diagnostics {
      * @return array Configuration details
      */
     public static function get_configuration() {
-        $config = get_config('block_chatbot');
+        $config = get_config('block_tutoring_machine');
 
         // Mask API keys for security
         $masked_config = clone $config;
@@ -255,29 +255,29 @@ if (PHP_SAPI === 'cli') {
     require_once(__DIR__ . '/../../config.php');
 
     // Run diagnostics
-    echo "Running Chatbot diagnostics...\n";
-    block_chatbot_diagnostics::init_log();
-    block_chatbot_diagnostics::log("Starting CLI diagnostics");
+    echo "Running Tutoring Machine diagnostics...\n";
+    block_tutoring_machine_diagnostics::init_log();
+    block_tutoring_machine_diagnostics::log("Starting CLI diagnostics");
 
     echo "\nSystem Checks:\n";
-    $system_checks = block_chatbot_diagnostics::check_system();
+    $system_checks = block_tutoring_machine_diagnostics::check_system();
     foreach ($system_checks as $check => $result) {
         echo "- $check: " . $result['status'] . " - " . $result['message'] . "\n";
     }
 
     echo "\nConfiguration:\n";
-    $config = block_chatbot_diagnostics::get_configuration();
+    $config = block_tutoring_machine_diagnostics::get_configuration();
     foreach ($config as $key => $value) {
         echo "- $key: $value\n";
     }
 
     echo "\nAPI Connectivity Tests:\n";
-    $api_tests = block_chatbot_diagnostics::test_api_connectivity();
+    $api_tests = block_tutoring_machine_diagnostics::test_api_connectivity();
     foreach ($api_tests as $provider => $result) {
         echo "- $provider: " . $result['status'] . " - " . $result['message'] . "\n";
     }
 
-    echo "\nDiagnostics complete. Log file: " . block_chatbot_diagnostics::$log_file . "\n";
+    echo "\nDiagnostics complete. Log file: " . block_tutoring_machine_diagnostics::$log_file . "\n";
 }
 
 // Debug endpoints
@@ -287,28 +287,28 @@ if (isset($_GET['action']) && $_GET['action'] === 'debug') {
     require_once($CFG->libdir . '/adminlib.php');
 
     // Check admin privileges
-    admin_externalpage_setup('blocksettingchatbot');
+    admin_externalpage_setup('blocksettingtutoring_machine');
 
     // Set up page
     $PAGE->set_context(context_system::instance());
-    $PAGE->set_url('/blocks/chatbot/debug.php', ['action' => 'debug']);
-    $PAGE->set_title('Chatbot Diagnostics');
-    $PAGE->set_heading('Chatbot Diagnostics');
+    $PAGE->set_url('/blocks/tutoring_machine/debug.php', ['action' => 'debug']);
+    $PAGE->set_title('Tutoring Machine Diagnostics');
+    $PAGE->set_heading('Tutoring Machine Diagnostics');
 
     // Initialize diagnostic logger
-    block_chatbot_diagnostics::init_log();
-    block_chatbot_diagnostics::log("Starting web diagnostics");
+    block_tutoring_machine_diagnostics::init_log();
+    block_tutoring_machine_diagnostics::log("Starting web diagnostics");
 
     // Run tests
-    $system_checks = block_chatbot_diagnostics::check_system();
-    $config = block_chatbot_diagnostics::get_configuration();
-    $api_tests = block_chatbot_diagnostics::test_api_connectivity();
+    $system_checks = block_tutoring_machine_diagnostics::check_system();
+    $config = block_tutoring_machine_diagnostics::get_configuration();
+    $api_tests = block_tutoring_machine_diagnostics::test_api_connectivity();
 
     // Output page
     echo $OUTPUT->header();
-    echo $OUTPUT->heading('Chatbot Diagnostics');
+    echo $OUTPUT->heading('Tutoring Machine Diagnostics');
 
-    echo '<div class="alert alert-info">This page runs diagnostic tests on the Chatbot plugin to help identify configuration issues.</div>';
+    echo '<div class="alert alert-info">This page runs diagnostic tests on the Tutoring Machine plugin to help identify configuration issues.</div>';
 
     // System checks
     echo $OUTPUT->heading('System Checks', 3);
@@ -338,7 +338,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'debug') {
     echo '</tbody></table>';
 
     // Log file information
-    $log_file = block_chatbot_diagnostics::$log_file;
+    $log_file = block_tutoring_machine_diagnostics::$log_file;
     $log_contents = file_exists($log_file) ? file_get_contents($log_file) : 'No log file available';
 
     echo $OUTPUT->heading('Debug Log', 3);

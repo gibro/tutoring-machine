@@ -3,7 +3,7 @@
 /**
  * Scheduled task for cleaning up old analytics data.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -38,9 +38,9 @@ log_message("Starting analytics data cleanup");
 try {
     global $DB;
 
-    // Get all chatbot block instances
-    $blocks = $DB->get_records('block_instances', ['blockname' => 'chatbot']);
-    log_message("Found " . count($blocks) . " chatbot blocks");
+    // Get all Tutoring Machine block instances
+    $blocks = $DB->get_records('block_instances', ['blockname' => 'tutoring_machine']);
+    log_message("Found " . count($blocks) . " Tutoring Machine blocks");
 
     $total_deleted = 0;
 
@@ -50,7 +50,7 @@ try {
         $blockid = $block->id;
 
         // Create analytics manager
-        $analytics_manager = new block_chatbot_analytics_manager($courseid, $blockid);
+        $analytics_manager = new block_tutoring_machine_analytics_manager($courseid, $blockid);
 
         // Skip if analytics not enabled
         if (!$analytics_manager->is_analytics_enabled()) {

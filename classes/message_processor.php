@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Message processor class for Chatbot block.
+ * Message processor class for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -13,7 +13,7 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Class to process messages and format responses
  */
-class block_chatbot_message_processor {
+class block_tutoring_machine_message_processor {
     /** @var string $response_text The raw response text */
     private $response_text;
 
@@ -30,7 +30,7 @@ class block_chatbot_message_processor {
      * Set the response tex
      *
      * @param string $response_text The raw response tex
-     * @return block_chatbot_message_processor This instance for method chaining
+     * @return block_tutoring_machine_message_processor This instance for method chaining
      */
     public function set_response_text($response_text) {
         $this->response_text = $response_text;
@@ -50,7 +50,7 @@ class block_chatbot_message_processor {
      * Truncate response text to ensure complete sentences
      * Limits text to approximately 2000 characters but ensures it ends with a complete sentence
      *
-     * @return block_chatbot_message_processor This instance for method chaining
+     * @return block_tutoring_machine_message_processor This instance for method chaining
      */
     public function truncate_response() {
         // Increased character limit for longer responses
@@ -362,7 +362,7 @@ class block_chatbot_message_processor {
                 return null;
             }
 
-            if ($block_record->blockname !== 'chatbot') {
+            if ($block_record->blockname !== 'tutoring_machine') {
                 return null;
             }
         }
@@ -391,7 +391,7 @@ class block_chatbot_message_processor {
             }
 
             // Check if it's the correct block type
-            if ($block_record->blockname !== 'chatbot') {
+            if ($block_record->blockname !== 'tutoring_machine') {
                 return '';
             }
 

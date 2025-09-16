@@ -1,21 +1,21 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Event observers for Chatbot block.
+ * Event observers for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace block_chatbot;
+namespace block_tutoring_machine;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/blocks/chatbot/classes/cache_manager.php');
+require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
 /**
- * Event observers for Chatbot block
+ * Event observers for Tutoring Machine block
  *
  * These observers automatically invalidate cached content when relevant content is updated
  */
@@ -35,10 +35,10 @@ class observers {
         $pageid = $cm->instance;
 
         // Invalidate the page cache
-        \block_chatbot_cache_manager::invalidate_page_cache($pageid);
+        \block_tutoring_machine_cache_manager::invalidate_page_cache($pageid);
 
         // Also invalidate the course content cache
-        \block_chatbot_cache_manager::invalidate_course_cache($cm->course);
+        \block_tutoring_machine_cache_manager::invalidate_course_cache($cm->course);
 
         return true;
     }
@@ -58,10 +58,10 @@ class observers {
         $glossaryid = $cm->instance;
 
         // Invalidate the glossary cache
-        \block_chatbot_cache_manager::invalidate_glossary_cache($glossaryid);
+        \block_tutoring_machine_cache_manager::invalidate_glossary_cache($glossaryid);
 
         // Also invalidate the course content cache
-        \block_chatbot_cache_manager::invalidate_course_cache($cm->course);
+        \block_tutoring_machine_cache_manager::invalidate_course_cache($cm->course);
 
         return true;
     }
@@ -82,10 +82,10 @@ class observers {
         $glossary = $DB->get_record('glossary', ['id' => $glossaryid], '*', MUST_EXIST);
 
         // Invalidate the glossary cache
-        \block_chatbot_cache_manager::invalidate_glossary_cache($glossaryid);
+        \block_tutoring_machine_cache_manager::invalidate_glossary_cache($glossaryid);
 
         // Also invalidate the course content cache
-        \block_chatbot_cache_manager::invalidate_course_cache($glossary->course);
+        \block_tutoring_machine_cache_manager::invalidate_course_cache($glossary->course);
 
         return true;
     }
@@ -105,10 +105,10 @@ class observers {
         $h5pid = $cm->instance;
 
         // Invalidate the H5P cache
-        \block_chatbot_cache_manager::invalidate_h5p_cache($h5pid);
+        \block_tutoring_machine_cache_manager::invalidate_h5p_cache($h5pid);
 
         // Also invalidate the course content cache
-        \block_chatbot_cache_manager::invalidate_course_cache($cm->course);
+        \block_tutoring_machine_cache_manager::invalidate_course_cache($cm->course);
 
         return true;
     }
@@ -128,12 +128,12 @@ class observers {
         // Only process PDF files
         if ($eventdata['other']['mimetype'] === 'application/pdf') {
             // Invalidate the PDF cache
-            \block_chatbot_cache_manager::invalidate_pdf_cache($eventdata['other']['contenthash']);
+            \block_tutoring_machine_cache_manager::invalidate_pdf_cache($eventdata['other']['contenthash']);
 
             // Try to determine the course ID
             if (isset($eventdata['courseid']) && $eventdata['courseid'] > 0) {
                 // Invalidate the course content cache
-                \block_chatbot_cache_manager::invalidate_course_cache($eventdata['courseid']);
+                \block_tutoring_machine_cache_manager::invalidate_course_cache($eventdata['courseid']);
             }
         }
 
@@ -162,12 +162,12 @@ class observers {
         foreach ($files as $file) {
             // If it's a PDF, invalidate its cache
             if ($file->get_mimetype() === 'application/pdf') {
-                \block_chatbot_cache_manager::invalidate_pdf_cache($file->get_contenthash());
+                \block_tutoring_machine_cache_manager::invalidate_pdf_cache($file->get_contenthash());
             }
         }
 
         // Also invalidate the course content cache
-        \block_chatbot_cache_manager::invalidate_course_cache($cm->course);
+        \block_tutoring_machine_cache_manager::invalidate_course_cache($cm->course);
 
         return true;
     }
@@ -182,7 +182,7 @@ class observers {
         $courseid = $event->objectid;
 
         // Invalidate the course content cache
-        \block_chatbot_cache_manager::invalidate_course_cache($courseid);
+        \block_tutoring_machine_cache_manager::invalidate_course_cache($courseid);
 
         return true;
     }

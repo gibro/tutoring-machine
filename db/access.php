@@ -2,7 +2,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = array(
-    'block/chatbot:myaddinstance' => array(
+    'block/tutoring_machine:myaddinstance' => array(
         'captype' => 'write',
         'contextlevel' => CONTEXT_BLOCK,
         'archetypes' => array(
@@ -10,7 +10,7 @@ $capabilities = array(
         ),
         'clonepermissionsfrom' => 'moodle/my:manageblocks'
     ),
-    'block/chatbot:addinstance' => array(
+    'block/tutoring_machine:addinstance' => array(
         'riskbitmask' => RISK_SPAM | RISK_XSS,
         'captype' => 'write',
         'contextlevel' => CONTEXT_BLOCK,
@@ -20,7 +20,7 @@ $capabilities = array(
         ),
         'clonepermissionsfrom' => 'moodle/site:manageblocks'
     ),
-    'block/chatbot:viewanalytics' => array(
+    'block/tutoring_machine:viewanalytics' => array(
         'captype' => 'read',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => array(
@@ -29,7 +29,7 @@ $capabilities = array(
             'manager' => CAP_ALLOW
         )
     ),
-    'block/chatbot:view' => array(
+    'block/tutoring_machine:view' => array(
         'captype' => 'read',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => array(

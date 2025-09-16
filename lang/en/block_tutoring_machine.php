@@ -1,8 +1,8 @@
 <?php
-// English language strings for the Chatbot block.
-$string['pluginname']         = 'Chatbot';
-$string['chatbot:addinstance'] = 'Add a new Chatbot block';
-$string['chatbot:myaddinstance'] = 'Add a new Chatbot block to Dashboard';
+// English language strings for the Tutoring Machine block.
+$string['pluginname']         = 'Tutoring Machine';
+$string['tutoring_machine:addinstance'] = 'Add a new Tutoring Machine block';
+$string['tutoring_machine:myaddinstance'] = 'Add a new Tutoring Machine block to Dashboard';
 $string['assistantname']      = 'Assistantname';
 $string['assistantnamedesc']  = 'Enter the name that is displayed in the chat as Assistant.';
 $string['courselogo']         = 'Course-specific Logo';
@@ -16,16 +16,16 @@ $string['google_apikeydesc']  = 'Enter your Google API key for accessing Gemini 
 
 // Legacy - for backward compatibility
 $string['apikey']             = 'API Key (Legacy)';
-$string['apikeydesc']         = 'Enter your API key for the chatbot functionality (deprecated, use provider-specific keys instead).';
-$string['metaprompt']         = 'Chatbot Instructions';
-$string['metaprompt_help']    = 'Enter special instructions for the chatbot in this course. These instructions will be added before every user message. For example: "Always be friendly and use simple language." or "You are a Moodle support assistant, always use informal language."';
+$string['apikeydesc']         = 'Enter your API key for the Tutoring Machine functionality (deprecated, use provider-specific keys instead).';
+$string['metaprompt']         = 'Tutoring Machine Instructions';
+$string['metaprompt_help']    = 'Enter special instructions for the Tutoring Machine in this course. These instructions will be added before every user message. For example: "Always be friendly and use simple language." or "You are a Moodle support assistant, always use informal language."';
 $string['course_content_context'] = 'Course Content Context';
-$string['course_content_context_desc'] = 'The chatbot uses content from the course (text pages and glossaries) as context for its responses.';
+$string['course_content_context_desc'] = 'The Tutoring Machine uses content from the course (text pages and glossaries) as context for its responses.';
 
 // Appearance settings
 $string['appearance'] = 'Appearance';
 $string['main_color'] = 'Main color';
-$string['main_color_help'] = 'Select the main color for the chatbot interface. This color will be used for the header, buttons, and user message bubbles.';
+$string['main_color_help'] = 'Select the main color for the Tutoring Machine interface. This color will be used for the header, buttons, and user message bubbles.';
 
 // Context sources settings
 $string['contextsources'] = 'Context Sources';
@@ -36,8 +36,8 @@ $string['use_glossaries'] = 'Include Glossaries';
 $string['use_glossaries_desc'] = 'Use content from course glossaries as context for responses.';
 $string['use_glossaries_help'] = 'When enabled, the entries from all glossaries in the course will be used to answer questions.';
 $string['use_internet'] = 'Allow Internet Search';
-$string['use_internet_desc'] = 'Allow the chatbot to use information from the internet when an answer is not found in the course content.';
-$string['use_internet_help'] = 'When enabled, the chatbot can draw on information from the internet to answer questions not covered by the course content. This information will be combined with the course content.';
+$string['use_internet_desc'] = 'Allow the Tutoring Machine to use information from the internet when an answer is not found in the course content.';
+$string['use_internet_help'] = 'When enabled, the Tutoring Machine can draw on information from the internet to answer questions not covered by the course content. This information will be combined with the course content.';
 $string['use_h5p'] = 'Include H5P Activities';
 $string['use_h5p_desc'] = 'Use content from H5P activities as context for responses.';
 $string['use_h5p_help'] = 'When enabled, the content from all H5P activities in the course will be used to answer questions.';
@@ -79,9 +79,9 @@ $string['use_lessons_help'] = 'When enabled, the content from all lessons in the
 
 // Admin settings groups
 $string['basicsettings'] = 'Basic Settings';
-$string['basicsettings_desc'] = 'Configure the basic settings for the Chatbot block. To test the API connection, you can use the <a href="{$CFG->wwwroot}/blocks/chatbot/api_test_web.php" target="_blank">API Test Tool</a> which verifies the configured API keys.';
+$string['basicsettings_desc'] = 'Configure the basic settings for the Tutoring Machine block. To test the API connection, you can use the <a href="{$CFG->wwwroot}/blocks/tutoring_machine/api_test_web.php" target="_blank">API Test Tool</a> which verifies the configured API keys.';
 $string['modelsettings'] = 'AI Model Settings';
-$string['modelsettingsdesc'] = 'Choose the AI model to be used by default for all chatbot instances. Models differ in quality, speed, and cost.';
+$string['modelsettingsdesc'] = 'Choose the AI model to be used by default for all Tutoring Machine instances. Models differ in quality, speed, and cost.';
 $string['model_usage_info'] = 'Application Recommendations';
 $string['model_usage_info_desc'] = 'Model recommendations for different learning scenarios:<ul>
 <li><strong>For tutoring and complex explanations:</strong> GPT-4 or GPT-4o (best quality)</li>
@@ -93,23 +93,23 @@ $string['model_usage_info_desc'] = 'Model recommendations for different learning
 $string['parametersettings'] = 'Parameter Settings';
 $string['parametersettingsdesc'] = 'Configure the parameters for AI response generation to adjust quality and style of responses.';
 $string['systemsettings'] = 'System Settings';
-$string['systemsettings_desc'] = 'Advanced settings for API communication. If you experience connection issues, you can use the <a href="{$CFG->wwwroot}/blocks/chatbot/api_test_web.php" target="_blank">API Test Tool</a> to diagnose communication with the AI providers.';
+$string['systemsettings_desc'] = 'Advanced settings for API communication. If you experience connection issues, you can use the <a href="{$CFG->wwwroot}/blocks/tutoring_machine/api_test_web.php" target="_blank">API Test Tool</a> to diagnose communication with the AI providers.';
 
 // Provider settings
 $string['default_provider'] = 'Default AI Provider';
-$string['default_provider_desc'] = 'Choose the AI provider to be used for all chatbot instances unless configured otherwise.';
+$string['default_provider_desc'] = 'Choose the AI provider to be used for all Tutoring Machine instances unless configured otherwise.';
 $string['provider_openai'] = 'OpenAI (GPT-4, GPT-4o)';
 $string['provider_google'] = 'Google (Gemini)';
 // Anthropic provider removed
 
 // Model settings
 $string['default_model'] = 'Default AI Model';
-$string['default_model_desc'] = 'Choose the AI model to be used for all chatbot instances unless configured otherwise.';
+$string['default_model_desc'] = 'Choose the AI model to be used for all Tutoring Machine instances unless configured otherwise.';
 $string['ai_model'] = 'AI Model for this Course';
-$string['ai_model_help'] = 'Choose the AI model to be used for this chatbot. If you use the system default, the option set in the global settings will be used.';
+$string['ai_model_help'] = 'Choose the AI model to be used for this Tutoring Machine. If you use the system default, the option set in the global settings will be used.';
 $string['use_system_default'] = 'Use System Default';
 $string['usage_intent'] = 'Usage Purpose';
-$string['usage_intent_help'] = 'Choose the primary purpose of the chatbot in this course. This helps in selecting the optimal AI model.';
+$string['usage_intent_help'] = 'Choose the primary purpose of the Tutoring Machine in this course. This helps in selecting the optimal AI model.';
 $string['usage_intent_tutor'] = 'Tutor & Complex Explanations';
 $string['usage_intent_research'] = 'Research Help & Source Reference';
 $string['usage_intent_summarization'] = 'Summaries & Concept Explanations';
@@ -119,7 +119,7 @@ $string['model_recommendations'] = 'Model Recommendations by Usage Purpose';
 
 // Parameter settings
 $string['temperature'] = 'Creativity (Temperature)';
-$string['temperature_desc'] = 'Controls how creative and diverse the chatbot\'s responses are. Lower values (0.1-0.5) produce more consistent, fact-oriented responses, while higher values (0.6-1.0) produce more creative and diverse responses.';
+$string['temperature_desc'] = 'Controls how creative and diverse the Tutoring Machine\'s responses are. Lower values (0.1-0.5) produce more consistent, fact-oriented responses, while higher values (0.6-1.0) produce more creative and diverse responses.';
 $string['top_p'] = 'Response Diversity (Top-P)';
 $string['top_p_desc'] = 'Controls the variability of word choice - unlike temperature which controls general creativity. Top-P limits selection to the most probable tokens, determining the "focus" of the response. A higher value (0.9-1.0) allows more varied phrasing, while a lower value (0.1-0.5) concentrates answers on more predictable formulations.';
 
@@ -133,13 +133,13 @@ $string['timeout'] = 'Time Limit (Seconds)';
 $string['timeout_desc'] = 'The maximum time in seconds to wait for a response from the AI service before the request times out.';
 
 // Error messages
-$string['noapikey'] = 'API key not configured. Please configure the API key in the Chatbot block settings.';
+$string['noapikey'] = 'API key not configured. Please configure the API key in the Tutoring Machine block settings.';
 $string['apiconnectionerror'] = 'Error connecting to the API. Please try again later.';
 $string['toomanyrequests'] = 'Too many requests. Please try again later.';
 $string['invalidcourseid'] = 'Invalid course ID.';
 $string['usernotincourse'] = 'You are not enrolled in this course.';
 $string['invalidblockid'] = 'Invalid block ID.';
-$string['blocktypenotchatbot'] = 'Block is not a chatbot block.';
+$string['blocktypenottutoringmachine'] = 'Block is not a Tutoring Machine block.';
 $string['accessdenied'] = 'Access denied.';
 $string['nopermission'] = 'You do not have permission to access this resource.';
 $string['missingparam'] = 'Missing required parameter: {$a}.';
@@ -154,7 +154,7 @@ $string['enable_analytics'] = 'Enable Teaching Analytics';
 $string['enable_analytics_desc'] = 'Collects anonymized user inputs to analyze the most frequently asked questions. Data is stored without user identification.';
 $string['enable_analytics_help'] = 'When enabled, learners\' questions are stored anonymously to provide teachers with insights into frequently asked questions. No personal data is collected.';
 $string['analytics_notice_title'] = 'Privacy Notice';
-$string['analytics_notice'] = '<strong>Important:</strong> When you enable teaching analytics, learners will be shown a notice during their first use of the chatbot that their requests are being stored anonymously for analysis purposes.';
+$string['analytics_notice'] = '<strong>Important:</strong> When you enable teaching analytics, learners will be shown a notice during their first use of the Tutoring Machine that their requests are being stored anonymously for analysis purposes.';
 $string['analytics_retention'] = 'Data retention period';
 $string['analytics_retention_help'] = 'Defines how long anonymized requests are stored before being automatically deleted.';
 $string['retention_1week'] = '1 week';
@@ -165,13 +165,13 @@ $string['retention_1year'] = '1 year';
 
 $string['analytics_dashboard'] = 'Open Analytics Dashboard';
 $string['analytics_dashboard_desc'] = 'Shows statistics about the most frequently asked questions in the course.';
-$string['no_analytics_data'] = 'No analytics data available. Enable teaching analytics and wait for learners to use the chatbot.';
+$string['no_analytics_data'] = 'No analytics data available. Enable teaching analytics and wait for learners to use the Tutoring Machine.';
 $string['most_common_questions'] = 'Most Common Questions';
 $string['query_count'] = 'Count';
 $string['total_queries'] = 'Total number of queries';
 $string['queries_last_days'] = 'Queries from the last {$a} days';
 $string['analytics_timeperiod'] = 'Time period';
-$string['analytics_not_enabled'] = 'Teaching analytics are not enabled for this chatbot. Please enable analytics in the block settings.';
+$string['analytics_not_enabled'] = 'Teaching analytics are not enabled for this Tutoring Machine. Please enable analytics in the block settings.';
 $string['query'] = 'Query';
 $string['query_types'] = 'Query types';
 $string['queries'] = 'Queries';
@@ -182,15 +182,15 @@ $string['querytype_grade'] = 'Grade questions';
 $string['querytype_technical'] = 'Technical questions';
 $string['querytype_schedule'] = 'Schedule questions';
 $string['data_anonymized_notice'] = 'All data is anonymized. No conclusions about individual users are possible.';
-$string['analytics_info'] = 'Teaching Analytics displays anonymized requests from learners to the chatbot. This information can help identify common questions and adjust teaching materials accordingly.';
+$string['analytics_info'] = 'Teaching Analytics displays anonymized requests from learners to the Tutoring Machine. This information can help identify common questions and adjust teaching materials accordingly.';
 $string['data_collection_notice'] = 'Note: Your queries are stored anonymously for analytics purposes. No personal data is collected.';
 
 // Task strings
-$string['task_cleanup_analytics'] = 'Clean up old chatbot analytics data';
+$string['task_cleanup_analytics'] = 'Clean up old Tutoring Machine analytics data';
 
 // Prompt Suggestions
 $string['prompt_suggestions'] = 'Prompt Suggestions';
-$string['prompt_suggestions_desc'] = 'Provide suggestions for effective prompts that learners can use with the chatbot.';
+$string['prompt_suggestions_desc'] = 'Provide suggestions for effective prompts that learners can use with the Tutoring Machine.';
 $string['prompt_suggestions_help'] = 'Enter one suggestion per line. These will be displayed as clickable options in the chat interface.';
 $string['enable_prompt_suggestions'] = 'Enable Prompt Suggestions';
 $string['enable_prompt_suggestions_desc'] = 'Show a button in the chat interface that allows learners to select from predefined prompt suggestions.';

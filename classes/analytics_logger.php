@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Analytics logger for Chatbot block.
+ * Analytics logger for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -15,7 +15,7 @@ require_once(__DIR__ . '/analytics_manager.php');
 /**
  * Class to log analytics data for the chatbo
  */
-class block_chatbot_analytics_logger {
+class block_tutoring_machine_analytics_logger {
     /**
      * Log a user query for analytics
      *
@@ -44,7 +44,7 @@ class block_chatbot_analytics_logger {
         }
 
         // Create analytics manager
-        $analytics_manager = new block_chatbot_analytics_manager($courseid, $blockinstanceid, $config);
+        $analytics_manager = new block_tutoring_machine_analytics_manager($courseid, $blockinstanceid, $config);
 
         // Log the query
         return $analytics_manager->log_query($query, $model, $tokens);

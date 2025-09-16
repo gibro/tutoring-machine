@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * API Test Script for Chatbot block.
+ * API Test Script for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -29,10 +29,10 @@ function log_message($message) {
 }
 
 // Initialize log file
-file_put_contents($log_file, "=== Chatbot API Test Log ===\n" . date('Y-m-d H:i:s') . "\n\n");
+file_put_contents($log_file, "=== Tutoring Machine API Test Log ===\n" . date('Y-m-d H:i:s') . "\n\n");
 
 // Get configuration
-$config = get_config('block_chatbot');
+$config = get_config('block_tutoring_machine');
 
 // Determine which provider to tes
 $provider = isset($argv[1]) ? $argv[1] : 'all';
@@ -51,7 +51,7 @@ if ($provider === 'all' || $provider === 'openai') {
     } else {
         try {
             log_message("Creating OpenAI client with API key (length: " . strlen($config->openai_apikey) . ")");
-            $client = new block_chatbot_openai_client($config->openai_apikey);
+            $client = new block_tutoring_machine_openai_client($config->openai_apikey);
 
             $models = ['gpt-4o', 'gpt-4-turbo', 'gpt-4o-mini'];
 
@@ -96,7 +96,7 @@ if ($provider === 'all' || $provider === 'google') {
     } else {
         try {
             log_message("Creating Google client with API key (length: " . strlen($config->google_apikey) . ")");
-            $client = new block_chatbot_google_client($config->google_apikey);
+            $client = new block_tutoring_machine_google_client($config->google_apikey);
 
             $models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
 

@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Cache manager class for Chatbot block.
+ * Cache manager class for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -11,11 +11,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Cache manager class for Chatbot block
+ * Cache manager class for Tutoring Machine block
  *
  * Manages caching of various content types used by the chatbo
  */
-class block_chatbot_cache_manager {
+class block_tutoring_machine_cache_manager {
     /**
      * Cache types
      */
@@ -223,11 +223,11 @@ class block_chatbot_cache_manager {
     private static function get_cache_for_type($type) {
         // For PDF and Office content, use the database cache since they may be large
         if ($type == self::CACHE_TYPE_PDF || $type == self::CACHE_TYPE_OFFICE) {
-            return new block_chatbot_db_cache();
+            return new block_tutoring_machine_db_cache();
         }
 
         // For other types, use Moodle's caching API
-        return cache::make('block_chatbot', $type);
+        return cache::make('block_tutoring_machine', $type);
     }
 
     /**
@@ -319,7 +319,7 @@ class block_chatbot_cache_manager {
  * This is used when we need to store large amounts of data
  * that might exceed the size limits of Moodle's caching API
  */
-class block_chatbot_db_cache {
+class block_tutoring_machine_db_cache {
     /**
      * Get a cached item from the database
      *
@@ -332,12 +332,12 @@ class block_chatbot_db_cache {
         try {
             // Determine which table to use based on key prefix
             if (strpos($key, 'pdf_') === 0) {
-                $table = 'block_chatbot_pdf_cache';
+                $table = 'block_tutoring_machine_pdf_cache';
             } else if (strpos($key, 'office_') === 0) {
-                $table = 'block_chatbot_office_cache';
+                $table = 'block_tutoring_machine_office_cache';
             } else {
                 // Default to PDF cache table for backward compatibility
-                $table = 'block_chatbot_pdf_cache';
+                $table = 'block_tutoring_machine_pdf_cache';
             }
             
             $record = $DB->get_record($table, ['contenthash' => $key]);
@@ -375,12 +375,12 @@ class block_chatbot_db_cache {
             
             // Determine which table to use based on key prefix
             if (strpos($key, 'pdf_') === 0) {
-                $table = 'block_chatbot_pdf_cache';
+                $table = 'block_tutoring_machine_pdf_cache';
             } else if (strpos($key, 'office_') === 0) {
-                $table = 'block_chatbot_office_cache';
+                $table = 'block_tutoring_machine_office_cache';
             } else {
                 // Default to PDF cache table for backward compatibility
-                $table = 'block_chatbot_pdf_cache';
+                $table = 'block_tutoring_machine_pdf_cache';
             }
 
             // Check if entry already exists
@@ -418,12 +418,12 @@ class block_chatbot_db_cache {
         try {
             // Determine which table to use based on key prefix
             if (strpos($key, 'pdf_') === 0) {
-                $table = 'block_chatbot_pdf_cache';
+                $table = 'block_tutoring_machine_pdf_cache';
             } else if (strpos($key, 'office_') === 0) {
-                $table = 'block_chatbot_office_cache';
+                $table = 'block_tutoring_machine_office_cache';
             } else {
                 // Default to PDF cache table for backward compatibility
-                $table = 'block_chatbot_pdf_cache';
+                $table = 'block_tutoring_machine_pdf_cache';
             }
             
             return $DB->delete_records($table, ['contenthash' => $key]);
@@ -442,12 +442,12 @@ class block_chatbot_db_cache {
         global $DB;
 
         try {
-            $result1 = $DB->delete_records('block_chatbot_pdf_cache');
+            $result1 = $DB->delete_records('block_tutoring_machine_pdf_cache');
             $result2 = true;
             
             // Check if office cache table exists before attempting to purge it
-            if ($DB->get_manager()->table_exists('block_chatbot_office_cache')) {
-                $result2 = $DB->delete_records('block_chatbot_office_cache');
+            if ($DB->get_manager()->table_exists('block_tutoring_machine_office_cache')) {
+                $result2 = $DB->delete_records('block_tutoring_machine_office_cache');
             }
             
             return $result1 && $result2;

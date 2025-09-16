@@ -6,34 +6,34 @@ defined('MOODLE_INTERNAL') || die();
 if ($ADMIN->fulltree) {
     // Grundlegende Einstellungen
     $settings->add(new admin_setting_heading(
-        'block_chatbot/basicsettings',
-        get_string('basicsettings', 'block_chatbot'),
+        'block_tutoring_machine/basicsettings',
+        get_string('basicsettings', 'block_tutoring_machine'),
         ''
     ));
 
     // Einstellung: Assistantname
     $settings->add(new admin_setting_configtext(
-        'block_chatbot/assistantname',
-        get_string('assistantname', 'block_chatbot'),
-        get_string('assistantnamedesc', 'block_chatbot'),
-        'Chatbot',
+        'block_tutoring_machine/assistantname',
+        get_string('assistantname', 'block_tutoring_machine'),
+        get_string('assistantnamedesc', 'block_tutoring_machine'),
+        'Tutoring Machine',
         PARAM_TEXT
     ));
 
     // Einstellung: API Key für OpenAI
     $settings->add(new admin_setting_configpasswordunmask(
-        'block_chatbot/openai_apikey',
-        get_string('openai_apikey', 'block_chatbot'),
-        get_string('openai_apikeydesc', 'block_chatbot'),
+        'block_tutoring_machine/openai_apikey',
+        get_string('openai_apikey', 'block_tutoring_machine'),
+        get_string('openai_apikeydesc', 'block_tutoring_machine'),
         '',
         PARAM_TEXT
     ));
 
     // Einstellung: API Key für Google Gemini
     $settings->add(new admin_setting_configpasswordunmask(
-        'block_chatbot/google_apikey',
-        get_string('google_apikey', 'block_chatbot'),
-        get_string('google_apikeydesc', 'block_chatbot'),
+        'block_tutoring_machine/google_apikey',
+        get_string('google_apikey', 'block_tutoring_machine'),
+        get_string('google_apikeydesc', 'block_tutoring_machine'),
         '',
         PARAM_TEXT
     ));
@@ -42,20 +42,20 @@ if ($ADMIN->fulltree) {
 
     // API-Test-Info
     $api_test_info = 'Erweiterte Einstellungen für die API-Kommunikation. ';
-    $api_test_info .= 'Bei Verbindungsproblemen können Sie das <a href="'.$CFG->wwwroot.'/blocks/chatbot/api_test_web.php" target="_blank">API-Test-Tool</a> verwenden, ';
+    $api_test_info .= 'Bei Verbindungsproblemen können Sie das <a href="'.$CFG->wwwroot.'/blocks/tutoring_machine/api_test_web.php" target="_blank">API-Test-Tool</a> verwenden, ';
     $api_test_info .= 'um die Kommunikation mit den AI-Providern zu diagnostizieren.';
 
     $settings->add(new admin_setting_heading(
-        'block_chatbot/apitestinfo',
+        'block_tutoring_machine/apitestinfo',
         'API-Test',
         $api_test_info
     ));
 
     // Modell-Einstellungen
     $settings->add(new admin_setting_heading(
-        'block_chatbot/modelsettings',
-        get_string('modelsettings', 'block_chatbot'),
-        get_string('modelsettingsdesc', 'block_chatbot')
+        'block_tutoring_machine/modelsettings',
+        get_string('modelsettings', 'block_tutoring_machine'),
+        get_string('modelsettingsdesc', 'block_tutoring_machine')
     ));
 
     // Einstellung: KI-Modell
@@ -76,32 +76,32 @@ if ($ADMIN->fulltree) {
     ];
 
     $settings->add(new admin_setting_configselect(
-        'block_chatbot/default_model',
-        get_string('default_model', 'block_chatbot'),
-        get_string('default_model_desc', 'block_chatbot'),
+        'block_tutoring_machine/default_model',
+        get_string('default_model', 'block_tutoring_machine'),
+        get_string('default_model_desc', 'block_tutoring_machine'),
         'openai:gpt-4o',
         $model_choices
     ));
 
     // Einstellung: API-Provider-Auswahl
     $provider_choices = [
-        'openai' => get_string('provider_openai', 'block_chatbot'),
-        'google' => get_string('provider_google', 'block_chatbot')
+        'openai' => get_string('provider_openai', 'block_tutoring_machine'),
+        'google' => get_string('provider_google', 'block_tutoring_machine')
     ];
 
     $settings->add(new admin_setting_configselect(
-        'block_chatbot/default_provider',
-        get_string('default_provider', 'block_chatbot'),
-        get_string('default_provider_desc', 'block_chatbot'),
+        'block_tutoring_machine/default_provider',
+        get_string('default_provider', 'block_tutoring_machine'),
+        get_string('default_provider_desc', 'block_tutoring_machine'),
         'openai',
         $provider_choices
     ));
 
     // Parameter-Einstellungen
     $settings->add(new admin_setting_heading(
-        'block_chatbot/parametersettings',
-        get_string('parametersettings', 'block_chatbot'),
-        get_string('parametersettingsdesc', 'block_chatbot')
+        'block_tutoring_machine/parametersettings',
+        get_string('parametersettings', 'block_tutoring_machine'),
+        get_string('parametersettingsdesc', 'block_tutoring_machine')
     ));
 
 
@@ -112,9 +112,9 @@ if ($ADMIN->fulltree) {
     }
 
     $settings->add(new admin_setting_configselect(
-        'block_chatbot/temperature',
-        get_string('temperature', 'block_chatbot'),
-        get_string('temperature_desc', 'block_chatbot'),
+        'block_tutoring_machine/temperature',
+        get_string('temperature', 'block_tutoring_machine'),
+        get_string('temperature_desc', 'block_tutoring_machine'),
         '0.7', // Standardwer
         $temperature_options
     ));
@@ -126,52 +126,52 @@ if ($ADMIN->fulltree) {
     }
 
     $settings->add(new admin_setting_configselect(
-        'block_chatbot/top_p',
-        get_string('top_p', 'block_chatbot'),
-        get_string('top_p_desc', 'block_chatbot'),
+        'block_tutoring_machine/top_p',
+        get_string('top_p', 'block_tutoring_machine'),
+        get_string('top_p_desc', 'block_tutoring_machine'),
         '0.9', // Standardwer
         $top_p_options
     ));
 
     // Einstellung: Antwortforma
     $response_format_choices = [
-        'text' => get_string('response_format_text', 'block_chatbot'),
-        'json' => get_string('response_format_json', 'block_chatbot')
+        'text' => get_string('response_format_text', 'block_tutoring_machine'),
+        'json' => get_string('response_format_json', 'block_tutoring_machine')
     ];
 
     $settings->add(new admin_setting_configselect(
-        'block_chatbot/response_format',
-        get_string('response_format', 'block_chatbot'),
-        get_string('response_format_desc', 'block_chatbot'),
+        'block_tutoring_machine/response_format',
+        get_string('response_format', 'block_tutoring_machine'),
+        get_string('response_format_desc', 'block_tutoring_machine'),
         'text',
         $response_format_choices
     ));
 
     // System-Einstellungen
     $systemsettings_desc = 'Erweiterte Einstellungen für die API-Kommunikation. ';
-    $systemsettings_desc .= 'Bei Verbindungsproblemen können Sie das <a href="'.$CFG->wwwroot.'/blocks/chatbot/api_test_web.php" target="_blank">API-Test-Tool</a> verwenden, ';
+    $systemsettings_desc .= 'Bei Verbindungsproblemen können Sie das <a href="'.$CFG->wwwroot.'/blocks/tutoring_machine/api_test_web.php" target="_blank">API-Test-Tool</a> verwenden, ';
     $systemsettings_desc .= 'um die Kommunikation mit den AI-Providern zu diagnostizieren.';
 
     $settings->add(new admin_setting_heading(
-        'block_chatbot/systemsettings',
-        get_string('systemsettings', 'block_chatbot'),
+        'block_tutoring_machine/systemsettings',
+        get_string('systemsettings', 'block_tutoring_machine'),
         $systemsettings_desc
     ));
 
     // Einstellung: Maximale Tokens
     $settings->add(new admin_setting_configtext(
-        'block_chatbot/max_tokens',
-        get_string('max_tokens', 'block_chatbot'),
-        get_string('max_tokens_desc', 'block_chatbot'),
+        'block_tutoring_machine/max_tokens',
+        get_string('max_tokens', 'block_tutoring_machine'),
+        get_string('max_tokens_desc', 'block_tutoring_machine'),
         '2500',
         PARAM_INT
     ));
 
     // Einstellung: Timeou
     $settings->add(new admin_setting_configtext(
-        'block_chatbot/timeout',
-        get_string('timeout', 'block_chatbot'),
-        get_string('timeout_desc', 'block_chatbot'),
+        'block_tutoring_machine/timeout',
+        get_string('timeout', 'block_tutoring_machine'),
+        get_string('timeout_desc', 'block_tutoring_machine'),
         '30',
         PARAM_INT
     ));

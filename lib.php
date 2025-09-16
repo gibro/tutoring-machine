@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Library functions for the Chatbot block.
+ * Library functions for the Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -97,7 +97,7 @@ class pdf2text {
  * @param int $blockid The block instance ID
  * @return bool True if user can access, false otherwise
  */
-function block_chatbot_can_access_block($blockid) {
+function block_tutoring_machine_can_access_block($blockid) {
     global $DB, $USER, $COURSE;
 
     // Get block instance
@@ -129,7 +129,7 @@ function block_chatbot_can_access_block($blockid) {
  * @param stdClass $course The course objec
  * @param context $context The course contex
  */
-function block_chatbot_extend_navigation_course($navigation, $course, $context) {
+function block_tutoring_machine_extend_navigation_course($navigation, $course, $context) {
     // Die Funktion ist jetzt leer, da wir keinen Link in der Kursnavigation hinzufügen möchten
     // Der Kontext-Viewer ist nur über die Blockeinstellungen erreichbar
 }
@@ -140,7 +140,7 @@ function block_chatbot_extend_navigation_course($navigation, $course, $context) 
  * @param settings_navigation $navigation The settings navigation objec
  * @param context $context The context of the course
  */
-function block_chatbot_extend_settings_navigation($navigation, $context) {
+function block_tutoring_machine_extend_settings_navigation($navigation, $context) {
     global $CFG, $PAGE;
 
     // Only add settings if in course contex
@@ -149,20 +149,20 @@ function block_chatbot_extend_settings_navigation($navigation, $context) {
     }
 
     // Check if user has capability to view settings
-    // Check for either the chatbot view capability or basic course view capability
-    if (has_capability('block/chatbot:view', $context) || has_capability('moodle/course:view', $context)) {
+    // Check for either the Tutoring Machine view capability or basic course view capability
+    if (has_capability('block/tutoring_machine:view', $context) || has_capability('moodle/course:view', $context)) {
         // Find the course administration node
         if ($coursenode = $navigation->get('courseadmin')) {
             // Add link to the context viewer
-            $url = new moodle_url($CFG->wwwroot . '/blocks/chatbot/view_context.php',
+            $url = new moodle_url($CFG->wwwroot . '/blocks/tutoring_machine/view_context.php',
                 array('courseid' => $PAGE->course->id));
 
             $coursenode->add(
-                get_string('contextsources', 'block_chatbot'),
+                get_string('contextsources', 'block_tutoring_machine'),
                 $url,
                 navigation_node::TYPE_SETTING,
                 null,
-                'chatbotcontext',
+                'tutoring_machine_context',
                 new pix_icon('i/info', '')
             );
         }

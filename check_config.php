@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Configuration checker for Chatbot block.
+ * Configuration checker for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -12,16 +12,16 @@ require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 
 // Security: require admin access
-admin_externalpage_setup('blocksettingchatbot');
+admin_externalpage_setup('blocksettingtutoring_machine');
 
 // Page setup
 $PAGE->set_context(context_system::instance());
-$PAGE->set_url('/blocks/chatbot/check_config.php');
-$PAGE->set_title('Chatbot Configuration Check');
-$PAGE->set_heading('Chatbot Configuration Check');
+$PAGE->set_url('/blocks/tutoring_machine/check_config.php');
+$PAGE->set_title('Tutoring Machine Configuration Check');
+$PAGE->set_heading('Tutoring Machine Configuration Check');
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading('Chatbot Configuration Check');
+echo $OUTPUT->heading('Tutoring Machine Configuration Check');
 
 // Display PHP and environment info
 echo $OUTPUT->heading('Environment Information', 3);
@@ -34,7 +34,7 @@ echo '<tr><td>Operating System</td><td>' . php_uname() . '</td></tr>';
 echo '</table>';
 
 // Get and display plugin configuration
-$config = get_config('block_chatbot');
+$config = get_config('block_tutoring_machine');
 echo $OUTPUT->heading('Plugin Configuration', 3);
 echo '<table class="table">';
 

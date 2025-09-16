@@ -8,11 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Testing: Manual testing against target Moodle versions
 
 ## Test Commands
-- API test: `php blocks/chatbot/api_test.php [provider]` (openai, google, or all)
-- Web test: Access `/blocks/chatbot/api_test_web.php` in browser (admin only)
+- API test: `php blocks/tutoring_machine/api_test.php [provider]` (openai, google, or all)
+- Web test: Access `/blocks/tutoring_machine/api_test_web.php` in browser (admin only)
 - Debug mode: Add `?cache_buster=1` to URLs to bypass cache
-- Config check: `php blocks/chatbot/check_config.php`
-- Direct API test: `php blocks/chatbot/api_direct_test.php`
+- Config check: `php blocks/tutoring_machine/check_config.php`
+- Direct API test: `php blocks/tutoring_machine/api_direct_test.php`
 
 ## Code Style Guidelines
 - Follow Moodle coding style (PSR-2 for PHP)

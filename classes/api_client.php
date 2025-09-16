@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * API client class for Chatbot block.
+ * API client class for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -15,7 +15,7 @@ defined('MOODLE_INTERNAL') || die();
  *
  * Provides a common interface for all AI provider clients.
  */
-interface block_chatbot_api_client_interface {
+interface block_tutoring_machine_api_client_interface {
     /**
      * Get completion from the AI provider
      *
@@ -80,7 +80,7 @@ interface block_chatbot_api_client_interface {
  * It handles parameter validation, HTTP requests, error handling, and logging.
  * Each provider should extend this class and implement the provider-specific methods.
  */
-abstract class block_chatbot_api_client_base implements block_chatbot_api_client_interface {
+abstract class block_tutoring_machine_api_client_base implements block_tutoring_machine_api_client_interface {
     /** @var string $api_key The API key for authentication */
     protected $api_key;
 
@@ -124,7 +124,7 @@ abstract class block_chatbot_api_client_base implements block_chatbot_api_client
      * Set the model to use
      *
      * @param string $model Model identifier
-     * @return block_chatbot_api_client_base This instance for method chaining
+     * @return block_tutoring_machine_api_client_base This instance for method chaining
      */
     public function set_model($model) {
         $this->model = clean_param($model, PARAM_NOTAGS);
@@ -135,7 +135,7 @@ abstract class block_chatbot_api_client_base implements block_chatbot_api_client
      * Set max tokens parameter
      *
      * @param int $max_tokens Maximum number of tokens in response
-     * @return block_chatbot_api_client_base This instance for method chaining
+     * @return block_tutoring_machine_api_client_base This instance for method chaining
      */
     public function set_max_tokens($max_tokens) {
         $max_tokens = clean_param($max_tokens, PARAM_INT);
@@ -147,7 +147,7 @@ abstract class block_chatbot_api_client_base implements block_chatbot_api_client
      * Set temperature parameter
      *
      * @param float $temperature Temperature value (0.0-1.0)
-     * @return block_chatbot_api_client_base This instance for method chaining
+     * @return block_tutoring_machine_api_client_base This instance for method chaining
      */
     public function set_temperature($temperature) {
         $temperature = clean_param($temperature, PARAM_FLOAT);
@@ -159,7 +159,7 @@ abstract class block_chatbot_api_client_base implements block_chatbot_api_client
      * Set top_p parameter for nucleus sampling
      *
      * @param float $top_p Top-p value (0.0-1.0)
-     * @return block_chatbot_api_client_base This instance for method chaining
+     * @return block_tutoring_machine_api_client_base This instance for method chaining
      */
     public function set_top_p($top_p) {
         $top_p = clean_param($top_p, PARAM_FLOAT);
@@ -171,7 +171,7 @@ abstract class block_chatbot_api_client_base implements block_chatbot_api_client
      * Set response forma
      *
      * @param string $format Response format ('text' or 'json')
-     * @return block_chatbot_api_client_base This instance for method chaining
+     * @return block_tutoring_machine_api_client_base This instance for method chaining
      */
     public function set_response_format($format) {
         $format = clean_param($format, PARAM_ALPHA);
@@ -185,7 +185,7 @@ abstract class block_chatbot_api_client_base implements block_chatbot_api_client
      * Set request timeou
      *
      * @param int $timeout Timeout in seconds
-     * @return block_chatbot_api_client_base This instance for method chaining
+     * @return block_tutoring_machine_api_client_base This instance for method chaining
      */
     public function set_timeout($timeout) {
         $timeout = clean_param($timeout, PARAM_INT);
@@ -197,7 +197,7 @@ abstract class block_chatbot_api_client_base implements block_chatbot_api_client
      * Set connection timeou
      *
      * @param int $timeout Timeout in seconds
-     * @return block_chatbot_api_client_base This instance for method chaining
+     * @return block_tutoring_machine_api_client_base This instance for method chaining
      */
     public function set_connect_timeout($timeout) {
         $timeout = clean_param($timeout, PARAM_INT);
@@ -511,7 +511,7 @@ abstract class block_chatbot_api_client_base implements block_chatbot_api_client
  * This class provides integration with OpenAI's GPT models via their Chat Completions API.
  * It supports all current OpenAI models including GPT-4, GPT-4o, and others.
  */
-class block_chatbot_openai_client extends block_chatbot_api_client_base {
+class block_tutoring_machine_openai_client extends block_tutoring_machine_api_client_base {
     /** @var array $supported_json_models Models that support JSON response format */
     protected $supported_json_models = [
         'gpt-4-turbo', 'gpt-4o', 'gpt-4o-mini', 'gpt-4.1-nano', 'gpt-4.1-mini',
@@ -594,7 +594,7 @@ class block_chatbot_openai_client extends block_chatbot_api_client_base {
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
                 'Authorization: Bearer ' . $this->api_key,
-                'User-Agent: MoodleChatbot/3.0',
+                'User-Agent: MoodleTutoring Machine/3.0',
                 'OpenAI-Beta: assistants=v1' // Include beta features if available
             ]
         ];
@@ -724,7 +724,7 @@ class block_chatbot_openai_client extends block_chatbot_api_client_base {
  * This class provides integration with Google's Gemini models via their Generative Language API.
  * It supports Gemini models including gemini-1.5-pro and gemini-1.5-flash.
  */
-class block_chatbot_google_client extends block_chatbot_api_client_base {
+class block_tutoring_machine_google_client extends block_tutoring_machine_api_client_base {
     /** @var array $supported_json_models Models that support JSON response format */
     protected $supported_json_models = [
         'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'
@@ -893,7 +893,7 @@ class block_chatbot_google_client extends block_chatbot_api_client_base {
             CURLOPT_POSTFIELDS => $json_data,
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
-                'User-Agent: MoodleChatbot/3.0'
+                'User-Agent: MoodleTutoring Machine/3.0'
             ]
         ];
 
@@ -1040,19 +1040,19 @@ class block_chatbot_google_client extends block_chatbot_api_client_base {
 
 /**
  * API provider implementations for other services can be added here
- * by extending the block_chatbot_api_client_base abstract class
+ * by extending the block_tutoring_machine_api_client_base abstract class
  */
 
 /**
  * Factory class for creating API clients
  */
-class block_chatbot_api_client {
+class block_tutoring_machine_api_client {
     /**
      * Create an API client for the specified model/provider
      *
      * @param string $api_key The API key
      * @param string $model The model identifier (with provider prefix)
-     * @return block_chatbot_api_client_interface The API clien
+     * @return block_tutoring_machine_api_client_interface The API clien
      */
     public static function create($api_key, $model = null) {
         // Get provider from model string (format: "provider:model")
@@ -1064,7 +1064,7 @@ class block_chatbot_api_client {
         }
 
         // Check if a provider-specific API key is available
-        $config = get_config('block_chatbot');
+        $config = get_config('block_tutoring_machine');
         $provider_api_key = $api_key; // Default to provided key
 
         switch ($provider) {
@@ -1072,7 +1072,7 @@ class block_chatbot_api_client {
                 if (!empty($config->google_apikey)) {
                     $provider_api_key = $config->google_apikey;
                 }
-                $client = new block_chatbot_google_client($provider_api_key);
+                $client = new block_tutoring_machine_google_client($provider_api_key);
                 break;
 
             case 'openai':
@@ -1080,7 +1080,7 @@ class block_chatbot_api_client {
                 if (!empty($config->openai_apikey)) {
                     $provider_api_key = $config->openai_apikey;
                 }
-                $client = new block_chatbot_openai_client($provider_api_key);
+                $client = new block_tutoring_machine_openai_client($provider_api_key);
                 break;
         }
 

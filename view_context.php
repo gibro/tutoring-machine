@@ -1,9 +1,9 @@
 <?php
 // This file is part of Moodle - http://moodle.org/
 /**
- * Context viewer for Chatbot block.
+ * Context viewer for Tutoring Machine block.
  *
- * @package    block_chatbo
+ * @package    block_tutoring_machine
  * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -43,30 +43,30 @@ $context = context_course::instance($courseid);
 require_login($course);
 // Check for basic course participation capability instead of plugin-specific capability
 // This allows the feature to work even before installing the plugin update with the new capability
-if (!has_capability('block/chatbot:view', $context) &&
+if (!has_capability('block/tutoring_machine:view', $context) &&
     !has_capability('moodle/course:view', $context)) {
-    require_capability('block/chatbot:view', $context); // Will trigger the appropriate error
+    require_capability('block/tutoring_machine:view', $context); // Will trigger the appropriate error
 }
 
 // Get block configuration if blockid is provided
 $block_config = null;
 if ($blockid) {
     $block_record = $DB->get_record('block_instances', array('id' => $blockid), '*');
-    if ($block_record && $block_record->blockname == 'chatbot') {
+    if ($block_record && $block_record->blockname == 'tutoring_machine') {
         $block_config = unserialize(base64_decode($block_record->configdata));
     }
 }
 
 // Page setup
-$PAGE->set_url('/blocks/chatbot/view_context.php', array('courseid' => $courseid, 'blockid' => $blockid));
+$PAGE->set_url('/blocks/tutoring_machine/view_context.php', array('courseid' => $courseid, 'blockid' => $blockid));
 $PAGE->set_context($context);
-$PAGE->set_heading(get_string('pluginname', 'block_chatbot') . ': ' . $course->fullname);
-$PAGE->set_title(get_string('pluginname', 'block_chatbot') . ': ' . get_string('contextsources', 'block_chatbot'));
-$PAGE->navbar->add(get_string('pluginname', 'block_chatbot'));
-$PAGE->navbar->add(get_string('contextsources', 'block_chatbot'));
+$PAGE->set_heading(get_string('pluginname', 'block_tutoring_machine') . ': ' . $course->fullname);
+$PAGE->set_title(get_string('pluginname', 'block_tutoring_machine') . ': ' . get_string('contextsources', 'block_tutoring_machine'));
+$PAGE->navbar->add(get_string('pluginname', 'block_tutoring_machine'));
+$PAGE->navbar->add(get_string('contextsources', 'block_tutoring_machine'));
 
 // Get the context from the content extractor
-$extractor = new block_chatbot_content_extractor($courseid, $block_config);
+$extractor = new block_tutoring_machine_content_extractor($courseid, $block_config);
 $context_content = $extractor->get_context();
 
 // Format the context for display
@@ -74,12 +74,12 @@ $formatted_context = nl2br(htmlspecialchars($context_content));
 
 // Output page
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('pluginname', 'block_chatbot') . ': ' . get_string('contextsources', 'block_chatbot'));
+echo $OUTPUT->heading(get_string('pluginname', 'block_tutoring_machine') . ': ' . get_string('contextsources', 'block_tutoring_machine'));
 
 // Display an info box explaining what this page shows
 echo html_writer::div(
-    get_string('contextsources', 'block_chatbot') . ' ' .
-    get_string('course_content_context_desc', 'block_chatbot'),
+    get_string('contextsources', 'block_tutoring_machine') . ' ' .
+    get_string('course_content_context_desc', 'block_tutoring_machine'),
     'alert alert-info'
 );
 
@@ -99,18 +99,18 @@ echo html_writer::tag('h5', 'Aktivierte Kontextquellen:');
 echo html_writer::start_tag('ul', array('class' => 'list-group mb-3'));
 
 $sources = array(
-    'use_textpages' => get_string('use_textpages', 'block_chatbot'),
-    'use_glossaries' => get_string('use_glossaries', 'block_chatbot'),
-    'use_h5p' => get_string('use_h5p', 'block_chatbot'),
-    'use_pdfs' => get_string('use_pdfs', 'block_chatbot'),
-    'use_forums' => get_string('use_forums', 'block_chatbot'),
-    'use_quizzes' => get_string('use_quizzes', 'block_chatbot'),
-    'use_books' => get_string('use_books', 'block_chatbot'),
-    'use_assignments' => get_string('use_assignments', 'block_chatbot'),
-    'use_labels' => get_string('use_labels', 'block_chatbot'),
-    'use_urls' => get_string('use_urls', 'block_chatbot'),
-    'use_lessons' => get_string('use_lessons', 'block_chatbot'),
-    'use_internet' => get_string('use_internet', 'block_chatbot')
+    'use_textpages' => get_string('use_textpages', 'block_tutoring_machine'),
+    'use_glossaries' => get_string('use_glossaries', 'block_tutoring_machine'),
+    'use_h5p' => get_string('use_h5p', 'block_tutoring_machine'),
+    'use_pdfs' => get_string('use_pdfs', 'block_tutoring_machine'),
+    'use_forums' => get_string('use_forums', 'block_tutoring_machine'),
+    'use_quizzes' => get_string('use_quizzes', 'block_tutoring_machine'),
+    'use_books' => get_string('use_books', 'block_tutoring_machine'),
+    'use_assignments' => get_string('use_assignments', 'block_tutoring_machine'),
+    'use_labels' => get_string('use_labels', 'block_tutoring_machine'),
+    'use_urls' => get_string('use_urls', 'block_tutoring_machine'),
+    'use_lessons' => get_string('use_lessons', 'block_tutoring_machine'),
+    'use_internet' => get_string('use_internet', 'block_tutoring_machine')
 );
 
 foreach ($sources as $key => $label) {

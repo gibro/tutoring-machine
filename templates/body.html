@@ -1,6 +1,6 @@
 <!-- 
-    Moodle Chatbot Templates
-    This template contains the structure, styles and scripts for the chatbot interface
+    Moodle Tutoring Machine Templates
+    This template contains the structure, styles and scripts for the Tutoring Machine interface
 -->
 
 <!-- Inline CSS Styles -->
@@ -359,9 +359,9 @@
 
 <script>
     /**
-     * Chatbot functionality
+     * Tutoring Machine functionality
      *
-     * This script handles the chatbot UI interaction, message formatting,
+     * This script handles the Tutoring Machine UI interaction, message formatting,
      * and communication with the server.
      */
     
@@ -375,12 +375,12 @@
     let isFullscreen = false;
 
     // Event listeners and initialization
-    document.addEventListener('DOMContentLoaded', initChatbot);
+    document.addEventListener('DOMContentLoaded', initTutoringMachine);
     
     /**
-     * Initialize the chatbot interface
+     * Initialize the Tutoring Machine interface
      */
-    function initChatbot() {
+    function initTutoringMachine() {
         addEventListeners();
         showAnalyticsNotice();
         
@@ -810,9 +810,9 @@
             }
             
             // Get base URL from Moodle or use relative path
-            let apiUrl = "/blocks/chatbot/chatbot.php";
+            let apiUrl = "/blocks/tutoring_machine/tutoring_machine.php";
             if (typeof M !== 'undefined' && M.cfg && M.cfg.wwwroot) {
-                apiUrl = M.cfg.wwwroot + "/blocks/chatbot/chatbot.php";
+                apiUrl = M.cfg.wwwroot + "/blocks/tutoring_machine/tutoring_machine.php";
             }
             
             // Send request to server

@@ -1,21 +1,21 @@
 <?php
-// German language strings for the Chatbot block.
-$string['pluginname']         = 'Chatbot';
-$string['chatbot:addinstance'] = 'Einen neuen Chatbot-Block hinzufügen';
-$string['chatbot:myaddinstance'] = 'Einen neuen Chatbot-Block zum Dashboard hinzufügen';
+// German language strings for the Tutoring Machine block.
+$string['pluginname']         = 'Tutoring Machine';
+$string['tutoring_machine:addinstance'] = 'Einen neuen Tutoring Machine-Block hinzufügen';
+$string['tutoring_machine:myaddinstance'] = 'Einen neuen Tutoring Machine-Block zum Dashboard hinzufügen';
 $string['assistantname']      = 'Assistent*innen-Name';
 $string['assistantnamedesc']  = 'Gebe den Namen ein, der im Chat als Assistent angezeigt wird.';
 $string['courselogo']         = 'Kursspezifisches Logo';
 $string['courselogo_help']    = 'Lade ein eigenes Logo für diese Kursinstanz hoch. Wenn nicht festgelegt, wird das Standard-Logo verwendet.';
 $string['apikey']             = 'API-Schlüssel';
-$string['apikeydesc']         = 'Gib deinen OpenAI API-Schlüssel für die Chatbot-Funktionalität ein.';
-$string['metaprompt']         = 'Chatbot-Anweisungen';
-$string['metaprompt_help']    = 'Gib hier besondere Anweisungen für den Chatbot in diesem Kurs ein. Diese Anweisungen werden vor jede Benutzeranfrage gestellt. Beispiel: "Verwende stets eine freundliche und einfache Sprache." oder "Du bist ein Moodle-Support-Assistent, verwende stets die informelle Anrede und duze die Nutzer*innen."';
+$string['apikeydesc']         = 'Gib deinen OpenAI API-Schlüssel für die Tutoring Machine-Funktionalität ein.';
+$string['metaprompt']         = 'Tutoring Machine-Anweisungen';
+$string['metaprompt_help']    = 'Gib hier besondere Anweisungen für die Tutoring Machine in diesem Kurs ein. Diese Anweisungen werden vor jede Benutzeranfrage gestellt. Beispiel: "Verwende stets eine freundliche und einfache Sprache." oder "Du bist ein Moodle-Support-Assistent, verwende stets die informelle Anrede und duze die Nutzer*innen."';
 
 // Darstellungs-Einstellungen
 $string['appearance'] = 'Darstellung';
 $string['main_color'] = 'Hauptfarbe';
-$string['main_color_help'] = 'Wähle die Hauptfarbe für die Chatbot-Oberfläche. Diese Farbe wird für die Kopfzeile, Schaltflächen und Benutzer-Nachrichtenblasen verwendet.';
+$string['main_color_help'] = 'Wähle die Hauptfarbe für die Tutoring Machine-Oberfläche. Diese Farbe wird für die Kopfzeile, Schaltflächen und Benutzer-Nachrichtenblasen verwendet.';
 
 // Kontextquellen-Einstellungen
 $string['contextsources'] = 'Kontextquellen';
@@ -26,8 +26,8 @@ $string['use_glossaries'] = 'Glossare einbeziehen';
 $string['use_glossaries_desc'] = 'Inhalte aus Glossaren des Kurses als Kontext für Antworten verwenden.';
 $string['use_glossaries_help'] = 'Wenn aktiviert, werden die Einträge aller Glossare im Kurs für die Beantwortung von Fragen verwendet.';
 $string['use_internet'] = 'Internetsuche erlauben';
-$string['use_internet_desc'] = 'Dem Chatbot erlauben, Informationen aus dem Internet zu verwenden, wenn keine Antwort im Kursinhalt gefunden wird.';
-$string['use_internet_help'] = 'Wenn aktiviert, kann der Chatbot Informationen aus dem Internet heranziehen, um Fragen zu beantworten, die nicht durch den Kursinhalt abgedeckt sind. Diese Informationen werden mit dem Kursinhalt kombiniert.';
+$string['use_internet_desc'] = 'Der Tutoring Machine erlauben, Informationen aus dem Internet zu verwenden, wenn keine Antwort im Kursinhalt gefunden wird.';
+$string['use_internet_help'] = 'Wenn aktiviert, kann die Tutoring Machine Informationen aus dem Internet heranziehen, um Fragen zu beantworten, die nicht durch den Kursinhalt abgedeckt sind. Diese Informationen werden mit dem Kursinhalt kombiniert.';
 $string['use_h5p'] = 'H5P-Aktivitäten einbeziehen';
 $string['use_h5p_desc'] = 'Inhalte aus H5P-Aktivitäten des Kurses als Kontext für Antworten verwenden.';
 $string['use_h5p_help'] = 'Wenn aktiviert, werden die Inhalte aller H5P-Aktivitäten im Kurs für die Beantwortung von Fragen verwendet.';
@@ -76,7 +76,7 @@ $string['data_collection_notice'] = 'Hey! Schön, dass du hier bist. Ich bin dei
 
 // Prompt-Empfehlungen
 $string['prompt_suggestions'] = 'Prompt-Empfehlungen';
-$string['prompt_suggestions_desc'] = 'Stelle Empfehlungen für effektive Prompts bereit, die Lernende mit dem Chatbot verwenden können.';
+$string['prompt_suggestions_desc'] = 'Stelle Empfehlungen für effektive Prompts bereit, die Lernende mit dem Tutoring Machine verwenden können.';
 $string['prompt_suggestions_help'] = 'Gib eine Empfehlung pro Zeile ein. Diese werden als anklickbare Optionen in der Chat-Oberfläche angezeigt.';
 $string['enable_prompt_suggestions'] = 'Prompt-Empfehlungen aktivieren';
 $string['enable_prompt_suggestions_desc'] = 'Zeigt einen Button in der Chat-Oberfläche an, mit dem Lernende aus vordefinierten Prompt-Empfehlungen auswählen können.';
