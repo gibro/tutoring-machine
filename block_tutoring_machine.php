@@ -58,6 +58,20 @@ class block_tutoring_machine extends block_base {
      */
     public function instance_config_save($data, $nolongerused = false) {
         $data = (object)$data; // Make sure it's an objec
+
+        if (isset($data->assistantname)) {
+            $data->assistantname = trim($data->assistantname);
+
+            $globalname = get_config('block_tutoring_machine', 'assistantname');
+            if ($globalname === false || $globalname === null || $globalname === '') {
+                $globalname = get_string('pluginname', 'block_tutoring_machine');
+            }
+
+            if ($data->assistantname === '' || $data->assistantname === $globalname) {
+                unset($data->assistantname);
+            }
+        }
+
         return parent::instance_config_save($data, $nolongerused);
     }
 
@@ -73,9 +87,32 @@ class block_tutoring_machine extends block_base {
             return $this->content;
         }
 
-        // Get assistant name from plugin settings
+        // Get assistant name from global plugin settings
         $config = get_config('block_tutoring_machine');
-        $assistant_name = !empty($config->assistantname) ? $config->assistantname : 'Tutoring Machine';
+        $global_assistant_name = !empty($config->assistantname) ? $config->assistantname : get_string('pluginname', 'block_tutoring_machine');
+
+        $contextoptions = array();
+        if (!empty($this->instance) && !empty($this->instance->id)) {
+            $contextoptions['context'] = context_block::instance($this->instance->id);
+        }
+
+        $global_assistant_name = format_string($global_assistant_name, true, $contextoptions);
+
+        $assistant_name = $global_assistant_name;
+
+        $instance_assistant = '';
+        if (!empty($this->config) && !empty($this->config->assistantname)) {
+            $instance_assistant = format_string($this->config->assistantname, true, $contextoptions);
+        }
+        if ($instance_assistant !== '') {
+            $assistant_name = $instance_assistant;
+        }
+
+        // Determine the display title for this block instance (matches block header)
+        $display_title = format_string($this->title, true, $contextoptions);
+        if ($display_title === '') {
+            $display_title = $assistant_name;
+        }
 
         // Get logo URL
         $logo_url = $this->get_logo_url();
@@ -153,7 +190,9 @@ class block_tutoring_machine extends block_base {
         }
 
         // Replace placeholders
-        $html = str_replace('%%CHATBOT_NAME%%', s($assistant_name), $template_content);
+        $html = str_replace('%%CHATBOT_NAME%%', s($global_assistant_name), $template_content);
+        $html = str_replace('%%BLOCK_ASSISTANT_NAME%%', s($assistant_name), $html);
+        $html = str_replace('%%CHATBOT_TITLE%%', s($display_title), $html);
         $html = str_replace('%%CHATBOT_LOGO%%', $logo_url, $html);
         $html = str_replace('%%BLOCK_ID%%', $this->instance->id, $html);
         $html = str_replace('%%MAIN_COLOR%%', $main_color, $html);

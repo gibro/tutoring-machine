@@ -3,6 +3,10 @@
 $string['pluginname']         = 'Tutoring Machine';
 $string['tutoring_machine:addinstance'] = 'Einen neuen Tutoring Machine-Block hinzufügen';
 $string['tutoring_machine:myaddinstance'] = 'Einen neuen Tutoring Machine-Block zum Dashboard hinzufügen';
+$string['configtitle'] = 'Blocktitel';
+$string['configtitle_help'] = 'Überschreibt den Standardnamen der Tutoring Machine für diese Blockinstanz. Lass das Feld leer, um den globalen Namen zu behalten.';
+$string['configassistantname'] = 'Name des Assistenten';
+$string['configassistantname_help'] = 'Trage hier einen individuellen Namen ein, der in allen Antworten der Tutoring Machine für diesen Block angezeigt wird. Leer lassen, um den globalen Assistentennamen zu übernehmen.';
 $string['assistantname']      = 'Assistent*innen-Name';
 $string['assistantnamedesc']  = 'Gebe den Namen ein, der im Chat als Assistent angezeigt wird.';
 $string['courselogo']         = 'Kursspezifisches Logo';

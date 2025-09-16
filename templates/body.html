@@ -357,6 +357,8 @@
     </div>
 </div>
 
+<div id="tutoring-machine-config" data-assistant-name="%%BLOCK_ASSISTANT_NAME%%" data-default-name="%%CHATBOT_NAME%%" data-title-name="%%CHATBOT_TITLE%%" style="display:none"></div>
+
 <script>
     /**
      * Tutoring Machine functionality
@@ -366,7 +368,14 @@
      */
     
     // Global variables
-    let assistantName = "%%CHATBOT_NAME%%";
+    const configElement = document.getElementById('tutoring-machine-config');
+    let assistantName = '';
+    if (configElement) {
+        assistantName = configElement.dataset.assistantName || configElement.dataset.titleName || configElement.dataset.defaultName || '';
+    }
+    if (!assistantName) {
+        assistantName = 'Tutoring Machine';
+    }
     let conversationHistory = [];
     let analyticsEnabled = %%ANALYTICS_ENABLED%%;
     let promptSuggestionsEnabled = %%PROMPT_SUGGESTIONS_ENABLED%%;
@@ -926,7 +935,8 @@
         if (data.response) {
             // Format the response text
             let formattedResponse = formatBotResponse(data.response);
-            const botMessageHtml = `<div class='chat-bubble bot-message fade-in'><strong>${assistantName}:</strong><br>${formattedResponse}</div>`;
+            const safeAssistantName = sanitizeHTML(assistantName);
+            const botMessageHtml = `<div class='chat-bubble bot-message fade-in'><strong>${safeAssistantName}:</strong><br>${formattedResponse}</div>`;
             
             // Update both views
             normalMessages.innerHTML += botMessageHtml;

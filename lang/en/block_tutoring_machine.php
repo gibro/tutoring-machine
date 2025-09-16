@@ -3,6 +3,10 @@
 $string['pluginname']         = 'Tutoring Machine';
 $string['tutoring_machine:addinstance'] = 'Add a new Tutoring Machine block';
 $string['tutoring_machine:myaddinstance'] = 'Add a new Tutoring Machine block to Dashboard';
+$string['configtitle'] = 'Block title';
+$string['configtitle_help'] = 'Override the default Tutoring Machine name for this block instance. Leave empty to keep the plugin default.';
+$string['configassistantname'] = 'Assistant display name';
+$string['configassistantname_help'] = 'Set a custom assistant name shown in all Tutoring Machine replies for this block. Leave empty to reuse the global assistant name.';
 $string['assistantname']      = 'Assistantname';
 $string['assistantnamedesc']  = 'Enter the name that is displayed in the chat as Assistant.';
 $string['courselogo']         = 'Course-specific Logo';

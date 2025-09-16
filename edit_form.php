@@ -24,6 +24,23 @@ class block_tutoring_machine_edit_form extends block_edit_form {
         // Section header title.
         $mform->addElement('header', 'configheader', get_string('blocksettings', 'block'));
 
+        $config = get_config('block_tutoring_machine');
+
+        // Custom block title per instance.
+        $mform->addElement('text', 'config_title',
+            get_string('configtitle', 'block_tutoring_machine'), array('size' => 50));
+        $mform->setType('config_title', PARAM_TEXT);
+        $mform->setDefault('config_title', get_string('pluginname', 'block_tutoring_machine'));
+        $mform->addHelpButton('config_title', 'configtitle', 'block_tutoring_machine');
+
+        // Custom assistant name for this instance.
+        $defaultassistant = !empty($config->assistantname) ? $config->assistantname : get_string('pluginname', 'block_tutoring_machine');
+        $mform->addElement('text', 'config_assistantname',
+            get_string('configassistantname', 'block_tutoring_machine'), array('size' => 50));
+        $mform->setType('config_assistantname', PARAM_TEXT);
+        $mform->setDefault('config_assistantname', $defaultassistant);
+        $mform->addHelpButton('config_assistantname', 'configassistantname', 'block_tutoring_machine');
+
         // Metaprompt field for custom instructions
         $mform->addElement('textarea', 'config_metaprompt',
             get_string('metaprompt', 'block_tutoring_machine'),
@@ -35,7 +52,6 @@ class block_tutoring_machine_edit_form extends block_edit_form {
         $mform->addElement('header', 'ai_model', get_string('modelsettings', 'block_tutoring_machine'));
 
         // Get system default model
-        $config = get_config('block_tutoring_machine');
         $default_model = isset($config->default_model) ? $config->default_model : 'gpt-4';
 
         // Model choices with descriptions for learning applications

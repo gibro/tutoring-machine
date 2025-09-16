@@ -129,12 +129,12 @@ Dieses Caching-System reduziert die Verarbeitungszeit und verbessert die Reaktio
 ## Änderungsprotokoll
 
 ### Version 3.14.3
-- Standardlogo bereinigt: der Block lädt nun `/blocks/chatbot/pix/icon.png` statt des alten Widget-Logos.
-- PHPDoc-Metadaten korrigiert (`@package block_chatbot`) und damit die Komponentenbezeichnung vereinheitlicht.
+- Pro Block ist nun ein eigener Assistentenname konfigurierbar; die Chat-Sprechblasen übernehmen diesen Namen automatisch.
+- Der neue Block-Parameter bleibt optional – leere Felder fallen auf den globalen Namen zurück, spätere Globaleinstellungen greifen wieder für alle Blöcke ohne eigenen Namen.
 
 ### Version 3.14.2
-- Neues Formularfeld `Block-Titel` erlaubt pro Instanz einen individuellen Namen inklusive Hilfetext.
-- Bei der Ausgabe wird der Titel per `format_string()` bereinigt und fällt andernfalls auf den Standardnamen zurück.
+- Blocktitel lässt sich pro Instanz setzen und dient jetzt gleichzeitig als Absendername jeder KI-Antwort im Chat.
+- Das Bearbeitungsformular bietet erneut das Feld "Blocktitel" inklusive Hilfetext; leere Werte verwenden den globalen Namen.
 
 ### Version 3.14.1
 - Gemeinsame `handleSendMessage`-Logik synchronisiert Chatverlauf zwischen Block- und Vollbildansicht.
