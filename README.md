@@ -4,52 +4,45 @@ Ein Block für Moodle, der eine KI-basierte Tutoring Machine zur Unterstützung 
 
 ## Installation
 
-1. Entpacken Sie das Plugin in das `/blocks/tutoring_machine`-Verzeichnis Ihrer Moodle-Installation.
-2. Navigieren Sie zu "Website-Administration" > "Mitteilungen" > "Benachrichtigungen aktualisieren".
-3. Folgen Sie dem Installationsprozess und bestätigen Sie die Installation.
+1. Entpacke das Plugin in das `/blocks/tutoring_machine`-Verzeichnis Ihrer Moodle-Installation.
+2. Navigiere zu "Website-Administration" > "Mitteilungen" > "Benachrichtigungen aktualisieren".
+3. Folge dem Installationsprozess und bestätige die Installation.
 
 ## Konfiguration
 
 Das Plugin kann über die Blockeinstellungen in jeder Kursseite konfiguriert werden:
 
-1. Schalten Sie den Bearbeitungsmodus ein.
-2. Fügen Sie den "Tutoring Machine"-Block hinzu.
-3. Klicken Sie auf das Zahnrad-Symbol und wählen Sie "Block konfigurieren".
-4. Passen Sie die Einstellungen nach Bedarf an:
-   - **Tutoring Machine-Anweisungen**: Geben Sie spezielle Anweisungen für die Tutoring Machine ein
-   - **Hauptfarbe**: Wählen Sie die Hauptfarbe für die Benutzeroberfläche
-   - **Kontextquellen**: Wählen Sie, welche Kursressourcen als Kontext verwendet werden sollen:
+1. Schalte den Bearbeitungsmodus ein.
+2. Füge den "Tutoring Machine"-Block hinzu.
+3. Klicken Sie auf das Zahnrad-Symbol und wähle "Tutoring Machine konfigurieren".
+4. Passe die Einstellungen nach Bedarf an:
+   - **Tutoring Machine-Anweisungen**: Gebe spezielle Anweisungen für die Tutoring Machine ein, zum Beispiel: Gebe keine Lösungen vor, sondern verweise auf das Material, in dem die Lösung auf die gestellte Frage zu finden ist.
+   - **KI-Modell-Einstellungen**: Wähle das Modell aus, dass für deine Aufgabe im Kurs geeignet ist
+   - **Darstellung**: Wähle die Hauptfarbe für die Benutzeroberfläche
+   - **Kontext**: Wähle, welche Kursressourcen als Kontext verwendet werden sollen:
      - Textseiten
      - Glossare
      - H5P-Aktivitäten
      - PDF-Dokumente
      - Internetsuche (für Fragen, die nicht durch Kursinhalte beantwortet werden können)
-
-## Widget-Logo anpassen
-
-Das Chat-Widget verwendet ein Standard-Logo, das Sie folgendermaßen anpassen können:
-
-1. Erstellen Sie ein eigenes Logo mit folgenden Eigenschaften:
-   - Größe: 140 x 108 Pixel
-   - Format: PNG mit transparentem Hintergrund empfohlen
-   - Dateiname: `widget-logo.png`
-
-2. Ersetzen Sie die Datei im Plugin-Verzeichnis:
-   ```
-   /blocks/tutoring_machine/pix/widget-logo.png
-   ```
-
-3. Löschen Sie den Browser-Cache, damit das neue Logo angezeigt wird.
-
-**Hinweis:** Sie müssen direkten Zugriff auf das Dateisystem des Servers haben (z.B. per FTP oder SSH), um das Logo zu ersetzen.
+     Quellen, die nicht ausgewählt werden, werden auch nicht in den Kontext einbezogen, Die Tutoring Machine gibt dann die Antwort, dass dazu keine Informationen im Kurs gefunden werden konnten und die Referent*innen befragt werden müssen.
+   - **Lehr-Analysen**: Wenn die Lehr-Analysen aktiviert werden, werden alle Prompts der Teilnehmenden gespeichert und in einem für die Referent*innen zugänglichen Analyse-Dashboard ausgewertet, bzw. angezeigt. Der Willkommensprompt weist die Teilnehmenden darauf hin, dass ihre Eingaben gespeichert und den Referent*innen zugänglich gemacht werden.
+   - **Prompt-Empfehlungen**: Wenn aktiviert, wird ein weiterer Button angezeigt, mit dem den Teilnehmenden Prompt-Empfehlungen für die Nutzung der Tutoring Machine vorgeschlagen werden. Die können ausgewählt und abgeschickt werden. Um zu verschiedenen Kategorien Prompt-Empfehlugnen zu machen kann eine Raute vorausgeschickt werden. 
+   Beispiel:
+   #Anfänger
+	Wie alt ist Einstein geworden?
+	Wann ist Einstein geboren?
+   #Forgeschrittene
+	Wie alt ist Watts geworden?
+	Wann ist Watts geboren?
 
 ## Globale Einstellungen
 
 Globale Einstellungen für die Tutoring Machine können unter "Website-Administration" > "Plugins" > "Blöcke" > "Tutoring Machine" konfiguriert werden:
 
 - **Assistantname**: Der Name, der im Chat-Interface angezeigt wird
-- **OpenAI API-Schlüssel**: Ihr OpenAI API-Schlüssel für die Verbindung mit OpenAI-Modellen
-- **Google API-Schlüssel**: Ihr Google API-Schlüssel für die Verbindung mit Gemini-Modellen
+- **OpenAI API-Schlüssel**: Dein OpenAI API-Schlüssel für die Verbindung mit OpenAI-Modellen
+- **Google API-Schlüssel**: Dein Google API-Schlüssel für die Verbindung mit Gemini-Modellen
 - **Standard-Modell**: Das zu verwendende Standard-KI-Modell im Format "provider:model"
   - Unterstützte OpenAI-Modelle: gpt-4o, gpt-4-turbo, gpt-4o-mini und weitere
   - Unterstützte Google-Modelle: gemini-1.5-pro, gemini-1.5-flash, gemini-pro
@@ -134,6 +127,40 @@ Die Tutoring Machine nutzt ein umfassendes Caching-System, um die Leistung zu ve
 Dieses Caching-System reduziert die Verarbeitungszeit und verbessert die Reaktionsfähigkeit der Tutoring Machine erheblich.
 
 ## Änderungsprotokoll
+
+### Version 3.14.3
+- Standardlogo bereinigt: der Block lädt nun `/blocks/chatbot/pix/icon.png` statt des alten Widget-Logos.
+- PHPDoc-Metadaten korrigiert (`@package block_chatbot`) und damit die Komponentenbezeichnung vereinheitlicht.
+
+### Version 3.14.2
+- Neues Formularfeld `Block-Titel` erlaubt pro Instanz einen individuellen Namen inklusive Hilfetext.
+- Bei der Ausgabe wird der Titel per `format_string()` bereinigt und fällt andernfalls auf den Standardnamen zurück.
+
+### Version 3.14.1
+- Gemeinsame `handleSendMessage`-Logik synchronisiert Chatverlauf zwischen Block- und Vollbildansicht.
+- Willkommens- und Fehlermeldungen werden vor dem Rendern sanitisiert, um HTML aus Nutzereingaben zu filtern.
+- Requests prüfen `sesskey`, `blockid` und `courseid` robuster und bereinigen Ladeindikatoren über `removeLoadingIndicator()`.
+
+### Version 3.14.0
+- Vollbildmodus implementiert: Modal-Container, Buttons und Styling erleichtern das Arbeiten mit langen Antworten.
+- Toggle-/Close-Handler übertragen Chatverlauf zwischen Block und Modal und verwalten den `isFullscreen`-Status.
+
+### Version 3.13.1
+- Blockkonfiguration bietet einen Button zum direkten Öffnen des Analytics-Dashboards.
+- Analytics-SQL nutzt konsistente `COUNT`-Aliase, damit Statistiken zuverlässig berechnet werden.
+
+### Version 3.13.0
+- Chatoberfläche wurde als Blockinhalt umgesetzt; das bisherige schwebende Widget einschließlich Größensteuerung entfällt.
+- Link zur Kontext-Quellenansicht ist in die Blockeinstellungen umgezogen und ersetzt den bisherigen Footer-Link.
+
+### Version 3.12.4
+- Office-Dokumente (Word, Excel, PowerPoint) werden als Kontext extrahiert und gecacht; Unterstützung inkl. LibreOffice-Fallback.
+- Neuer Cache-Typ `block_chatbot_office_cache` wird per Upgrade installiert und verwaltet Office-Inhalte getrennt vom PDF-Cache.
+
+### Version 3.12.0
+- Selektive Aktivitätsauswahl erlaubt das Markieren einzelner Kursaktivitäten pro Abschnitt als Kontextquelle.
+- Der Content-Extractor filtert anhand der ausgewählten Aktivitäten und pflegt `specific_activities` im Cache.
+- Die Kontextdiagnose listet ausschließlich die aktivierten Aktivitäten und Sektionen auf.
 
 ### Version 3.11.0
 - Umfassendes Code-Refactoring für bessere Wartbarkeit
