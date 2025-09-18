@@ -26,6 +26,8 @@ class block_tutoring_machine_cache_manager {
     const CACHE_TYPE_GLOSSARY = 'glossary_content';
     const CACHE_TYPE_H5P = 'h5p_content';
     const CACHE_TYPE_MISC = 'misc_content'; // For other module types like forums, quizzes, etc.
+    const CACHE_TYPE_UPLOADS = 'uploaded_files'; // Mapping between Moodle files and remote AI file IDs
+    const CACHE_TYPE_VECTOR_STORE = 'vector_stores'; // Stored vector store identifiers per provider/course
 
     /**
      * Default TTL values in seconds
@@ -223,7 +225,7 @@ class block_tutoring_machine_cache_manager {
     private static function get_cache_for_type($type) {
         // For PDF and Office content, use the database cache since they may be large
         if ($type == self::CACHE_TYPE_PDF || $type == self::CACHE_TYPE_OFFICE) {
-            return new block_tutoring_machine_db_cache();
+            return new block_tutoring_machine_db_cache($type);
         }
 
         // For other types, use Moodle's caching API
@@ -257,9 +259,9 @@ class block_tutoring_machine_cache_manager {
      * @return string Cache key
      */
     public static function get_pdf_content_key($contenthash) {
-        return "pdf_{$contenthash}";
+        return $contenthash;
     }
-    
+
     /**
      * Generate a cache key for Office document content
      *
@@ -268,7 +270,7 @@ class block_tutoring_machine_cache_manager {
      * @return string Cache key
      */
     public static function get_office_content_key($contenthash, $type) {
-        return "office_{$type}_{$contenthash}";
+        return $contenthash;
     }
 
     /**
@@ -302,6 +304,28 @@ class block_tutoring_machine_cache_manager {
     }
 
     /**
+     * Generate a cache key for uploaded AI context files
+     *
+     * @param string $provider Provider identifier (openai, google,...)
+     * @param string $contenthash Moodle file content hash
+     * @return string Cache key
+     */
+    public static function get_uploaded_file_key($provider, $contenthash) {
+        return "{$provider}_{$contenthash}";
+    }
+
+    /**
+     * Generate a cache key for stored vector store identifiers
+     *
+     * @param string $provider Provider identifier (openai, google,...)
+     * @param int $courseid Course identifier
+     * @return string Cache key
+     */
+    public static function get_vector_store_key($provider, $courseid) {
+        return "{$provider}_course_{$courseid}";
+    }
+
+    /**
      * Generate a generic cache key for any module type
      *
      * @param string $module_type The module type (forum, quiz, book, etc.)
@@ -320,6 +344,29 @@ class block_tutoring_machine_cache_manager {
  * that might exceed the size limits of Moodle's caching API
  */
 class block_tutoring_machine_db_cache {
+    /** @var string $type Cache type managed by this instance */
+    private $type;
+
+    /**
+     * Constructor
+     *
+     * @param string $type Cache type
+     */
+    public function __construct($type) {
+        $this->type = $type;
+    }
+
+    /**
+     * Resolve database table based on cache type.
+     *
+     * @return string Table name
+     */
+    private function get_table() {
+        return ($this->type === block_tutoring_machine_cache_manager::CACHE_TYPE_OFFICE)
+            ? 'block_tutoring_machine_office_cache'
+            : 'block_tutoring_machine_pdf_cache';
+    }
+
     /**
      * Get a cached item from the database
      *
@@ -330,16 +377,8 @@ class block_tutoring_machine_db_cache {
         global $DB;
 
         try {
-            // Determine which table to use based on key prefix
-            if (strpos($key, 'pdf_') === 0) {
-                $table = 'block_tutoring_machine_pdf_cache';
-            } else if (strpos($key, 'office_') === 0) {
-                $table = 'block_tutoring_machine_office_cache';
-            } else {
-                // Default to PDF cache table for backward compatibility
-                $table = 'block_tutoring_machine_pdf_cache';
-            }
-            
+            $table = $this->get_table();
+
             $record = $DB->get_record($table, ['contenthash' => $key]);
             if (!$record) {
                 return false;
@@ -369,21 +408,11 @@ class block_tutoring_machine_db_cache {
         global $DB;
 
         try {
-            // Extract data and metadata
+            $table = $this->get_table();
+
             $content = $data['data'];
             $metadata = $data['metadata'];
-            
-            // Determine which table to use based on key prefix
-            if (strpos($key, 'pdf_') === 0) {
-                $table = 'block_tutoring_machine_pdf_cache';
-            } else if (strpos($key, 'office_') === 0) {
-                $table = 'block_tutoring_machine_office_cache';
-            } else {
-                // Default to PDF cache table for backward compatibility
-                $table = 'block_tutoring_machine_pdf_cache';
-            }
 
-            // Check if entry already exists
             $existing = $DB->get_record($table, ['contenthash' => $key]);
 
             $record = new stdClass();
@@ -393,13 +422,11 @@ class block_tutoring_machine_db_cache {
             $record->content = $content;
 
             if ($existing) {
-                // Update existing record
                 $record->id = $existing->id;
                 return $DB->update_record($table, $record);
-            } else {
-                // Insert new record
-                return $DB->insert_record($table, $record) ? true : false;
             }
+
+            return $DB->insert_record($table, $record) ? true : false;
         } catch (Exception $e) {
             error_log("Error saving document cache: " . $e->getMessage());
             return false;
@@ -416,16 +443,7 @@ class block_tutoring_machine_db_cache {
         global $DB;
 
         try {
-            // Determine which table to use based on key prefix
-            if (strpos($key, 'pdf_') === 0) {
-                $table = 'block_tutoring_machine_pdf_cache';
-            } else if (strpos($key, 'office_') === 0) {
-                $table = 'block_tutoring_machine_office_cache';
-            } else {
-                // Default to PDF cache table for backward compatibility
-                $table = 'block_tutoring_machine_pdf_cache';
-            }
-            
+            $table = $this->get_table();
             return $DB->delete_records($table, ['contenthash' => $key]);
         } catch (Exception $e) {
             error_log("Error deleting document cache: " . $e->getMessage());
@@ -442,15 +460,14 @@ class block_tutoring_machine_db_cache {
         global $DB;
 
         try {
-            $result1 = $DB->delete_records('block_tutoring_machine_pdf_cache');
-            $result2 = true;
-            
-            // Check if office cache table exists before attempting to purge it
+            $resultPdf = $DB->delete_records('block_tutoring_machine_pdf_cache');
+            $resultOffice = true;
+
             if ($DB->get_manager()->table_exists('block_tutoring_machine_office_cache')) {
-                $result2 = $DB->delete_records('block_tutoring_machine_office_cache');
+                $resultOffice = $DB->delete_records('block_tutoring_machine_office_cache');
             }
-            
-            return $result1 && $result2;
+
+            return $resultPdf && $resultOffice;
         } catch (Exception $e) {
             error_log("Error purging document cache: " . $e->getMessage());
             return false;

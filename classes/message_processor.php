@@ -127,7 +127,7 @@ class block_tutoring_machine_message_processor {
     public function get_assistant_message() {
         return [
             'role' => 'assistant',
-            'content' => $this->response_tex
+            'content' => $this->response_text
         ];
     }
 

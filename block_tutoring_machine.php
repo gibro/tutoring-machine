@@ -134,7 +134,9 @@ class block_tutoring_machine extends block_base {
             $assistant_name,
             $logo_url,
             $main_color,
-            $analytics_notice
+            $analytics_notice,
+            $global_assistant_name,
+            $display_title
         );
 
         $this->content = new stdClass;
@@ -165,7 +167,7 @@ class block_tutoring_machine extends block_base {
      * @param string $analytics_notice Notice about analytics data collection
      * @return string Final HTML conten
      */
-    private function load_html_template($template_path, $assistant_name, $logo_url, $main_color = '#007bff', $analytics_notice = '') {
+    private function load_html_template($template_path, $assistant_name, $logo_url, $main_color = '#007bff', $analytics_notice = '', $global_assistant_name = '', $display_title = '') {
         global $COURSE;
 
         // Make sure analytics_notice is set to empty string if not provided
@@ -190,6 +192,9 @@ class block_tutoring_machine extends block_base {
         }
 
         // Replace placeholders
+        $global_assistant_name = $global_assistant_name !== '' ? $global_assistant_name : $assistant_name;
+        $display_title = $display_title !== '' ? $display_title : $assistant_name;
+
         $html = str_replace('%%CHATBOT_NAME%%', s($global_assistant_name), $template_content);
         $html = str_replace('%%BLOCK_ASSISTANT_NAME%%', s($assistant_name), $html);
         $html = str_replace('%%CHATBOT_TITLE%%', s($display_title), $html);

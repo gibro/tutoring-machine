@@ -128,6 +128,22 @@ Dieses Caching-System reduziert die Verarbeitungszeit und verbessert die Reaktio
 
 ## Änderungsprotokoll
 
+### Version 4.0.0
+- Komplettes Refactoring der OpenAI-Integration: Dateivorbereitung und Vector-Store-Synchronisation laufen jetzt über eigene Service-Klassen.
+- Kontextdateien werden automatisch geprüft: PDFs werden unverändert übernommen; Office-Dokumente (DOC/DOCX/PPT/PPTX/RTF/ODT/ODP) werden als Originaldateien hochgeladen und ausschließlich über `file_search` genutzt. Nicht unterstützte Formate werden übersprungen und in der Antwort vermerkt.
+- Vector Stores werden automatisch neu erstellt, wenn gecachte IDs beim Anbieter nicht mehr existieren.
+- Technische Grundlage für zukünftige Erweiterungen (z. B. alternative Provider, erweiterte Konvertierungen).
+
+### Version 3.14.5
+- Selektive Kontextquellen lösen jetzt automatisch einen Upload der Originaldateien zur Responses-API aus, unterstützt durch einen kursweiten Vector Store.
+- Antworten werden mit Fußnoten versehen, die auf die genutzten Kursdokumente verweisen.
+- Office-Dokumente werden bei Bedarf serverseitig in Text umgewandelt, damit sie von `file_search` verarbeitet werden können.
+
+### Version 3.14.4
+- Bei OpenAI-Modellen werden PDF- und Office-Dokumente jetzt als Originaldateien über die Responses-API bereitgestellt; eine serverseitige Textkonvertierung entfällt.
+- Kontextdateien werden automatisch hochgeladen und nach Content-Hash gecacht; das Modell nutzt die `file_search`-Funktion, um direkt aus den Kursdateien zu antworten, ohne wiederholt dieselben Dateien senden zu müssen.
+- Antworten enthalten automatisch Fußnoten mit Quellenverweisen, wenn Dateiinhalte verwendet werden.
+
 ### Version 3.14.3
 - Pro Block ist nun ein eigener Assistentenname konfigurierbar; die Chat-Sprechblasen übernehmen diesen Namen automatisch.
 - Der neue Block-Parameter bleibt optional – leere Felder fallen auf den globalen Namen zurück, spätere Globaleinstellungen greifen wieder für alle Blöcke ohne eigenen Namen.

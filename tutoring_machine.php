@@ -33,6 +33,7 @@ if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) ||
     die('Direkter Zugriff nicht erlaubt.');
 }
 
+
 // Additional CSRF protection using sesskey
 // Stricter implementation to require sesskey for all requests
 if (!isset($_POST['sesskey']) && !isset($_GET['sesskey'])) {
@@ -74,6 +75,33 @@ try {
     // Get API keys from plugin settings
     $api_key = get_api_key();
 
+    // Load global and block-specific configuration to determine provider and model
+    $config = get_config('block_tutoring_machine');
+    $block_config_settings = null;
+    if (!empty($block_id)) {
+        global $DB;
+        $block_record = $DB->get_record('block_instances', ['id' => $block_id], '*');
+        if ($block_record && $block_record->blockname === 'tutoring_machine') {
+            $block_config_settings = unserialize(base64_decode($block_record->configdata));
+        }
+    }
+
+    $model_to_use = !empty($config->default_model) ? $config->default_model : 'openai:gpt-4o';
+    if (!empty($block_config_settings) && !empty($block_config_settings->ai_model)) {
+        $model_to_use = $block_config_settings->ai_model;
+    }
+
+    $provider = 'openai';
+    if (strpos($model_to_use, ':') !== false) {
+        list($provider) = explode(':', $model_to_use, 2);
+    } else {
+        $provider = !empty($config->default_provider) ? $config->default_provider : 'openai';
+        $model_to_use = $provider . ':' . $model_to_use;
+    }
+
+    $file_context_items = [];
+    $should_upload_files = ($provider === 'openai' && !empty($block_config_settings) && !empty($block_config_settings->use_specific_activities));
+
     // Get context from course conten
     $system_message = '';
     $content_instructions = '';
@@ -82,19 +110,17 @@ try {
     // Add course content as context if course ID is provided
     if (!empty($course_id)) {
         try {
-            // Get block instance settings if available
-            $block_config = null;
-            if (!empty($block_id)) {
-                global $DB;
-                $block_record = $DB->get_record('block_instances', ['id' => $block_id], '*');
-                if ($block_record && $block_record->blockname === 'tutoring_machine') {
-                    $block_config = unserialize(base64_decode($block_record->configdata));
-                }
-            }
+            $block_config = $block_config_settings;
 
             // Extract course conten
             $extractor = new block_tutoring_machine_content_extractor($course_id, $block_config);
+            if ($should_upload_files) {
+                $extractor->enable_file_upload_mode();
+            }
             $course_content = $extractor->get_context();
+            if ($should_upload_files) {
+                $file_context_items = $extractor->get_files_for_upload();
+            }
 
             if (!empty($course_content)) {
                 // Parse out the instructions part from the contex
@@ -199,24 +225,6 @@ try {
         'content' => $message
     ];
 
-    // Get system configuration
-    $config = get_config('block_tutoring_machine');
-
-    // Get model to use (block settings override global settings)
-    $model_to_use = !empty($config->default_model) ? $config->default_model : 'openai:gpt-4o';
-
-    // Check if there are block-specific model settings
-    if (!empty($block_id)) {
-        global $DB;
-        $block_record = $DB->get_record('block_instances', ['id' => $block_id], '*');
-        if ($block_record && $block_record->blockname === 'tutoring_machine') {
-            $block_config = unserialize(base64_decode($block_record->configdata));
-            if (!empty($block_config->ai_model)) {
-                $model_to_use = $block_config->ai_model;
-            }
-        }
-    }
-
     // Create API client with the factory using the selected model
     try {
         // Verbose logging for debugging
@@ -255,7 +263,7 @@ try {
         error_log("[CHATBOT DEBUG] Sending request to API...");
         $start_time = microtime(true);
 
-        $response_text = $client->get_completion($messages);
+        $response_text = $client->get_completion($messages, $file_context_items);
 
         $end_time = microtime(true);
         $time_taken = round($end_time - $start_time, 2);

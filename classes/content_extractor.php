@@ -33,6 +33,12 @@ class block_tutoring_machine_content_extractor {
     /** @var object $modinfo Course module information */
     private $modinfo;
 
+    /** @var array $files_for_upload Collected files to pass to external APIs */
+    private $files_for_upload = [];
+
+    /** @var bool $file_upload_mode Flag to indicate that raw files should be provided instead of extracted text */
+    private $file_upload_mode = false;
+
     // MIME types for Office documents
     const MIMETYPE_DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     const MIMETYPE_DOC = 'application/msword';
@@ -106,6 +112,50 @@ class block_tutoring_machine_content_extractor {
     }
 
     /**
+     * Enable file upload mode so that original files are collected for external processing.
+     */
+    public function enable_file_upload_mode() {
+        $this->file_upload_mode = true;
+    }
+
+    /**
+     * Get the list of files that should be uploaded to external services.
+     *
+     * @return array List of arrays with keys: file (stored_file), label, type, filename, mimetype
+     */
+    public function get_files_for_upload() {
+        return array_values($this->files_for_upload);
+    }
+
+    /**
+     * Register a file so that it can be uploaded to an external AI service.
+     *
+     * @param stored_file $file Moodle stored file object
+     * @param string $label Human readable label (e.g. activity name)
+     * @param string $type Logical type (pdf, word, etc.)
+     */
+    private function register_file_for_upload($file, $label, $type, $extracted_text = '') {
+        if (!$file instanceof stored_file) {
+            return;
+        }
+
+        $hash = $file->get_contenthash();
+        if (isset($this->files_for_upload[$hash])) {
+            return;
+        }
+
+        $this->files_for_upload[$hash] = [
+            'file' => $file,
+            'label' => $label,
+            'type' => $type,
+            'filename' => $file->get_filename(),
+            'mimetype' => $file->get_mimetype(),
+            'courseid' => $this->course->id,
+            'extracted_text' => $extracted_text
+        ];
+    }
+
+    /**
      * Get context from all enabled sources with caching
      *
      * @return string The formatted contex
@@ -114,11 +164,20 @@ class block_tutoring_machine_content_extractor {
         global $CFG;
         require_once($CFG->dirroot . '/blocks/tutoring_machine/classes/cache_manager.php');
 
+        // Reset collected files at the beginning of each extraction run
+        $this->files_for_upload = [];
+
         // Cache-Key immer generieren, unabhängig davon, ob wir ihn jetzt verwenden
         $cache_key = block_tutoring_machine_cache_manager::get_course_content_key($this->course->id, $this->config);
         
         // Überprüfe, ob ein Cache-Buster in der URL ist
         $skip_cache = isset($_GET['cache_buster']);
+
+        // Wenn wir Dateien direkt bereitstellen möchten, arbeiten wir immer ohne Cache,
+        // damit wir die aktuelle Dateiliste erhalten und keine alten Daten verwenden.
+        if ($this->file_upload_mode) {
+            $skip_cache = true;
+        }
 
         if (!$skip_cache) {
             // Try to get from cache
@@ -629,6 +688,10 @@ class block_tutoring_machine_content_extractor {
             if (!empty($pdf_content)) {
                 $pdf_context .= "### PDF-Dokument: {$resource->name}\n";
                 $pdf_context .= $pdf_content . "\n\n";
+
+                if ($this->file_upload_mode) {
+                    $this->register_file_for_upload($file, $resource->name, 'pdf', $pdf_content);
+                }
             }
         }
 
@@ -938,6 +1001,10 @@ class block_tutoring_machine_content_extractor {
             if (!empty($office_content)) {
                 $office_context .= "### {$this->get_doc_type_name($doc_type)}: {$resource->name}\n";
                 $office_context .= $office_content . "\n\n";
+
+                if ($this->file_upload_mode) {
+                    $this->register_file_for_upload($file, $resource->name, $doc_type, $office_content);
+                }
             }
         }
 

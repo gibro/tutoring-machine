@@ -10,6 +10,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+require_once(__DIR__ . '/cache_manager.php');
+require_once(__DIR__ . '/openai/file_preparer.php');
+require_once(__DIR__ . '/openai/vector_store_manager.php');
+
 /**
  * API client interface for AI providers
  *
@@ -20,9 +24,10 @@ interface block_tutoring_machine_api_client_interface {
      * Get completion from the AI provider
      *
      * @param array $messages The messages to send to the AI provider
+     * @param array $attachments Optional list of additional context payloads (e.g. files)
      * @return string|false The completion text or false on failure
      */
-    public function get_completion($messages);
+    public function get_completion($messages, $attachments = []);
 
     /**
      * Set the model to use
@@ -518,6 +523,30 @@ class block_tutoring_machine_openai_client extends block_tutoring_machine_api_cl
         'gpt-4-vision-preview', 'gpt-4-1106-preview', 'gpt-4-0613'
     ];
 
+    /** @var string $responses_endpoint Endpoint for the Responses API */
+    protected $responses_endpoint = 'https://api.openai.com/v1/responses';
+
+    /** @var string $files_endpoint Endpoint for uploading files */
+    protected $files_endpoint = 'https://api.openai.com/v1/files';
+
+    /** @var int $responses_poll_max_attempts Maximum polling attempts for Responses API */
+    private $responses_poll_max_attempts = 6;
+
+    /** @var int $responses_poll_initial_delay Initial delay (seconds) before polling Responses API */
+    private $responses_poll_initial_delay = 1;
+
+    /** @var array $latest_uploaded_files Metadata for the most recently prepared attachments */
+    private $latest_uploaded_files = [];
+
+    /** @var array $latest_skipped_files Unsupported files skipped during upload */
+    private $latest_skipped_files = [];
+
+    /** @var block_tutoring_machine_openai_file_preparer|null */
+    private $file_preparer = null;
+
+    /** @var block_tutoring_machine_openai_vector_store_manager|null */
+    private $vector_store_manager = null;
+
     /**
      * Constructor
      *
@@ -643,6 +672,513 @@ class block_tutoring_machine_openai_client extends block_tutoring_machine_api_cl
     }
 
     /**
+     * Send a Responses API request that references uploaded context files.
+     *
+     * @param array $messages Conversation messages
+     * @param array $attachments Context file information
+     * @return array|false API response data or false on failure
+     */
+    private function send_responses_request($messages, $attachments) {
+        if (empty($this->api_key)) {
+            $this->log_error('OpenAI API key is not configured');
+            return false;
+        }
+
+        try {
+            $validated_messages = $this->validate_messages($messages);
+            list($conversation_messages, $instructions) = $this->separate_instructions_from_messages($validated_messages);
+
+            $file_result = $this->prepare_files_for_responses($attachments);
+            $uploaded_files = $file_result['files'];
+            $course_id = $file_result['courseid'];
+
+            $instruction_sections = [];
+            $base_instructions = trim($instructions);
+            if ($base_instructions !== '') {
+                $instruction_sections[] = $base_instructions;
+            }
+
+            if (!empty($uploaded_files)) {
+                $file_list_text = "Folgende Kursdateien stehen dir zur Verfügung:\n";
+                foreach ($uploaded_files as $file_meta) {
+                    $display_name = isset($file_meta['label']) && $file_meta['label'] !== ''
+                        ? $file_meta['label']
+                        : $file_meta['filename'];
+                    $file_list_text .= '- ' . $display_name . "\n";
+                }
+                $file_list_text .= "\nBitte markiere belegte Aussagen mit Verweisen wie [1], [2] in der Reihenfolge ihres Auftretens.";
+                $instruction_sections[] = trim($file_list_text);
+            }
+
+            if (!empty($this->latest_skipped_files)) {
+                $instruction_sections[] = 'Hinweis: Die folgenden Dateien konnten wegen eines nicht unterstützten Formats nicht eingebunden werden: ' .
+                    implode(', ', $this->latest_skipped_files) . '.';
+            }
+
+            $instructions = trim(implode("\n\n", array_filter($instruction_sections)));
+
+            $input_items = $this->convert_messages_for_responses($conversation_messages, $uploaded_files);
+
+            $post_data = [
+                'model' => $this->model,
+                'input' => $input_items,
+                'temperature' => $this->temperature,
+                'top_p' => $this->top_p,
+                'parallel_tool_calls' => true,
+                'max_output_tokens' => $this->max_tokens
+            ];
+
+            if (!empty($instructions)) {
+                $post_data['instructions'] = $instructions;
+            }
+
+            if (!empty($uploaded_files)) {
+                $post_data['include'] = ['file_search_call.results'];
+                $file_ids = array_values(array_unique(array_map(function($meta) {
+                    return $meta['id'];
+                }, $uploaded_files)));
+
+                $vector_store_id = $this->get_vector_store_manager()->ensure($course_id, $file_ids);
+                $tool_definition = ['type' => 'file_search'];
+                if ($vector_store_id) {
+                    $tool_definition['vector_store_ids'] = [$vector_store_id];
+                }
+                $post_data['tools'] = [$tool_definition];
+            } else {
+                $this->latest_uploaded_files = [];
+            }
+
+            $log_preview = $post_data;
+            // Truncate logged input text for privacy
+            if (isset($log_preview['input'])) {
+                foreach ($log_preview['input'] as &$input_item) {
+                    if (isset($input_item['type']) && $input_item['type'] === 'message' && isset($input_item['content'])) {
+                        foreach ($input_item['content'] as &$content_item) {
+                            if (isset($content_item['type']) && in_array($content_item['type'], ['input_text', 'output_text'])) {
+                                $content_item['text'] = substr($content_item['text'], 0, 40) . '...';
+                            }
+                        }
+                    }
+                }
+            }
+            $this->log_info('OpenAI Responses request payload: ' . json_encode($log_preview));
+
+        } catch (Exception $e) {
+            $this->log_error('Failed to prepare OpenAI Responses request: ' . $e->getMessage());
+            return false;
+        }
+
+        $result = $this->post_json($this->responses_endpoint, $post_data);
+
+        if ($result === false) {
+            $this->log_error('OpenAI Responses API request failed');
+            return false;
+        }
+
+        if (isset($result['error'])) {
+            $this->handle_api_error($result['error']);
+            return false;
+        }
+
+        $result = $this->await_responses_completion($result);
+        if ($result === false) {
+            $this->log_error('OpenAI Responses polling failed to return a completed result');
+            return false;
+        }
+
+        if (isset($result['error'])) {
+            $this->handle_api_error($result['error']);
+            return false;
+        }
+
+        if (isset($result['status']) && $result['status'] !== 'completed' &&
+            empty($result['output']) && empty($result['output_text'])) {
+            $this->log_error('OpenAI Responses finished with status ' . $result['status'] . ' without output');
+            return false;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Lazily instantiate the file preparer helper.
+     *
+     * @return block_tutoring_machine_openai_file_preparer
+     */
+    private function get_file_preparer() {
+        if ($this->file_preparer === null) {
+            $this->file_preparer = new block_tutoring_machine_openai_file_preparer([
+                'create_temp_file' => function(stored_file $file) {
+                    return $this->create_temp_file_from_stored_file($file);
+                },
+                'upload_file' => function($path, $filename, $mimetype) {
+                    return $this->upload_file_to_openai($path, $filename, $mimetype);
+                },
+                'log_info' => function($message) {
+                    $this->log_info($message);
+                },
+                'log_warning' => function($message) {
+                    $this->log_warning($message);
+                },
+                'log_error' => function($message) {
+                    $this->log_error($message);
+                }
+            ]);
+        }
+
+        return $this->file_preparer;
+    }
+
+    /**
+     * Lazily instantiate the vector store manager helper.
+     *
+     * @return block_tutoring_machine_openai_vector_store_manager
+     */
+    private function get_vector_store_manager() {
+        if ($this->vector_store_manager === null) {
+            $this->vector_store_manager = new block_tutoring_machine_openai_vector_store_manager([
+                'post_json' => function($url, $payload) {
+                    return $this->post_json($url, $payload);
+                },
+                'get_json' => function($url) {
+                    return $this->get_json($url);
+                },
+                'log_info' => function($message) {
+                    $this->log_info($message);
+                },
+                'log_warning' => function($message) {
+                    $this->log_warning($message);
+                },
+                'log_error' => function($message) {
+                    $this->log_error($message);
+                }
+            ]);
+        }
+
+        return $this->vector_store_manager;
+    }
+
+    /**
+     * Wait for a Responses API call to finish processing.
+     *
+     * @param array $initial_result Result returned from the create call
+     * @return array|false Completed response payload or false on failure
+     */
+    private function await_responses_completion(array $initial_result) {
+        $status = isset($initial_result['status']) ? $initial_result['status'] : null;
+        if ($status === null || $status === 'completed') {
+            return $initial_result;
+        }
+
+        $response_id = isset($initial_result['id']) ? $initial_result['id'] : null;
+        if (empty($response_id)) {
+            $this->log_warning('Responses result is missing an identifier; unable to poll for completion');
+            return $initial_result;
+        }
+
+        $attempt = 0;
+        $delay = $this->responses_poll_initial_delay;
+        $terminal_statuses = ['completed', 'failed', 'cancelled', 'expired'];
+
+        while ($attempt < $this->responses_poll_max_attempts && in_array($status, ['queued', 'in_progress'])) {
+            $attempt++;
+            $this->log_info('Polling Responses API for completion (attempt ' . $attempt . ', status ' . $status . ')');
+
+            $sleep_for = max(1, (int)$delay);
+            if ($sleep_for > 0) {
+                sleep($sleep_for);
+            }
+
+            $polled = $this->poll_responses_result($response_id);
+            if ($polled === false) {
+                return false;
+            }
+
+            $initial_result = $polled;
+            $status = isset($initial_result['status']) ? $initial_result['status'] : null;
+            $delay = min($delay * 2, 8);
+        }
+
+        if ($status === 'requires_action') {
+            $this->log_error('OpenAI Responses request requires additional tool output – not supported');
+            return false;
+        }
+
+        if ($status && !in_array($status, $terminal_statuses)) {
+            $this->log_warning('OpenAI Responses finished with unexpected status ' . $status);
+        }
+
+        if ($status === 'failed' || $status === 'cancelled' || $status === 'expired') {
+            $this->log_error('OpenAI Responses reported a terminal status: ' . $status);
+            return false;
+        }
+
+        return $initial_result;
+    }
+
+    /**
+     * Fetch the latest state for a Responses API call.
+     *
+     * @param string $response_id The response identifier
+     * @return array|false JSON-decoded response or false on failure
+     */
+    private function poll_responses_result($response_id) {
+        $url = $this->build_responses_poll_url($response_id);
+        return $this->get_json($url);
+    }
+
+    /**
+     * Build the polling URL for the Responses API.
+     *
+     * @param string $response_id The response identifier
+     * @return string URL including query parameters
+     */
+    private function build_responses_poll_url($response_id) {
+        $base = rtrim($this->responses_endpoint, '/') . '/' . urlencode($response_id);
+        $query = http_build_query(['include' => 'file_search_call.results']);
+        return $base . '?' . $query;
+    }
+
+    /**
+     * Split out system instructions from normal conversation messages.
+     *
+     * @param array $messages Validated message list
+     * @return array Tuple of [messagesWithoutInstructions, combinedInstructions]
+     */
+    private function separate_instructions_from_messages($messages) {
+        $instructions = '';
+        $conversation_messages = [];
+
+        foreach ($messages as $message) {
+            if ($message['role'] === 'system') {
+                $instructions .= (empty($instructions) ? '' : "\n\n") . $message['content'];
+                continue;
+            }
+            $conversation_messages[] = $message;
+        }
+
+        return [$conversation_messages, $instructions];
+    }
+
+    /**
+     * Convert chat messages to Responses API input format and append file references.
+     *
+     * @param array $messages Conversation messages without system entries
+     * @param array $uploaded_files Uploaded file metadata
+     * @return array Responses API input items
+     */
+    private function convert_messages_for_responses($messages, $uploaded_files) {
+        $input_items = [];
+
+        foreach ($messages as $message) {
+            $type = ($message['role'] === 'assistant') ? 'output_text' : 'input_text';
+            $input_items[] = [
+                'type' => 'message',
+                'role' => $message['role'],
+                'content' => [
+                    [
+                        'type' => $type,
+                        'text' => $message['content']
+                    ]
+                ]
+            ];
+        }
+
+        if (!empty($uploaded_files)) {
+            $target_index = null;
+            for ($i = count($input_items) - 1; $i >= 0; $i--) {
+                if ($input_items[$i]['role'] === 'user') {
+                    $target_index = $i;
+                    break;
+                }
+            }
+
+            if ($target_index === null) {
+                $input_items[] = [
+                    'type' => 'message',
+                    'role' => 'user',
+                    'content' => []
+                ];
+                $target_index = count($input_items) - 1;
+            }
+
+            foreach ($uploaded_files as $file_info) {
+                $allow = !isset($file_info['allow_responses']) || $file_info['allow_responses'];
+                if (!$allow) {
+                    continue;
+                }
+
+                $input_items[$target_index]['content'][] = [
+                    'type' => 'input_file',
+                    'file_id' => $file_info['id']
+                ];
+            }
+        }
+
+        return $input_items;
+    }
+
+    /**
+     * Prepare attachments for Responses requests.
+     *
+     * @param array $attachments Array of attachment definitions
+     * @return array File preparer result (files with allow_responses flag, courseid, skipped)
+     */
+    private function prepare_files_for_responses($attachments) {
+        $result = $this->get_file_preparer()->prepare($attachments);
+        $this->latest_uploaded_files = $result['files'];
+        $this->latest_skipped_files = $result['skipped'];
+        return $result;
+    }
+
+    /**
+     * Ensure a vector store exists for the provided course and that the given files are indexed.
+     *
+     * @param int|null $course_id Course identifier
+     * @param array $file_ids List of OpenAI file identifiers
+     * @return string|null Vector store identifier
+     */
+    private function ensure_vector_store($course_id, array $file_ids) {
+        return $this->get_vector_store_manager()->ensure($course_id, $file_ids);
+    }
+
+    /**
+     * Format the Responses API result, including footnotes for file references.
+     *
+     * @param array $result Responses API result
+     * @return string Rendered text
+     */
+    private function format_responses_output(array $result) {
+        $text = isset($result['output_text']) ? $result['output_text'] : '';
+
+        if ($text === '' && isset($result['output'][0]['content'][0]['text'])) {
+            $text = $result['output'][0]['content'][0]['text'];
+        }
+
+        if (!is_string($text) || trim($text) === '') {
+            $text = $this->extract_responses_text($result);
+        }
+
+        if (!is_string($text) || $text === '') {
+            return json_encode($result);
+        }
+
+        return $text;
+    }
+
+
+    /**
+     * Collect citation labels from the Responses result.
+     *
+     * @param array $result Responses API result
+     * @return array List of citation strings
+     */
+    private function build_citations(array $result, array $uploaded_files = []) {
+        return [];
+    }
+
+    /**
+     * Create a temporary file from a Moodle stored_file for upload purposes.
+     *
+     * @param stored_file $file Moodle stored file
+     * @return string|false Path to the temporary file or false on failure
+     */
+    private function create_temp_file_from_stored_file($file) {
+        global $CFG;
+
+        $tempdir = $CFG->tempdir . '/tutoring_machine_uploads';
+        if (!is_dir($tempdir)) {
+            mkdir($tempdir, 0777, true);
+        }
+
+        $tempfile = tempnam($tempdir, 'ctx');
+        if ($tempfile === false) {
+            return false;
+        }
+
+        try {
+            $file->copy_content_to($tempfile);
+            return $tempfile;
+        } catch (Exception $e) {
+            $this->log_error('Failed to copy stored file to temporary location: ' . $e->getMessage());
+            @unlink($tempfile);
+            return false;
+        }
+    }
+
+    /**
+     * Create a temporary text file containing the provided content.
+     *
+     * @param string $text Text content to write
+     * @param string $hash Identifier to ensure unique filenames
+     * @return string|false Path to the temporary file or false on failure
+     */
+
+    /**
+     * Upload a file to OpenAI and return the response payload.
+     *
+     * @param string $filepath Path to the file on disk
+     * @param string $filename Original filename
+     * @param string $mimetype File mimetype
+     * @return array|false OpenAI file response or false on failure
+     */
+    private function upload_file_to_openai($filepath, $filename, $mimetype) {
+        $cfile = new CURLFile($filepath, $mimetype ?: 'application/octet-stream', $filename);
+
+        $postfields = [
+            'purpose' => 'assistants',
+            'file' => $cfile
+        ];
+
+        $options = [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $postfields,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $this->api_key,
+                'User-Agent: MoodleTutoring Machine/3.0'
+            ]
+        ];
+
+        $result = $this->execute_curl_request($this->files_endpoint, $options);
+
+        if ($result && isset($result['id'])) {
+            $this->log_info('Uploaded file to OpenAI: ' . $filename . ' (id: ' . $result['id'] . ')');
+            return $result;
+        }
+
+        $this->log_error('OpenAI file upload returned no file id.');
+        return false;
+    }
+
+    /**
+     * Extract assistant text from a Responses API payload.
+     *
+     * @param array $result Responses API response
+     * @return string The extracted assistant text
+     */
+    private function extract_responses_text($result) {
+        if (isset($result['output']) && is_array($result['output'])) {
+            foreach ($result['output'] as $item) {
+                if (!isset($item['content']) || !is_array($item['content'])) {
+                    continue;
+                }
+                foreach ($item['content'] as $content_piece) {
+                    if (isset($content_piece['type']) && $content_piece['type'] === 'output_text' && isset($content_piece['text'])) {
+                        return trim(clean_param($content_piece['text'], PARAM_TEXT));
+                    }
+                }
+            }
+        }
+
+        if (isset($result['output_text'])) {
+            return trim(clean_param($result['output_text'], PARAM_TEXT));
+        }
+
+        $this->log_warning('Unable to extract text from OpenAI Responses payload');
+        return '';
+    }
+
+    /**
      * Send a chat completion request and return the response tex
      *
      * Main method to be called by external code to get AI completions.
@@ -650,7 +1186,16 @@ class block_tutoring_machine_openai_client extends block_tutoring_machine_api_cl
      * @param array $messages The array of messages to send
      * @return string|false The response text or false on failure
      */
-    public function get_completion($messages) {
+    public function get_completion($messages, $attachments = []) {
+        if (!empty($attachments)) {
+            $result = $this->send_responses_request($messages, $attachments);
+            if ($result) {
+                return $this->format_responses_output($result);
+            }
+
+            throw new RuntimeException('OpenAI Responses request failed – no fallback available.');
+        }
+
         $result = $this->send_request($messages);
 
         if (!$result) {
@@ -680,6 +1225,68 @@ class block_tutoring_machine_openai_client extends block_tutoring_machine_api_cl
         $this->log_info('OpenAI request data: ' . json_encode($log_data));
         $this->log_info('OpenAI endpoint: ' . $this->api_endpoint);
         $this->log_info('OpenAI model: ' . $this->model);
+    }
+
+    /**
+     * Helper to POST JSON payloads to the OpenAI API.
+     *
+     * @param string $url Endpoint URL
+     * @param array $payload JSON payload
+     * @return array|false Decoded JSON response
+     */
+    private function post_json($url, array $payload) {
+        try {
+            $json = json_encode($payload, JSON_THROW_ON_ERROR);
+        } catch (Exception $e) {
+            $this->log_error('Failed to encode JSON payload: ' . $e->getMessage());
+            return false;
+        }
+
+        $options = [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $json,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $this->api_key,
+                'User-Agent: MoodleTutoring Machine/3.0'
+            ]
+        ];
+
+        $result = $this->execute_curl_request($url, $options);
+
+        if ($result === false) {
+            $this->log_error('JSON POST request failed for ' . $url);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Execute a GET request expecting a JSON payload.
+     *
+     * @param string $url Target URL
+     * @param array $headers Additional headers to merge
+     * @return array|false Decoded JSON response or false on failure
+     */
+    protected function get_json($url, array $headers = []) {
+        $request_headers = array_merge([
+            'Accept: application/json',
+            'Authorization: Bearer ' . $this->api_key,
+            'User-Agent: MoodleTutoring Machine/3.0'
+        ], $headers);
+
+        $options = [
+            CURLOPT_HTTPHEADER => $request_headers,
+            CURLOPT_HTTPGET => true
+        ];
+
+        $result = $this->execute_curl_request($url, $options);
+
+        if ($result === false) {
+            $this->log_error('JSON GET request failed for ' . $url);
+        }
+
+        return $result;
     }
 
     /**
@@ -948,7 +1555,8 @@ class block_tutoring_machine_google_client extends block_tutoring_machine_api_cl
      * @param array $messages The array of messages to send
      * @return string|false The response text or false on failure
      */
-    public function get_completion($messages) {
+    public function get_completion($messages, $attachments = []) {
+        // Attachments are not supported for Gemini at the moment.
         $result = $this->send_request($messages);
 
         if (!$result) {

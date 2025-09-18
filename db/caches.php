@@ -70,6 +70,26 @@ $definitions = [
         'staticacceleration' => false, // Don't store in memory due to size
     ],
 
+    // Mapping of uploaded AI context files (contenthash -> remote file id)
+    'uploaded_files' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => false,
+        'ttl' => 604800, // 1 week (re-upload after significant time)
+        'staticacceleration' => true,
+        'staticaccelerationsize' => 100,
+    ],
+
+    // Stored vector store identifiers per provider/course combination
+    'vector_stores' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => false,
+        'ttl' => 604800,
+        'staticacceleration' => true,
+        'staticaccelerationsize' => 50,
+    ],
+
     // Miscellaneous content cache (forums, quizzes, books, etc.)
     'misc_content' => [
         'mode' => cache_store::MODE_APPLICATION,
