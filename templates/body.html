@@ -1,0 +1,1421 @@
+<!-- 
+    Moodle Tutoring Machine Templates
+    This template contains the structure, styles and scripts for the Tutoring Machine interface
+-->
+
+<!-- Inline CSS Styles -->
+<style>
+    /* Base styles */
+    body {
+        font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    
+    /* Chat container for the block */
+    #chat-container {
+        width: 100%;
+        height: 450px;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-top: 10px;
+        position: relative; /* Für den Expand-Button */
+    }
+    
+    /* Fullscreen Modal Styles */
+    .chat-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .chat-modal-content {
+        width: 80%;
+        height: 80%;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        max-width: 1200px;
+    }
+    
+    /* Styling for modal components */
+    #modal-chat-messages {
+        flex: 1;
+        padding: 12px;
+        overflow-y: auto;
+        white-space: pre-line;
+        display: flex;
+        flex-direction: column;
+        scroll-behavior: smooth;
+    }
+    
+    #modal-chat-input {
+        width: 100%;
+    }
+    
+    #modal-chat-input textarea {
+        width: 100%;
+    }
+    
+    /* Styles for messaging components */
+
+    /* Messages container */
+    #chat-messages {
+        flex: 1;
+        padding: 12px;
+        overflow-y: auto;
+        white-space: pre-line;
+        display: flex;
+        flex-direction: column;
+        scroll-behavior: smooth;
+    }
+    
+    /* Message formatting - headings */
+    #chat-messages h3, #chat-messages h4, #chat-messages h5 {
+        display: block;
+        font-weight: bold;
+        color: #333;
+        margin-top: 16px;
+        margin-bottom: 8px;
+    }
+    
+    #chat-messages h3 { font-size: 16px; }
+    #chat-messages h4 { font-size: 15px; }
+    #chat-messages h5 { font-size: 14px; }
+    
+    /* Message formatting - lists */
+    #chat-messages .numbered-item, #chat-messages .bullet-item {
+        display: block;
+        margin: 1px 0;
+        padding: 1px 10px 1px 5px;
+        background-color: rgba(240, 240, 240, 0.1);
+    }
+    
+    #chat-messages .numbered-list {
+        display: block;
+        margin: 2px 0;
+    }
+    
+    #chat-messages .numbered-list .numbered-item {
+        margin: 0;
+    }
+    
+    /* List spacing fixes */
+    #chat-messages .numbered-list + .numbered-list,
+    #chat-messages .bullet-item + .numbered-list,
+    #chat-messages .numbered-list + .bullet-item {
+        margin-top: 1px;
+    }
+    
+    #chat-messages br + .numbered-list,
+    #chat-messages br + .bullet-item {
+        margin-top: 0;
+        display: inline-block;
+    }
+    
+    #chat-messages strong {
+        margin-top: 8px;
+        display: inline-block;
+    }
+
+    /* Chat bubbles */
+    .chat-bubble {
+        max-width: 85%;
+        padding: 12px;
+        border-radius: 15px;
+        margin: 6px 0;
+    }
+
+    .user-message {
+        background: %%MAIN_COLOR%%;
+        color: white;
+        align-self: flex-end;
+        text-align: left;
+        border-bottom-right-radius: 2px;
+        white-space: pre-wrap;
+    }
+
+    .bot-message {
+        background: #e3f2fd;
+        color: black;
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+    }
+    
+    /* Error message */
+    .error-message {
+        background: #ffebee;
+        color: #b71c1c;
+        border-left: 3px solid #f44336;
+        align-self: center;
+        text-align: center;
+        max-width: 95%;
+    }
+    
+    /* Loading indicator */
+    .loading {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        border: 3px solid rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        border-top-color: %%MAIN_COLOR%%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Chat input area */
+    #chat-input, .chat-input {
+        display: flex;
+        flex-direction: column;
+        border-top: 1px solid #ddd;
+        padding: 8px;
+        background: #f8f9fa;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    #chat-input textarea, .chat-input textarea {
+        width: 100%;
+        padding: 8px;
+        border: none;
+        outline: none;
+        border-radius: 5px;
+        resize: none;
+        min-height: 38px;
+        max-height: 120px;
+        overflow-y: auto;
+        margin-bottom: 8px;
+    }
+
+    #chat-input .button-row, .chat-input .button-row {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    #chat-input button, .chat-input button {
+        background: %%MAIN_COLOR%%;
+        color: white;
+        border: none;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-left: 8px;
+    }
+    
+    /* Prompt suggestions */
+    #prompt-suggestions-panel, .prompt-suggestions-panel {
+        display: none;
+        position: relative;
+        background: white;
+        border-top: 1px solid #ddd;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 100;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+        padding: 10px;
+    }
+    
+    #prompt-back-button, .prompt-back-button {
+        display: none;
+        padding: 5px 10px;
+        margin-bottom: 10px;
+        background: #f1f1f1;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: left;
+    }
+    
+    #prompt-back-button:hover, .prompt-back-button:hover {
+        background: #e3e3e3;
+    }
+    
+    .prompt-suggestion {
+        cursor: pointer;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        background: #f1f1f1;
+        border-radius: 5px;
+        transition: background 0.2s;
+        font-size: 14px;
+    }
+    
+    .prompt-suggestion:hover {
+        background: #e3e3e3;
+    }
+    
+    .prompt-category {
+        cursor: pointer;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        background: #e0e0e0;
+        border-radius: 5px;
+        transition: background 0.2s;
+        font-size: 14px;
+        font-weight: bold;
+        border-left: 3px solid %%MAIN_COLOR%%;
+    }
+    
+    .prompt-category:hover {
+        background: #d0d0d0;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<!-- Chat Interface HTML Structure (Embedded in Block) -->
+<div id="chat-container"
+     data-welcome-message="%%WELCOME_MESSAGE%%"
+     data-welcome-message-analytics="%%WELCOME_MESSAGE_ANALYTICS%%">
+    <div id="chat-messages"></div>
+    <div id="analytics-notice" style="display: none; font-size: 12px; color: #666; padding: 4px 8px; text-align: center; background-color: #f8f9fa; border-top: 1px solid #eee;">%%ANALYTICS_NOTICE%%</div>
+    <div id="prompt-suggestions-panel">
+        <button id="prompt-back-button">← Zurück</button>
+        <div id="prompt-suggestions-content">
+            <!-- Prompt suggestions will be dynamically added here -->
+        </div>
+    </div>
+    <div id="chat-input">
+        <textarea id="user-input" placeholder="Schreibe eine Nachricht..."></textarea>
+        <div class="button-row">
+            <button onclick="sendMessage()">➤</button>
+            <button id="suggestions-button" onclick="togglePromptSuggestions()" style="display: none;">
+                <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 24 24">
+                    <path d="M7,8h10V6H7V8z M7,12h10v-2H7V12z M7,16h10v-2H7V16z"/>
+                </svg>
+            </button>
+            <button onclick="resetSession()">
+                <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 32 32">
+                    <path d="M 16 4 C 10.886719 4 6.617188 7.160156 4.875 11.625 L 6.71875 12.375 C 8.175781 8.640625 11.710938 6 16 6 C 19.242188 6 22.132813 7.589844 23.9375 10 L 20 10 L 20 12 L 27 12 L 27 5 L 25 5 L 25 8.09375 C 22.808594 5.582031 19.570313 4 16 4 Z M 25.28125 19.625 C 23.824219 23.359375 20.289063 26 16 26 C 12.722656 26 9.84375 24.386719 8.03125 22 L 12 22 L 12 20 L 5 20 L 5 27 L 7 27 L 7 23.90625 C 9.1875 26.386719 12.394531 28 16 28 C 21.113281 28 25.382813 24.839844 27.125 20.375 Z"></path>
+                </svg>
+            </button>
+            <button onclick="toggleFullscreen()" title="Vollbildansicht öffnen">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Fullscreen Modal Container -->
+<div id="chat-modal" class="chat-modal">
+    <div class="chat-modal-content">
+        <div id="modal-chat-messages" class="chat-messages"></div>
+        <div id="modal-analytics-notice" style="display: none; font-size: 12px; color: #666; padding: 4px 8px; text-align: center; background-color: #f8f9fa; border-top: 1px solid #eee;">%%ANALYTICS_NOTICE%%</div>
+        <div id="modal-prompt-suggestions-panel" class="prompt-suggestions-panel">
+            <button id="modal-prompt-back-button" class="prompt-back-button">← Zurück</button>
+            <div id="modal-prompt-suggestions-content" class="prompt-suggestions-content">
+                <!-- Prompt suggestions will be dynamically added here -->
+            </div>
+        </div>
+        <div id="modal-chat-input" class="chat-input">
+            <textarea id="modal-user-input" placeholder="Schreibe eine Nachricht..."></textarea>
+            <div class="button-row">
+                <button onclick="sendModalMessage()">➤</button>
+                <button id="modal-suggestions-button" onclick="toggleModalPromptSuggestions()" style="display: none;">
+                    <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 24 24">
+                        <path d="M7,8h10V6H7V8z M7,12h10v-2H7V12z M7,16h10v-2H7V16z"/>
+                    </svg>
+                </button>
+                <button onclick="resetSession()">
+                    <svg fill="#ffffff" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="20" height="20" viewBox="0 0 32 32">
+                        <path d="M 16 4 C 10.886719 4 6.617188 7.160156 4.875 11.625 L 6.71875 12.375 C 8.175781 8.640625 11.710938 6 16 6 C 19.242188 6 22.132813 7.589844 23.9375 10 L 20 10 L 20 12 L 27 12 L 27 5 L 25 5 L 25 8.09375 C 22.808594 5.582031 19.570313 4 16 4 Z M 25.28125 19.625 C 23.824219 23.359375 20.289063 26 16 26 C 12.722656 26 9.84375 24.386719 8.03125 22 L 12 22 L 12 20 L 5 20 L 5 27 L 7 27 L 7 23.90625 C 9.1875 26.386719 12.394531 28 16 28 C 21.113281 28 25.382813 24.839844 27.125 20.375 Z"></path>
+                    </svg>
+                </button>
+                <button onclick="closeFullscreen()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tutoring-machine-config" data-assistant-name="%%BLOCK_ASSISTANT_NAME%%" data-default-name="%%CHATBOT_NAME%%" data-title-name="%%CHATBOT_TITLE%%" style="display:none"></div>
+
+<script>
+    /**
+     * Tutoring Machine functionality
+     *
+     * This script handles the Tutoring Machine UI interaction, message formatting,
+     * and communication with the server.
+     */
+    
+    // Global variables
+    const configElement = document.getElementById('tutoring-machine-config');
+    let assistantName = '';
+    if (configElement) {
+        assistantName = configElement.dataset.assistantName || configElement.dataset.titleName || configElement.dataset.defaultName || '';
+    }
+    if (!assistantName) {
+        assistantName = 'Tutoring Machine';
+    }
+    let conversationHistory = [];
+    let analyticsEnabled = %%ANALYTICS_ENABLED%%;
+    let promptSuggestionsEnabled = %%PROMPT_SUGGESTIONS_ENABLED%%;
+    let promptSuggestions = `%%PROMPT_SUGGESTIONS%%`;
+    let promptSuggestionsOpen = false;
+    let isFullscreen = false;
+
+    // Event listeners and initialization
+    document.addEventListener('DOMContentLoaded', initTutoringMachine);
+    
+    /**
+     * Initialize the Tutoring Machine interface
+     */
+    function initTutoringMachine() {
+        addEventListeners();
+        showAnalyticsNotice();
+        
+        // Check analytics status and force reset if needed
+        const needsReset = checkAnalyticsStatus();
+        
+        // If we need to reset, don't load the old session
+        if (!needsReset) {
+            loadSession();
+        }
+        
+        setTimeout(scrollToBottom, 100);
+        
+        // Initialize prompt suggestions if enabled
+        if (promptSuggestionsEnabled) {
+            initPromptSuggestions();
+        }
+    }
+    
+    /**
+     * Check if analytics status has changed
+     * Resets the conversation if the status has changed since last visit
+     */
+    function checkAnalyticsStatus() {
+        // Get stored analytics status
+        const storedStatus = localStorage.getItem("analyticsEnabled");
+        
+        // If analytics status has changed since last visit, force reset the conversation
+        if (storedStatus !== null && storedStatus !== String(analyticsEnabled)) {
+            console.log("Analytics status changed from " + storedStatus + " to " + analyticsEnabled + ", resetting conversation");
+            
+            // Reset stored conversation
+            localStorage.removeItem("chatHistory");
+            localStorage.removeItem("conversationHistory");
+            conversationHistory = [];
+            
+            // Force a welcome message reset when we open the chat
+            return true;
+        }
+        
+        // Always store current status
+        localStorage.setItem("analyticsEnabled", analyticsEnabled);
+        return false;
+    }
+    
+    /**
+     * Show analytics notice if it's provided
+     */
+    function showAnalyticsNotice() {
+        const analyticsNotice = document.getElementById("analytics-notice");
+        const noticeText = analyticsNotice.textContent.trim();
+        
+        if (noticeText && noticeText !== "%%ANALYTICS_NOTICE%%") {
+            analyticsNotice.style.display = "block";
+        }
+    }
+    
+    /**
+     * Add event listeners to UI elements
+     */
+    function addEventListeners() {
+        const userInput = document.getElementById("user-input");
+        const modalUserInput = document.getElementById("modal-user-input");
+        
+        if (userInput) {
+            userInput.addEventListener("keydown", function(event) {
+                // Allow growing textarea as content increases
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+                
+                // Send message on Enter without Shift key
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+        
+        if (modalUserInput) {
+            modalUserInput.addEventListener("keydown", function(event) {
+                // Allow growing textarea as content increases
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+                
+                // Send message on Enter without Shift key
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    sendModalMessage();
+                }
+            });
+        }
+        
+        // Initialize the chat immediately since it's always visible in the block
+        initializeChat();
+    }
+    
+    /**
+     * Toggle fullscreen mode
+     */
+    function toggleFullscreen() {
+        const modal = document.getElementById("chat-modal");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        const normalMessages = document.getElementById("chat-messages");
+        
+        // Toggle fullscreen state
+        isFullscreen = !isFullscreen;
+        
+        if (isFullscreen) {
+            // Copy content from normal chat to modal
+            modalMessages.innerHTML = normalMessages.innerHTML;
+            
+            // Copy analytics notice if visible
+            const analyticsNotice = document.getElementById("analytics-notice");
+            const modalAnalyticsNotice = document.getElementById("modal-analytics-notice");
+            if (analyticsNotice.style.display !== "none") {
+                modalAnalyticsNotice.style.display = analyticsNotice.style.display;
+                modalAnalyticsNotice.textContent = analyticsNotice.textContent;
+            }
+            
+            // Show modal
+            modal.style.display = "flex";
+            
+            // Focus on modal input
+            setTimeout(() => {
+                document.getElementById("modal-user-input").focus();
+            }, 100);
+            
+            // Disable page scrolling
+            document.body.style.overflow = "hidden";
+        }
+        
+        // Scroll to bottom in the active view
+        setTimeout(scrollToBottom, 100);
+    }
+    
+    /**
+     * Close fullscreen mode
+     */
+    function closeFullscreen() {
+        const modal = document.getElementById("chat-modal");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        const normalMessages = document.getElementById("chat-messages");
+        
+        // Copy content from modal to normal chat
+        normalMessages.innerHTML = modalMessages.innerHTML;
+        
+        // Hide modal
+        modal.style.display = "none";
+        isFullscreen = false;
+        
+        // Re-enable page scrolling
+        document.body.style.overflow = "";
+        
+        // Scroll to bottom in normal view
+        setTimeout(scrollToBottom, 100);
+    }
+    
+    /**
+     * Common function to handle sending messages
+     * @param {string} message - The message to send
+     * @param {string} mode - "normal" or "modal"
+     */
+    function handleSendMessage(message, mode) {
+        if (!message.trim()) return;
+        
+        // Get references to both views
+        const chatMessages = document.getElementById("chat-messages");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        
+        // Sanitize the message for security
+        const safeMessage = sanitizeHTML(message);
+        
+        // Create user message HTML
+        const userMessageHtml = `<div class='chat-bubble user-message fade-in'><strong>Du:</strong><br>${safeMessage}</div>`;
+        
+        // Update the view that triggered the message
+        if (mode === "modal") {
+            // Add message to both views for synchronization
+            modalMessages.innerHTML += userMessageHtml;
+            chatMessages.innerHTML += userMessageHtml;
+            
+            // Add loading indicator to modal view
+            modalMessages.innerHTML += `<div id="modal-loading" class="loading fade-in"></div>`;
+            
+            // Scroll both views
+            modalMessages.scrollTop = modalMessages.scrollHeight;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        } else {
+            // Add message to normal view
+            chatMessages.innerHTML += userMessageHtml;
+            chatMessages.innerHTML += `<div id="loading" class="loading fade-in"></div>`;
+            
+            // Also update modal view if we're in fullscreen mode
+            if (isFullscreen && modalMessages) {
+                modalMessages.innerHTML += userMessageHtml;
+            }
+            
+            // Scroll both views
+            scrollToBottom();
+        }
+        
+        // Add to conversation history
+        conversationHistory.push({
+            role: "user",
+            content: message // Original message for API
+        });
+        
+        // Save to local storage
+        saveSession();
+        
+        // Send the message to the server
+        sendMessageToServer(message, mode);
+    }
+    
+    /**
+     * Send a message from the modal view
+     */
+    function sendModalMessage() {
+        const modalInputField = document.getElementById("modal-user-input");
+        const message = modalInputField.value.trim();
+        
+        if (message) {
+            handleSendMessage(message, "modal");
+            modalInputField.value = ""; // Clear input
+        }
+    }
+    
+    /**
+     * Send a message from the normal view
+     */
+    function sendMessage() {
+        const inputField = document.getElementById("user-input");
+        const message = inputField.value.trim();
+        
+        if (message) {
+            handleSendMessage(message, "normal");
+            inputField.value = ""; // Clear input
+        }
+    }
+
+    /**
+     * Initialize the chat interface
+     */
+    function initializeChat() {
+        // Check if analytics status has changed and force reset if needed
+        const needsReset = checkAnalyticsStatus();
+        introduceBot(needsReset);
+    }
+
+    /**
+     * Display the bot's welcome message if it's the first time opening the chat
+     * or forced by reset
+     */
+    function introduceBot(forceReset = false) {
+        const chatMessages = document.getElementById("chat-messages");
+        
+        // Always show welcome message if forced or first time
+        if (forceReset || conversationHistory.length === 0) {
+            const chatContainer = document.getElementById("chat-container");
+            const fallbackDefaultWelcome = "Hey! Schön, dass du hier bist. Ich bin dein Freund und Lern-Begleiter. Frag mich einfach, wenn du Hilfe brauchst! 😊";
+            const fallbackAnalyticsWelcome = "Hey! Schön, dass du hier bist. Ich bin dein Lern-Begleiter. Deine Referentinnen oder/und Referenten haben die Chat-Analyse aktiviert, um aus deinen Fragen zu lernen, welche Inhalte zusätzliche Nachfragen erzeugt haben. Die Analyse findet anonym statt und ist nie auf dich zurückführbar. Stelle also alle Fragen, und denk daran, es gibt keine dummen Fragen ;-).";
+
+            const datasetDefaultWelcome = chatContainer && typeof chatContainer.dataset.welcomeMessage === 'string'
+                ? chatContainer.dataset.welcomeMessage.trim()
+                : '';
+            const datasetAnalyticsWelcome = chatContainer && typeof chatContainer.dataset.welcomeMessageAnalytics === 'string'
+                ? chatContainer.dataset.welcomeMessageAnalytics.trim()
+                : '';
+
+            const baseWelcomeMessage = datasetDefaultWelcome !== '' ? datasetDefaultWelcome : fallbackDefaultWelcome;
+            const analyticsWelcomeMessage = datasetAnalyticsWelcome !== ''
+                ? datasetAnalyticsWelcome
+                : (datasetDefaultWelcome !== '' ? datasetDefaultWelcome : fallbackAnalyticsWelcome);
+
+            // Analytics status is determined from the global variable
+            let welcomeMessage = analyticsEnabled ? analyticsWelcomeMessage : baseWelcomeMessage;
+            
+            // Clear existing conversation if forced
+            if (forceReset) {
+                chatMessages.innerHTML = "";
+                conversationHistory = [];
+            }
+            
+            // Sanitize for security
+            const safeWelcomeMessage = sanitizeHTML(welcomeMessage);
+            const formattedMessage = formatBotResponse(safeWelcomeMessage);
+            
+            chatMessages.innerHTML += `<div class='chat-bubble bot-message fade-in'><strong>${sanitizeHTML(assistantName)}:</strong><br>${formattedMessage}</div>`;
+            
+            conversationHistory.push({
+                role: "assistant",
+                content: welcomeMessage // Original message for API
+            });
+            
+            saveConversationHistory();
+            scrollToBottom();
+            
+            // Store current analytics status
+            localStorage.setItem("analyticsEnabled", analyticsEnabled);
+        }
+    }
+
+    /**
+     * Scroll the chat window to the bottom
+     */
+    function scrollToBottom() {
+        // Scroll the normal view
+        const chatMessages = document.getElementById("chat-messages");
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Scroll the modal view if we're in fullscreen mode
+        if (isFullscreen) {
+            const modalMessages = document.getElementById("modal-chat-messages");
+            modalMessages.scrollTop = modalMessages.scrollHeight;
+        }
+    }
+
+    /**
+     * Session management - save chat UI state and history
+     */
+    function saveSession() {
+        localStorage.setItem("chatHistory", document.getElementById("chat-messages").innerHTML);
+        saveConversationHistory();
+    }
+
+    /**
+     * Save conversation history to local storage
+     */
+    function saveConversationHistory() {
+        localStorage.setItem("conversationHistory", JSON.stringify(conversationHistory));
+    }
+
+    /**
+     * Load saved session from local storage
+     */
+    function loadSession() {
+        const chatMessages = document.getElementById("chat-messages");
+        const savedHistory = localStorage.getItem("chatHistory");
+        if (savedHistory) {
+            chatMessages.innerHTML = savedHistory;
+            
+            const savedConversation = localStorage.getItem("conversationHistory");
+            if (savedConversation) {
+                try {
+                    conversationHistory = JSON.parse(savedConversation);
+                } catch (e) {
+                    conversationHistory = [];
+                }
+            }
+            
+            scrollToBottom();
+        }
+    }
+
+    /**
+     * Reset the chat session
+     */
+    function resetSession() {
+        localStorage.removeItem("chatHistory");
+        localStorage.removeItem("conversationHistory");
+        
+        // Clear both views
+        document.getElementById("chat-messages").innerHTML = "";
+        if (document.getElementById("modal-chat-messages")) {
+            document.getElementById("modal-chat-messages").innerHTML = "";
+        }
+        
+        conversationHistory = [];
+        
+        // Store current analytics status from the global variable
+        localStorage.setItem("analyticsEnabled", analyticsEnabled);
+        
+        // Force a new welcome message
+        introduceBot(true);
+        
+        // If in fullscreen mode, update modal content as well
+        if (isFullscreen) {
+            const modalMessages = document.getElementById("modal-chat-messages");
+            const normalMessages = document.getElementById("chat-messages");
+            modalMessages.innerHTML = normalMessages.innerHTML;
+        }
+    }
+
+    /**
+     * Send a user message to the server and handle the response
+     * @param {string} message - The message to send
+     * @param {string} view - Which view is active ("normal" or "modal")
+     */
+    async function sendMessageToServer(message, view) {
+        const normalMessages = document.getElementById("chat-messages");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        const isModal = view === "modal";
+        const loadingId = isModal ? "modal-loading" : "loading";
+        
+        try {
+            // Prepare form data for request
+            const formData = new FormData();
+            formData.append('message', message);
+            formData.append('history', JSON.stringify(conversationHistory));
+            
+            // Add Moodle session key for CSRF protection - required for security
+            if (typeof M !== 'undefined' && M.cfg && M.cfg.sesskey) {
+                formData.append('sesskey', M.cfg.sesskey);
+            } else {
+                // Show error if sesskey is not available
+                const errorMessage = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Sicherheitstoken (sesskey) fehlt. Bitte lade die Seite neu.</div>`;
+                
+                // Update both views
+                normalMessages.innerHTML += errorMessage;
+                if (isModal && modalMessages) {
+                    modalMessages.innerHTML += errorMessage;
+                }
+                
+                // Remove loading indicators
+                removeLoadingIndicator(loadingId);
+                scrollToBottom();
+                return;
+            }
+            
+            // Add block ID if available (with validation)
+            try {
+                const blockId = %%BLOCK_ID%%;
+                if (blockId && !isNaN(parseInt(blockId))) {
+                    formData.append('blockid', blockId);
+                }
+            } catch (e) {
+                console.error("Error with block ID:", e);
+            }
+            
+            // Add course ID if available (with validation)
+            try {
+                if (typeof M !== 'undefined' && M.cfg && M.cfg.courseId && !isNaN(parseInt(M.cfg.courseId))) {
+                    formData.append('courseid', M.cfg.courseId);
+                }
+            } catch (e) {
+                console.error("Error with course ID:", e);
+            }
+            
+            // Get base URL from Moodle or use relative path
+            let apiUrl = "/blocks/tutoring_machine/tutoring_machine.php";
+            if (typeof M !== 'undefined' && M.cfg && M.cfg.wwwroot) {
+                apiUrl = M.cfg.wwwroot + "/blocks/tutoring_machine/tutoring_machine.php";
+            }
+            
+            // Send request to server
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: formData,
+                credentials: 'same-origin' // Ensure cookies are sent with the request
+            });
+
+            // Remove loading indicators
+            removeLoadingIndicator(loadingId);
+            
+            // Check for HTTP errors
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            
+            await handleServerResponse(response, view);
+        } catch (error) {
+            // Remove loading indicators
+            removeLoadingIndicator(loadingId);
+            
+            // Create sanitized error message
+            const safeErrorMessage = sanitizeHTML(error.message);
+            const errorMessage = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Verbindungsproblem: ${safeErrorMessage}</div>`;
+            
+            // Update both views
+            normalMessages.innerHTML += errorMessage;
+            if (isModal && modalMessages) {
+                modalMessages.innerHTML += errorMessage;
+            }
+            
+            scrollToBottom();
+            saveSession();
+        }
+    }
+    
+    /**
+     * Helper function to safely remove loading indicators
+     * @param {string} loadingId - The ID of the loading element to remove
+     */
+    function removeLoadingIndicator(loadingId) {
+        const loadingElement = document.getElementById(loadingId);
+        if (loadingElement) {
+            loadingElement.remove();
+        }
+    }
+    
+    /**
+     * Handle the server response
+     * @param {Response} response - The fetch response object
+     * @param {string} view - Which view is active ("normal" or "modal")
+     */
+    async function handleServerResponse(response, view) {
+        const normalMessages = document.getElementById("chat-messages");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        const responseText = await response.text();
+        let data;
+        
+        try {
+            data = JSON.parse(responseText);
+        } catch (jsonError) {
+            // Handle non-JSON responses
+            if (responseText && responseText.trim().length > 0) {
+                const plainTextResponse = responseText.trim();
+                const formattedMessage = formatBotResponse(plainTextResponse);
+                const errorHtml = `<div class='chat-bubble error-message fade-in'><strong>Debug:</strong><br>${formattedMessage}</div>`;
+                
+                // Update both views
+                normalMessages.innerHTML += errorHtml;
+                if (view === "modal") {
+                    modalMessages.innerHTML += errorHtml;
+                }
+                
+                conversationHistory.push({
+                    role: "assistant",
+                    content: plainTextResponse
+                });
+            } else {
+                const errorHtml = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Die Server-Antwort konnte nicht verarbeitet werden.</div>`;
+                
+                // Update both views
+                normalMessages.innerHTML += errorHtml;
+                if (view === "modal") {
+                    modalMessages.innerHTML += errorHtml;
+                }
+            }
+            saveConversationHistory();
+            scrollToBottom();
+            return;
+        }
+        
+        // Check for API error
+        if (data.error) {
+            const errorHtml = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>${data.message || 'Ein Fehler ist aufgetreten.'}</div>`;
+            
+            // Update both views
+            normalMessages.innerHTML += errorHtml;
+            if (view === "modal") {
+                modalMessages.innerHTML += errorHtml;
+            }
+            
+            scrollToBottom();
+            saveSession();
+            return;
+        }
+
+        if (data.response) {
+            // Format the response text
+            let formattedResponse = formatBotResponse(data.response);
+            const safeAssistantName = sanitizeHTML(assistantName);
+            const botMessageHtml = `<div class='chat-bubble bot-message fade-in'><strong>${safeAssistantName}:</strong><br>${formattedResponse}</div>`;
+            
+            // Update both views
+            normalMessages.innerHTML += botMessageHtml;
+            if (view === "modal") {
+                modalMessages.innerHTML += botMessageHtml;
+            }
+            
+            // Add assistant response to conversation history
+            if (data.lastMessage) {
+                conversationHistory.push(data.lastMessage);
+            } else {
+                conversationHistory.push({
+                    role: "assistant",
+                    content: data.response
+                });
+            }
+        } else {
+            const errorHtml = `<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Hm, da scheint was schiefgelaufen zu sein. Versuch's nochmal!</div>`;
+            
+            // Update both views
+            normalMessages.innerHTML += errorHtml;
+            if (view === "modal") {
+                modalMessages.innerHTML += errorHtml;
+            }
+        }
+        
+        scrollToBottom();
+        saveSession();
+    }
+    
+    /**
+     * Format bot messages with markdown-like syntax
+     * @param {string} text - The raw text to format
+     * @returns {string} - The formatted HTML
+     */
+    function formatBotResponse(text) {
+        // Sanitize text to prevent XSS
+        let formatted = sanitizeHTML(text);
+        
+        // Process numbered lists
+        formatted = processNumberedLists(formatted);
+        
+        // Process headers
+        formatted = processHeaders(formatted);
+        
+        // Process bullet lists
+        formatted = processBulletLists(formatted);
+        
+        // Cleanup and final formatting
+        formatted = cleanupFormatting(formatted);
+            
+        return formatted;
+    }
+    
+    /**
+     * Sanitize HTML to prevent XSS attacks
+     * @param {string} text - The text to sanitize
+     * @returns {string} - The sanitized text
+     */
+    function sanitizeHTML(text) {
+        const element = document.createElement('div');
+        element.textContent = text;
+        return element.innerHTML;
+    }
+    
+    /**
+     * Process numbered lists in text
+     * @param {string} text - Text to process
+     * @returns {string} - Processed text with HTML numbered lists
+     */
+    function processNumberedLists(text) {
+        let lines = text.split('\n');
+        let inNumberedList = false;
+        let numberedListItems = [];
+        
+        // First pass: identify and collect numbered list items
+        for (let i = 0; i < lines.length; i++) {
+            const numberedMatch = lines[i].match(/^(\d+)\.\s+(.*?)$/);
+            
+            if (numberedMatch) {
+                if (!inNumberedList) {
+                    inNumberedList = true;
+                    lines[i] = `__NUMBERED_LIST_START__${i}__`;
+                    numberedListItems.push({
+                        start: i,
+                        items: [`<div class="numbered-item">${numberedMatch[1]}. ${numberedMatch[2].trim()}</div>`]
+                    });
+                } else {
+                    const currentList = numberedListItems[numberedListItems.length - 1];
+                    currentList.items.push(`<div class="numbered-item">${numberedMatch[1]}. ${numberedMatch[2].trim()}</div>`);
+                    lines[i] = '';
+                }
+            } else {
+                inNumberedList = false;
+            }
+        }
+        
+        // Second pass: replace placeholders with HTML
+        numberedListItems.forEach(list => {
+            const numberedListHtml = `<div class="numbered-list">${list.items.join('')}</div>`;
+            lines[list.start] = numberedListHtml;
+        });
+        
+        return lines.join('\n');
+    }
+    
+    /**
+     * Process header tags in text
+     * @param {string} text - Text to process
+     * @returns {string} - Processed text with HTML headers
+     */
+    function processHeaders(text) {
+        return text
+            .replace(/^# (.*?)$/gm, "<h3>$1</h3>")
+            .replace(/\n# (.*?)$/gm, "<br><h3>$1</h3>")
+            .replace(/^## (.*?)$/gm, "<h4>$1</h4>")
+            .replace(/\n## (.*?)$/gm, "<br><h4>$1</h4>")
+            .replace(/^### (.*?)$/gm, "<h5>$1</h5>")
+            .replace(/\n### (.*?)$/gm, "<br><h5>$1</h5>");
+    }
+    
+    /**
+     * Process bullet lists in text
+     * @param {string} text - Text to process
+     * @returns {string} - Processed text with HTML bullet lists
+     */
+    function processBulletLists(text) {
+        let processed = text.replace(/^- (.*?)$/gm, function(match, content) {
+            return `<div class="bullet-item">• ${content.trim()}</div>`;
+        });
+        
+        return processed.replace(/\n- (.*?)$/gm, function(match, content) {
+            return `\n<div class="bullet-item">• ${content.trim()}</div>`;
+        });
+    }
+    
+    /**
+     * Cleanup and apply final formatting
+     * @param {string} text - Text to clean up
+     * @returns {string} - Cleaned text with final formatting applied
+     */
+    function cleanupFormatting(text) {
+        // Limit consecutive newlines
+        let cleaned = text.replace(/\n{2,}/g, '\n');
+        
+        // Special handling for consecutive lists
+        cleaned = cleaned.replace(/(<\/div>\n<div class="numbered-list">|<\/div>\n<div class="bullet-item">)/g, '</div><div class="numbered-list">');
+        
+        // Process remaining paragraph structure
+        cleaned = cleaned.replace(/\n\n/g, "<br>");
+        
+        // Final formatting
+        return cleaned
+            .replace(/\n/g, " ") // Replace newlines with spaces
+            .replace(/(<br>){2,}/g, "<br>") // Limit consecutive <br> tags
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\*(.*?)\*/g, "<em>$1</em>");
+    }
+    
+    /**
+     * Initialize prompt suggestions with hierarchical categories
+     */
+    function initPromptSuggestions() {
+        if (!promptSuggestionsEnabled || !promptSuggestions) {
+            return;
+        }
+        
+        // Show suggestions buttons
+        document.getElementById('suggestions-button').style.display = 'block';
+        document.getElementById('modal-suggestions-button').style.display = 'block';
+        
+        // Setup back button handlers
+        const backButton = document.getElementById('prompt-back-button');
+        backButton.addEventListener('click', navigateBackToCategories);
+        
+        const modalBackButton = document.getElementById('modal-prompt-back-button');
+        modalBackButton.addEventListener('click', navigateBackToModalCategories);
+        
+        // Parse and organize suggestions
+        parsePromptSuggestions();
+    }
+    
+    /**
+     * Parse prompt suggestions and detect categories if present
+     * @param {string} mode - "normal" or "modal"
+     */
+    function parsePromptSuggestionsHelper(mode) {
+        const isModal = mode === "modal";
+        const contentId = isModal ? 'modal-prompt-suggestions-content' : 'prompt-suggestions-content';
+        const suggestionsContent = document.getElementById(contentId);
+        
+        if (!suggestionsContent) return;
+        
+        suggestionsContent.innerHTML = ''; // Clear existing content
+        
+        // Parse suggestions
+        const suggestionLines = promptSuggestions.split('\n').filter(line => line.trim() !== '');
+        
+        // Check if we have categories (lines starting with #)
+        const hasCategories = suggestionLines.some(line => line.trim().startsWith('#'));
+        
+        if (hasCategories) {
+            // Process hierarchical structure
+            let currentCategory = null;
+            let categoryPrompts = {};
+            
+            // First pass: identify categories and their prompts
+            suggestionLines.forEach(line => {
+                const trimmedLine = line.trim();
+                
+                if (trimmedLine.startsWith('#')) {
+                    // This is a category header
+                    currentCategory = trimmedLine.substring(1).trim();
+                    if (!categoryPrompts[currentCategory]) {
+                        categoryPrompts[currentCategory] = [];
+                    }
+                } else if (currentCategory && trimmedLine) {
+                    // This is a prompt under the current category
+                    categoryPrompts[currentCategory].push(trimmedLine);
+                }
+            });
+            
+            // Create category elements
+            for (const category in categoryPrompts) {
+                const categoryElem = document.createElement('div');
+                categoryElem.className = 'prompt-category';
+                categoryElem.textContent = category;
+                categoryElem.dataset.category = category;
+                
+                // Use the appropriate function based on mode
+                if (isModal) {
+                    categoryElem.onclick = function() {
+                        showCategoryPromptsHelper(category, categoryPrompts[category], "modal");
+                    };
+                } else {
+                    categoryElem.onclick = function() {
+                        showCategoryPromptsHelper(category, categoryPrompts[category], "normal");
+                    };
+                }
+                
+                suggestionsContent.appendChild(categoryElem);
+            }
+        } else {
+            // No categories, display flat list of suggestions
+            suggestionLines.forEach(suggestion => {
+                if (suggestion.trim()) {
+                    const suggestionElem = document.createElement('div');
+                    suggestionElem.className = 'prompt-suggestion';
+                    suggestionElem.textContent = suggestion.trim();
+                    
+                    // Use the appropriate function based on mode
+                    if (isModal) {
+                        suggestionElem.onclick = function() {
+                            usePromptSuggestionHelper(suggestion.trim(), "modal");
+                        };
+                    } else {
+                        suggestionElem.onclick = function() {
+                            usePromptSuggestionHelper(suggestion.trim(), "normal");
+                        };
+                    }
+                    
+                    suggestionsContent.appendChild(suggestionElem);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Parse prompt suggestions for normal view
+     */
+    function parsePromptSuggestions() {
+        parsePromptSuggestionsHelper("normal");
+    }
+    
+    /**
+     * Parse prompt suggestions for modal view
+     */
+    function parseModalPromptSuggestions() {
+        parsePromptSuggestionsHelper("modal");
+    }
+    
+    /**
+     * Helper function to show prompts for a specific category
+     * @param {string} category - The category name 
+     * @param {Array} prompts - The list of prompts in this category
+     * @param {string} mode - "normal" or "modal"
+     */
+    function showCategoryPromptsHelper(category, prompts, mode) {
+        const isModal = mode === "modal";
+        const contentId = isModal ? 'modal-prompt-suggestions-content' : 'prompt-suggestions-content';
+        const backButtonId = isModal ? 'modal-prompt-back-button' : 'prompt-back-button';
+        
+        const suggestionsContent = document.getElementById(contentId);
+        const backButton = document.getElementById(backButtonId);
+        
+        if (!suggestionsContent || !backButton) return;
+        
+        // Clear current content
+        suggestionsContent.innerHTML = '';
+        
+        // Show back button
+        backButton.style.display = 'block';
+        
+        // Add category title
+        const categoryTitle = document.createElement('div');
+        categoryTitle.style.fontWeight = 'bold';
+        categoryTitle.style.marginBottom = '10px';
+        categoryTitle.textContent = category;
+        suggestionsContent.appendChild(categoryTitle);
+        
+        // Add prompts for this category
+        prompts.forEach(prompt => {
+            const promptElem = document.createElement('div');
+            promptElem.className = 'prompt-suggestion';
+            promptElem.textContent = prompt;
+            
+            // Use the appropriate function based on mode
+            if (isModal) {
+                promptElem.onclick = function() {
+                    usePromptSuggestionHelper(prompt, "modal");
+                };
+            } else {
+                promptElem.onclick = function() {
+                    usePromptSuggestionHelper(prompt, "normal");
+                };
+            }
+            
+            suggestionsContent.appendChild(promptElem);
+        });
+    }
+    
+    /**
+     * Show prompts for a specific category in normal view
+     */
+    function showCategoryPrompts(category, prompts) {
+        showCategoryPromptsHelper(category, prompts, "normal");
+    }
+    
+    /**
+     * Show prompts for a specific category in modal view
+     */
+    function showModalCategoryPrompts(category, prompts) {
+        showCategoryPromptsHelper(category, prompts, "modal");
+    }
+    
+    /**
+     * Helper function to navigate back to categories
+     * @param {string} mode - "normal" or "modal"
+     */
+    function navigateBackToCategoriesHelper(mode) {
+        const isModal = mode === "modal";
+        const backButtonId = isModal ? 'modal-prompt-back-button' : 'prompt-back-button';
+        const backButton = document.getElementById(backButtonId);
+        
+        if (!backButton) return;
+        
+        backButton.style.display = 'none';
+        
+        // Reparse and show categories
+        if (isModal) {
+            parseModalPromptSuggestions();
+        } else {
+            parsePromptSuggestions();
+        }
+    }
+    
+    /**
+     * Navigate back to the categories view in normal view
+     */
+    function navigateBackToCategories() {
+        navigateBackToCategoriesHelper("normal");
+    }
+    
+    /**
+     * Navigate back to the categories view in modal
+     */
+    function navigateBackToModalCategories() {
+        navigateBackToCategoriesHelper("modal");
+    }
+    
+    /**
+     * Helper function to toggle the visibility of prompt suggestions panel
+     * @param {string} mode - "normal" or "modal"
+     */
+    function togglePromptSuggestionsHelper(mode) {
+        const isModal = mode === "modal";
+        const panelId = isModal ? 'modal-prompt-suggestions-panel' : 'prompt-suggestions-panel';
+        const backButtonId = isModal ? 'modal-prompt-back-button' : 'prompt-back-button';
+        
+        const panel = document.getElementById(panelId);
+        const backButton = document.getElementById(backButtonId);
+        
+        if (!panel) return;
+        
+        promptSuggestionsOpen = !promptSuggestionsOpen;
+        
+        if (promptSuggestionsOpen) {
+            panel.style.display = 'block';
+            // Reset to top level view when opening
+            if (backButton) {
+                backButton.style.display = 'none';
+            }
+            
+            // Parse suggestions for the appropriate view
+            if (isModal) {
+                parseModalPromptSuggestions();
+            } else {
+                parsePromptSuggestions();
+            }
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Toggle the visibility of prompt suggestions panel in normal view
+     */
+    function togglePromptSuggestions() {
+        togglePromptSuggestionsHelper("normal");
+    }
+    
+    /**
+     * Toggle the visibility of prompt suggestions panel in modal view
+     */
+    function toggleModalPromptSuggestions() {
+        togglePromptSuggestionsHelper("modal");
+    }
+    
+    /**
+     * Helper function to use a prompt suggestion
+     * @param {string} suggestion - The suggestion text
+     * @param {string} mode - "normal" or "modal" 
+     */
+    function usePromptSuggestionHelper(suggestion, mode) {
+        const isModal = mode === "modal";
+        const inputId = isModal ? 'modal-user-input' : 'user-input';
+        
+        const inputField = document.getElementById(inputId);
+        
+        if (!inputField) return;
+        
+        // Set the suggestion text
+        inputField.value = suggestion;
+        
+        // Hide suggestions panel
+        if (isModal) {
+            toggleModalPromptSuggestions();
+        } else {
+            togglePromptSuggestions();
+        }
+        
+        // Focus on the input field and move cursor to the end
+        inputField.focus();
+        inputField.selectionStart = inputField.selectionEnd = inputField.value.length;
+    }
+    
+    /**
+     * Use a prompt suggestion in normal view
+     */
+    function usePromptSuggestion(suggestion) {
+        usePromptSuggestionHelper(suggestion, "normal");
+    }
+    
+    /**
+     * Use a prompt suggestion in modal view
+     */
+    function useModalPromptSuggestion(suggestion) {
+        usePromptSuggestionHelper(suggestion, "modal");
+    }
+</script>
