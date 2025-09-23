@@ -50,7 +50,6 @@ echo '<tr><td>Response Format</td><td>' . (isset($config->response_format) ? $co
 // Check API keys (mask them for security)
 $openai_key = isset($config->openai_apikey) ? $config->openai_apikey : '';
 $google_key = isset($config->google_apikey) ? $config->google_apikey : '';
-$anthropic_key = isset($config->anthropic_apikey) ? $config->anthropic_apikey : '';
 
 echo '<tr><td>OpenAI API Key</td><td>';
 if (!empty($openai_key)) {
@@ -72,15 +71,6 @@ if (!empty($google_key)) {
 }
 echo '</td></tr>';
 
-echo '<tr><td>Anthropic API Key</td><td>';
-if (!empty($anthropic_key)) {
-    $key_length = strlen($anthropic_key);
-    $mask = substr($anthropic_key, 0, 4) . '...' . substr($anthropic_key, -4);
-    echo '<span class="badge badge-success">Configured</span> (' . $mask . ') [Length: ' . $key_length . ']';
-} else {
-    echo '<span class="badge badge-danger">Not configured</span>';
-}
-echo '</td></tr>';
 echo '</table>';
 
 // Check for common issues
@@ -94,8 +84,6 @@ if ($default_provider === 'openai' && empty($openai_key)) {
     echo '<li class="list-group-item list-group-item-danger">The default provider is OpenAI but no OpenAI API key is configured</li>';
 } else if ($default_provider === 'google' && empty($google_key)) {
     echo '<li class="list-group-item list-group-item-danger">The default provider is Google but no Google API key is configured</li>';
-} else if ($default_provider === 'anthropic' && empty($anthropic_key)) {
-    echo '<li class="list-group-item list-group-item-danger">The default provider is Anthropic but no Anthropic API key is configured</li>';
 } else {
     echo '<li class="list-group-item list-group-item-success">Default provider (' . $default_provider . ') has an API key configured</li>';
 }
@@ -154,24 +142,12 @@ if (function_exists('curl_init')) {
     $google_reachable = curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 0;
     curl_close($ch);
 
-    // Check Anthropic endpoin
-    $ch = curl_init('https://api.anthropic.com/v1/messages');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_NOBODY, true);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-    curl_exec($ch);
-    $anthropic_reachable = curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 0;
-    curl_close($ch);
-
     echo '<li class="list-group-item ' . ($openai_reachable ? 'list-group-item-success' : 'list-group-item-danger') . '">
           OpenAI API endpoint is ' . ($openai_reachable ? 'reachable' : 'not reachable') . '</li>';
 
     echo '<li class="list-group-item ' . ($google_reachable ? 'list-group-item-success' : 'list-group-item-danger') . '">
           Google API endpoint is ' . ($google_reachable ? 'reachable' : 'not reachable') . '</li>';
 
-    echo '<li class="list-group-item ' . ($anthropic_reachable ? 'list-group-item-success' : 'list-group-item-danger') . '">
-          Anthropic API endpoint is ' . ($anthropic_reachable ? 'reachable' : 'not reachable') . '</li>';
 }
 
 echo '</ul>';
@@ -199,12 +175,6 @@ document.addEventListener("DOMContentLoaded", function() {
         return key.length > 10;
     }
 
-    // Function to check Anthropic key forma
-    function validateAnthropicKey(key) {
-        if (!key) return false;
-        return key.startsWith("sk-ant-") && key.length > 20;
-    }
-
     // Generate validation results
     let results = "<ul class=\'list-group\'>";
 
@@ -221,14 +191,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const googleValid = validateGoogleKey(googleKey);
     results += "<li class=\'list-group-item " + (googleValid ? "list-group-item-success" : "list-group-item-danger") + "\'>" +
               "Google API Key: " + (googleValid ? "Valid format" : "Invalid format or not provided") +
-              "</li>";
-
-    // Anthropic key validation
-    const anthropicKey = "' . (!empty($anthropic_key) ? $anthropic_key : '') . '";
-    const anthropicValid = validateAnthropicKey(anthropicKey);
-    results += "<li class=\'list-group-item " + (anthropicValid ? "list-group-item-success" : "list-group-item-danger") + "\'>" +
-              "Anthropic API Key: " + (anthropicValid ? "Valid format" : "Invalid format or not provided") +
-              (anthropicKey && !anthropicValid ? " (should start with sk-ant- and be longer than 20 characters)" : "") +
               "</li>";
 
     results += "</ul>";
@@ -256,7 +218,6 @@ echo '<pre>php ' . __DIR__ . '/api_test.php</pre>';
 echo '<p>Or test a specific provider:</p>';
 echo '<pre>php ' . __DIR__ . '/api_test.php openai</pre>';
 echo '<pre>php ' . __DIR__ . '/api_test.php google</pre>';
-echo '<pre>php ' . __DIR__ . '/api_test.php anthropic</pre>';
 echo '</div>';
 
 echo $OUTPUT->footer();

@@ -26,8 +26,6 @@ $string['openai_apikey']      = 'OpenAI API-Schlüssel';
 $string['openai_apikeydesc']  = 'Geben Sie Ihren OpenAI API-Schlüssel für den Zugriff auf OpenAI-Modelle ein (GPT-5, GPT-5 Mini, GPT-5 Nano, usw.).';
 $string['google_apikey']      = 'Google API-Schlüssel';
 $string['google_apikeydesc']  = 'Geben Sie Ihren Google API-Schlüssel für den Zugriff auf Gemini-Modelle ein.';
-$string['anthropic_apikey']   = 'Anthropic API-Schlüssel';
-$string['anthropic_apikeydesc'] = 'Geben Sie Ihren Anthropic API-Schlüssel für den Zugriff auf Claude-Modelle ein.';
 
 // Veraltet - für Abwärtskompatibilitä
 $string['apikey']             = 'API-Schlüssel (Veraltet)';
@@ -130,7 +128,6 @@ $string['default_provider'] = 'Standard-KI-Anbieter';
 $string['default_provider_desc'] = 'Wählen Sie den KI-Anbieter aus, der für alle Tutoring Machine-Instanzen verwendet werden soll, sofern nicht anders konfiguriert.';
 $string['provider_openai'] = 'OpenAI (GPT-5)';
 $string['provider_google'] = 'Google (Gemini)';
-$string['provider_anthropic'] = 'Anthropic (Claude)';
 
 // Modell-Einstellungen
 $string['default_model'] = 'Standard-KI-Modell';

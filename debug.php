@@ -64,8 +64,7 @@ class block_tutoring_machine_diagnostics {
 
         $results = [
             'openai' => ['status' => 'Not tested', 'message' => ''],
-            'google' => ['status' => 'Not tested', 'message' => ''],
-            'anthropic' => ['status' => 'Not tested', 'message' => '']
+            'google' => ['status' => 'Not tested', 'message' => '']
         ];
 
         // Get configuration
@@ -146,8 +145,6 @@ class block_tutoring_machine_diagnostics {
         }
 
         // Anthropic test has been removed
-        $results['anthropic']['status'] = 'Removed';
-        $results['anthropic']['message'] = "Anthropic integration has been removed";
         self::log("Anthropic API test skipped - integration removed", 'INFO');
 
         return $results;
@@ -178,13 +175,6 @@ class block_tutoring_machine_diagnostics {
                 '********';
         }
 
-        if (isset($masked_config->anthropic_apikey)) {
-            $key_length = strlen($masked_config->anthropic_apikey);
-            $masked_config->anthropic_apikey = ($key_length > 8) ?
-                substr($masked_config->anthropic_apikey, 0, 4) . '...' . substr($masked_config->anthropic_apikey, -4) :
-                '********';
-        }
-
         return [
             'default_provider' => isset($config->default_provider) ? $config->default_provider : 'openai',
             'default_model' => isset($config->default_model) ? $config->default_model : 'openai:gpt-5',
@@ -195,10 +185,8 @@ class block_tutoring_machine_diagnostics {
             'response_format' => isset($config->response_format) ? $config->response_format : 'text',
             'openai_apikey_set' => !empty($config->openai_apikey),
             'google_apikey_set' => !empty($config->google_apikey),
-            'anthropic_apikey_set' => !empty($config->anthropic_apikey),
             'openai_apikey_masked' => isset($masked_config->openai_apikey) ? $masked_config->openai_apikey : 'not set',
             'google_apikey_masked' => isset($masked_config->google_apikey) ? $masked_config->google_apikey : 'not set',
-            'anthropic_apikey_masked' => isset($masked_config->anthropic_apikey) ? $masked_config->anthropic_apikey : 'not set',
             'moodle_version' => $CFG->version,
             'php_version' => phpversion(),
             'curl_version' => function_exists('curl_version') ? curl_version()['version'] : 'unknown'

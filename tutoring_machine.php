@@ -396,7 +396,7 @@ try {
     $error_type = $e->getMessage();
 
     if ($error_type === 'apiconnectionerror') {
-        block_tutoring_machine_message_processor::send_response("Es tut mir leid, aber die Verbindung zum KI-Dienst konnte nicht hergestellt werden. Bitte überprüfe die API-Schlüssel in den Einstellungen und ob die ausgewählte KI (OpenAI, Google, Anthropic) verfügbar ist. Details für Administratoren wurden in die Moodle-Logs geschrieben.");
+        block_tutoring_machine_message_processor::send_response("Es tut mir leid, aber die Verbindung zum KI-Dienst konnte nicht hergestellt werden. Bitte überprüfe die API-Schlüssel in den Einstellungen und ob der ausgewählte Anbieter (OpenAI oder Google) verfügbar ist. Details für Administratoren wurden in die Moodle-Logs geschrieben.");
     } else if ($error_type === 'noapikey') {
         block_tutoring_machine_message_processor::send_response("Es wurde kein API-Schlüssel für den ausgewählten KI-Dienst konfiguriert. Bitte kontaktiere den Administrator, um den API-Schlüssel für den gewählten Anbieter einzurichten.");
     } else {
@@ -429,10 +429,6 @@ function get_api_key() {
     switch ($default_provider) {
         case 'google':
             $api_key = isset($config->google_apikey) ? trim($config->google_apikey) : '';
-            break;
-
-        case 'anthropic':
-            $api_key = isset($config->anthropic_apikey) ? trim($config->anthropic_apikey) : '';
             break;
 
         case 'openai':
