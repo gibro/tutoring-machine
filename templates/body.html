@@ -385,6 +385,88 @@
     let promptSuggestionsOpen = false;
     let isFullscreen = false;
 
+    const rawBlockId = Number(%%BLOCK_ID%%);
+    const blockId = isFinite(rawBlockId) && rawBlockId > 0 ? rawBlockId : null;
+    const rawPlaceholderCourseId = Number(%%COURSE_ID%%);
+    const placeholderCourseId = isFinite(rawPlaceholderCourseId) && rawPlaceholderCourseId > 0
+        ? rawPlaceholderCourseId
+        : null;
+
+    function resolveCourseId() {
+        try {
+            if (typeof M !== 'undefined' && M.cfg && typeof M.cfg.courseId !== 'undefined') {
+                var parsedCourseId = parseInt(M.cfg.courseId, 10);
+                if (!isNaN(parsedCourseId) && parsedCourseId > 0) {
+                    return parsedCourseId;
+                }
+            }
+        } catch (error) {
+            // Ignore Moodle config access issues and fall back to placeholder value.
+        }
+        return placeholderCourseId;
+    }
+
+    const courseId = resolveCourseId();
+    const storageScopeParts = [];
+    if (courseId) {
+        storageScopeParts.push('course_' + courseId);
+    }
+    if (blockId) {
+        storageScopeParts.push('block_' + blockId);
+    }
+    if (storageScopeParts.length === 0) {
+        storageScopeParts.push('site');
+    }
+    const storageScope = storageScopeParts.join('_');
+
+    function storageKey(postfix) {
+        return 'tm_' + storageScope + '_' + postfix;
+    }
+
+    function getStorageItem(key) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                return window.localStorage.getItem(storageKey(key));
+            }
+        } catch (error) {
+            // Ignore storage access issues (e.g., private browsing) and treat as empty.
+        }
+        return null;
+    }
+
+    function setStorageItem(key, value) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.setItem(storageKey(key), value);
+            }
+        } catch (error) {
+            // Ignore storage access issues (e.g., private browsing).
+        }
+    }
+
+    function removeStorageItem(key) {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.removeItem(storageKey(key));
+            }
+        } catch (error) {
+            // Ignore storage access issues (e.g., private browsing).
+        }
+    }
+
+    function cleanupLegacyStorage() {
+        try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+                var legacyKeys = ['chatHistory', 'conversationHistory', 'analyticsEnabled'];
+                for (var i = 0; i < legacyKeys.length; i++) {
+                    window.localStorage.removeItem(legacyKeys[i]);
+                }
+            }
+        } catch (error) {
+            // Ignore storage access issues (e.g., private browsing).
+        }
+    }
+
     // Event listeners and initialization
     document.addEventListener('DOMContentLoaded', initTutoringMachine);
     
@@ -392,6 +474,7 @@
      * Initialize the Tutoring Machine interface
      */
     function initTutoringMachine() {
+        cleanupLegacyStorage();
         addEventListeners();
         showAnalyticsNotice();
         
@@ -417,15 +500,17 @@
      */
     function checkAnalyticsStatus() {
         // Get stored analytics status
-        const storedStatus = localStorage.getItem("analyticsEnabled");
+        const storedStatus = getStorageItem('analyticsEnabled');
+        const currentStatus = analyticsEnabled ? 'true' : 'false';
         
         // If analytics status has changed since last visit, force reset the conversation
-        if (storedStatus !== null && storedStatus !== String(analyticsEnabled)) {
-            console.log("Analytics status changed from " + storedStatus + " to " + analyticsEnabled + ", resetting conversation");
+        if (storedStatus !== null && storedStatus !== currentStatus) {
+            console.log("Analytics status changed from " + storedStatus + " to " + currentStatus + ", resetting conversation");
             
             // Reset stored conversation
-            localStorage.removeItem("chatHistory");
-            localStorage.removeItem("conversationHistory");
+            removeStorageItem('chatHistory');
+            removeStorageItem('conversationHistory');
+            removeStorageItem('analyticsEnabled');
             conversationHistory = [];
             
             // Force a welcome message reset when we open the chat
@@ -433,7 +518,7 @@
         }
         
         // Always store current status
-        localStorage.setItem("analyticsEnabled", analyticsEnabled);
+        setStorageItem('analyticsEnabled', currentStatus);
         return false;
     }
     
@@ -690,7 +775,7 @@
             scrollToBottom();
             
             // Store current analytics status
-            localStorage.setItem("analyticsEnabled", analyticsEnabled);
+            setStorageItem('analyticsEnabled', analyticsEnabled ? 'true' : 'false');
         }
     }
 
@@ -713,7 +798,7 @@
      * Session management - save chat UI state and history
      */
     function saveSession() {
-        localStorage.setItem("chatHistory", document.getElementById("chat-messages").innerHTML);
+        setStorageItem('chatHistory', document.getElementById("chat-messages").innerHTML);
         saveConversationHistory();
     }
 
@@ -721,7 +806,7 @@
      * Save conversation history to local storage
      */
     function saveConversationHistory() {
-        localStorage.setItem("conversationHistory", JSON.stringify(conversationHistory));
+        setStorageItem('conversationHistory', JSON.stringify(conversationHistory));
     }
 
     /**
@@ -729,11 +814,11 @@
      */
     function loadSession() {
         const chatMessages = document.getElementById("chat-messages");
-        const savedHistory = localStorage.getItem("chatHistory");
+        const savedHistory = getStorageItem('chatHistory');
         if (savedHistory) {
             chatMessages.innerHTML = savedHistory;
             
-            const savedConversation = localStorage.getItem("conversationHistory");
+            const savedConversation = getStorageItem('conversationHistory');
             if (savedConversation) {
                 try {
                     conversationHistory = JSON.parse(savedConversation);
@@ -750,8 +835,8 @@
      * Reset the chat session
      */
     function resetSession() {
-        localStorage.removeItem("chatHistory");
-        localStorage.removeItem("conversationHistory");
+        removeStorageItem('chatHistory');
+        removeStorageItem('conversationHistory');
         
         // Clear both views
         document.getElementById("chat-messages").innerHTML = "";
@@ -762,7 +847,7 @@
         conversationHistory = [];
         
         // Store current analytics status from the global variable
-        localStorage.setItem("analyticsEnabled", analyticsEnabled);
+        setStorageItem('analyticsEnabled', analyticsEnabled ? 'true' : 'false');
         
         // Force a new welcome message
         introduceBot(true);
@@ -813,8 +898,7 @@
             
             // Add block ID if available (with validation)
             try {
-                const blockId = %%BLOCK_ID%%;
-                if (blockId && !isNaN(parseInt(blockId))) {
+                if (blockId) {
                     formData.append('blockid', blockId);
                 }
             } catch (e) {
@@ -823,8 +907,8 @@
             
             // Add course ID if available (with validation)
             try {
-                if (typeof M !== 'undefined' && M.cfg && M.cfg.courseId && !isNaN(parseInt(M.cfg.courseId))) {
-                    formData.append('courseid', M.cfg.courseId);
+                if (courseId) {
+                    formData.append('courseid', courseId);
                 }
             } catch (e) {
                 console.error("Error with course ID:", e);

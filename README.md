@@ -75,6 +75,11 @@ Die Tutoring Machine implementiert folgende Sicherheitsfunktionen:
 - **XSS-Schutz**: Bereinigung von HTML-Inhalten zur Vermeidung von Cross-Site-Scripting
 - **Zugriffskontrolle**: Prüfung der Benutzerberechtigungen
 
+## Chat-Verlauf & Sitzungen
+
+- Chatverläufe und UI-Zustände werden clientseitig pro Kurs und Blockinstanz gespeichert. Beim Wechsel in andere Kurse oder das Dashboard startet immer eine frische Unterhaltung.
+- Legacy-Schlüssel in `localStorage` werden automatisch bereinigt, damit bestehende Installationen ohne manuelles Eingreifen auf das neue Scoped-Storage-Verhalten umstellen.
+
 ## Technische Anforderungen
 
 - PHP 8.2 oder höher
@@ -136,6 +141,10 @@ Die Tutoring Machine nutzt ein umfassendes Caching-System, um die Leistung zu ve
 Dieses Caching-System reduziert die Verarbeitungszeit und verbessert die Reaktionsfähigkeit der Tutoring Machine erheblich.
 
 ## Änderungsprotokoll
+
+### Version 4.3.1
+- Chat-Historien werden nur noch im Kontext der jeweiligen Kurs-/Blockinstanz wiederhergestellt; Lernen­den sehen keine Unterhaltungen aus anderen Kursen oder dem Dashboard mehr.
+- Clientseitige Speicherstände migrieren beim ersten Aufruf automatisch auf die neue Namenskonvention und entfernen veraltete Einträge.
 
 ### Version 4.3.0
 - OpenAI-Integration vollständig auf die Responses API umgestellt; GPT-5-Modelle nutzen jetzt native Reasoning- und Verbosity-Parameter, inkl. Weitergabe der Chain of Thought zwischen Turns.
