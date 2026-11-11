@@ -92,7 +92,7 @@ $string['use_lessons_help'] = 'Wenn aktiviert, werden die Inhalte aller Lektione
 
 // Admin-Einstellungsgruppen
 $string['basicsettings'] = 'Grundlegende Einstellungen';
-$string['basicsettings_desc'] = 'Konfigurieren Sie hier die Grundeinstellungen für den Tutoring Machine-Block. Um die API-Verbindung zu testen, können Sie das <a href="{$CFG->wwwroot}/blocks/tutoring_machine/api_test_web.php" target="_blank">API-Test-Tool</a> verwenden, das die konfigurierten API-Schlüssel überprüft.';
+$string['basicsettings_desc'] = 'Konfigurieren Sie hier die Grundeinstellungen für den Tutoring Machine-Block.';
 $string['linkdomain_whitelist'] = 'Domain-Whitelist für Links';
 $string['linkdomain_whitelist_desc'] = 'Nur URLs von diesen Domains werden geholt und verarbeitet (eine Domain pro Zeile). Subdomains sind automatisch eingeschlossen.';
 $string['respect_robots'] = 'robots.txt beachten';
@@ -121,7 +121,7 @@ $string['model_usage_info_desc'] = 'Modellempfehlungen für verschiedene Lernsze
 $string['parametersettings'] = 'Parameter-Einstellungen';
 $string['parametersettingsdesc'] = 'Konfigurieren Sie die Parameter für die KI-Antwortgenerierung, um Qualität und Stil der Antworten anzupassen.';
 $string['systemsettings'] = 'System-Einstellungen';
-$string['systemsettings_desc'] = 'Erweiterte Einstellungen für die API-Kommunikation. Bei Verbindungsproblemen können Sie das <a href="{$CFG->wwwroot}/blocks/tutoring_machine/api_test_web.php" target="_blank">API-Test-Tool</a> verwenden, um die Kommunikation mit den AI-Providern zu diagnostizieren.';
+$string['systemsettings_desc'] = 'Erweiterte Einstellungen für die API-Kommunikation.';
 
 // Anbieter-Einstellungen
 $string['default_provider'] = 'Standard-KI-Anbieter';

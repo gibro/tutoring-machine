@@ -94,35 +94,6 @@ Die Tutoring Machine implementiert folgende Sicherheitsfunktionen:
     - Smalot/PdfParser: `composer require smalot/pdfparser`
     - Spatie/PdfToText: `composer require spatie/pdf-to-text`
 
-## API-Test-Tools
-
-Zur Überprüfung der API-Verbindungen stehen zwei Test-Tools zur Verfügung:
-
-### Kommandozeilen-Test
-
-Der Kommandozeilen-Test kann über die Moodle-Wurzel ausgeführt werden:
-
-```
-php blocks/tutoring_machine/api_test.php [provider]
-```
-
-Wobei `[provider]` einer der folgenden Werte sein kann:
-- `openai` - Test nur für OpenAI API
-- `google` - Test nur für Google Gemini API
-- `all` - Test für alle konfigurierten APIs (Standard)
-
-Die Ergebnisse werden sowohl in der Konsole ausgegeben als auch in einer Logdatei im Verzeichnis `blocks/tutoring_machine/logs/` gespeichert.
-
-### Web-basierter Test
-
-Der web-basierte Test kann über folgende URL aufgerufen werden:
-
-```
-https://ihre-moodle-url/blocks/tutoring_machine/api_test_web.php
-```
-
-Dieser Test bietet eine benutzerfreundliche Oberfläche zur Überprüfung der API-Verbindungen und ist nur für Administratoren im Entwicklungsmodus verfügbar.
-
 ## Unterstützte Sprachen
 
 - Englisch

@@ -93,7 +93,7 @@ $string['use_lessons_help'] = 'When enabled, the content from all lessons in the
 
 // Admin settings groups
 $string['basicsettings'] = 'Basic Settings';
-$string['basicsettings_desc'] = 'Configure the basic settings for the Tutoring Machine block. To test the API connection, you can use the <a href="{$CFG->wwwroot}/blocks/tutoring_machine/api_test_web.php" target="_blank">API Test Tool</a> which verifies the configured API keys.';
+$string['basicsettings_desc'] = 'Configure the basic settings for the Tutoring Machine block.';
 $string['linkdomain_whitelist'] = 'Link domain whitelist';
 $string['linkdomain_whitelist_desc'] = 'Only URLs pointing to these domains will be fetched and processed (one domain per line). Subdomains are allowed automatically.';
 $string['respect_robots'] = 'Respect robots.txt';
@@ -122,7 +122,7 @@ $string['model_usage_info_desc'] = 'Model recommendations for different learning
 $string['parametersettings'] = 'Parameter Settings';
 $string['parametersettingsdesc'] = 'Configure the parameters for AI response generation to adjust quality and style of responses.';
 $string['systemsettings'] = 'System Settings';
-$string['systemsettings_desc'] = 'Advanced settings for API communication. If you experience connection issues, you can use the <a href="{$CFG->wwwroot}/blocks/tutoring_machine/api_test_web.php" target="_blank">API Test Tool</a> to diagnose communication with the AI providers.';
+$string['systemsettings_desc'] = 'Advanced settings for API communication.';
 
 // Provider settings
 $string['default_provider'] = 'Default AI Provider';

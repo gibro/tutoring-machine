@@ -95,17 +95,6 @@ if ($ADMIN->fulltree) {
 
     // Claude API wurde entfern
 
-    // API-Test-Info
-    $api_test_info = 'Erweiterte Einstellungen für die API-Kommunikation. ';
-    $api_test_info .= 'Bei Verbindungsproblemen können Sie das <a href="'.$CFG->wwwroot.'/blocks/tutoring_machine/api_test_web.php" target="_blank">API-Test-Tool</a> verwenden, ';
-    $api_test_info .= 'um die Kommunikation mit den AI-Providern zu diagnostizieren.';
-
-    $settings->add(new admin_setting_heading(
-        'block_tutoring_machine/apitestinfo',
-        'API-Test',
-        $api_test_info
-    ));
-
     // Modell-Einstellungen
     $settings->add(new admin_setting_heading(
         'block_tutoring_machine/modelsettings',
@@ -201,8 +190,6 @@ if ($ADMIN->fulltree) {
 
     // System-Einstellungen
     $systemsettings_desc = 'Erweiterte Einstellungen für die API-Kommunikation. ';
-    $systemsettings_desc .= 'Bei Verbindungsproblemen können Sie das <a href="'.$CFG->wwwroot.'/blocks/tutoring_machine/api_test_web.php" target="_blank">API-Test-Tool</a> verwenden, ';
-    $systemsettings_desc .= 'um die Kommunikation mit den AI-Providern zu diagnostizieren.';
 
     $settings->add(new admin_setting_heading(
         'block_tutoring_machine/systemsettings',
