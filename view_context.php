@@ -8,25 +8,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-// Include the Moodle configuration file
-if (file_exists(__DIR__ . '/../../config.php')) {
-    require_once(__DIR__ . '/../../config.php'); // Standard Moodle Installation
-} else {
-    // Fallback - search for config.php in parent directories
-    $directory = __DIR__;
-    $found = false;
-    for ($i = 0; $i < 5; $i++) { // Try up to 5 levels up
-        $directory = dirname($directory);
-        if (file_exists($directory . '/config.php')) {
-            require_once($directory . '/config.php');
-            $found = true;
-            break;
-        }
-    }
-    if (!$found) {
-        die('Could not find Moodle config.php file');
-    }
-}
+// Include the Moodle configuration file (symlink-safe loader).
+require_once(__DIR__ . '/configloader.php');
 
 require_once($CFG->libdir . '/adminlib.php');
 require_once(__DIR__ . '/classes/content_extractor.php');

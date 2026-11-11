@@ -568,11 +568,18 @@ abstract class block_tutoring_machine_api_client_base implements block_tutoring_
  * OpenAI API client implementation
  *
  * This class provides integration with OpenAI's GPT-5 models via their Responses API.
- * It supports the current GPT-5 family including GPT-5, GPT-5 Mini, and GPT-5 Nano variants.
+ * It supports the current GPT-5.5 / GPT-5.4 family as well as the older GPT-5 variants.
  */
 class block_tutoring_machine_openai_client extends block_tutoring_machine_api_client_base {
     /** @var array $supported_json_models Models that support JSON response format */
     protected $supported_json_models = [
+        // Current generation (2026)
+        'gpt-5.5',
+        'gpt-5.4',
+        'gpt-5.4-mini',
+        'gpt-5.4-nano',
+        'gpt-5.1',
+        // Previous generation (still available)
         'gpt-5',
         'gpt-5-mini',
         'gpt-5-nano',
@@ -611,7 +618,7 @@ class block_tutoring_machine_openai_client extends block_tutoring_machine_api_cl
     public function __construct($api_key) {
         parent::__construct($api_key);
         $this->api_endpoint = 'https://api.openai.com/v1/responses';
-        $this->model = 'gpt-5'; // Default to the flagship general-purpose model
+        $this->model = 'gpt-5.5'; // Default to the current flagship general-purpose model
     }
 
     /**
@@ -1039,7 +1046,9 @@ class block_tutoring_machine_openai_client extends block_tutoring_machine_api_cl
 
         if ($this->response_format === 'json' &&
             in_array($this->model, $this->supported_json_models, true)) {
-            $payload['response_format'] = ['type' => 'json_object'];
+            // The Responses API expects structured-output settings under text.format;
+            // the Chat Completions "response_format" key is not honoured here.
+            $payload['text']['format'] = ['type' => 'json_object'];
             $this->log_info('Setting JSON response format for Responses model ' . $this->model);
         }
 
@@ -1348,12 +1357,15 @@ class block_tutoring_machine_openai_client extends block_tutoring_machine_api_cl
  * Google Gemini API client implementation
  *
  * This class provides integration with Google's Gemini models via their Generative Language API.
- * It supports Gemini models including gemini-1.5-pro and gemini-1.5-flash.
+ * It supports the current Gemini families (Gemini 3.x and Gemini 2.5).
+ * Note: the Gemini 1.5 models were retired by Google in 2025 and now return HTTP 404.
  */
 class block_tutoring_machine_google_client extends block_tutoring_machine_api_client_base {
     /** @var array $supported_json_models Models that support JSON response format */
     protected $supported_json_models = [
-        'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'
+        'gemini-3.5-flash', 'gemini-3.1-flash-lite',
+        'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite',
+        'gemini-flash-latest', 'gemini-pro-latest'
     ];
 
     /**
@@ -1364,7 +1376,7 @@ class block_tutoring_machine_google_client extends block_tutoring_machine_api_cl
     public function __construct($api_key) {
         parent::__construct($api_key);
         $this->api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/';
-        $this->model = 'gemini-1.5-pro'; // Default to the most capable general-purpose model
+        $this->model = 'gemini-2.5-pro'; // Default to a capable, generally-available model
     }
 
     /**
@@ -1380,8 +1392,11 @@ class block_tutoring_machine_google_client extends block_tutoring_machine_api_cl
         // Validate and sanitize messages
         $validated_messages = $this->validate_messages($messages);
 
+        // Separate system instructions from the conversation messages.
+        list($conversation_messages, $system_content) = $this->extract_system_content($validated_messages);
+
         // Convert OpenAI-compatible message format to Gemini forma
-        $gemini_messages = $this->convert_to_gemini_format($validated_messages);
+        $gemini_messages = $this->convert_to_gemini_format($conversation_messages);
 
         // Prepare the base request data
         $post_data = [
@@ -1393,13 +1408,21 @@ class block_tutoring_machine_google_client extends block_tutoring_machine_api_cl
             ]
         ];
 
+        // Current Gemini models support a dedicated top-level system instruction field.
+        if (trim($system_content) !== '') {
+            $post_data['systemInstruction'] = [
+                'parts' => [
+                    ['text' => trim($system_content)]
+                ]
+            ];
+            $this->log_info('Added system instruction to Gemini request');
+        }
+
         // Add response format if using supported models and JSON format is requested
         if (in_array($this->model, $this->supported_json_models) &&
             $this->response_format === 'json') {
-            $post_data['generationConfig']['responseSchema'] = [
-                'type' => 'object',
-                'format' => 'json'
-            ];
+            // Gemini enables JSON output through responseMimeType.
+            $post_data['generationConfig']['responseMimeType'] = 'application/json';
             $this->log_info("Setting JSON response format for model {$this->model}");
         }
 
@@ -1407,78 +1430,54 @@ class block_tutoring_machine_google_client extends block_tutoring_machine_api_cl
     }
 
     /**
+     * Split system messages out from the conversation messages.
+     *
+     * Modern Gemini models accept system guidance via the dedicated
+     * systemInstruction field, so we separate it from the chat turns.
+     *
+     * @param array $messages Validated messages in OpenAI forma
+     * @return array Tuple of [conversationMessages, combinedSystemContent]
+     */
+    private function extract_system_content($messages) {
+        $conversation_messages = [];
+        $system_content = '';
+
+        foreach ($messages as $message) {
+            if ($message['role'] === 'system') {
+                $system_content .= $message['content'] . "\n\n";
+            } else {
+                $conversation_messages[] = $message;
+            }
+        }
+
+        return [$conversation_messages, $system_content];
+    }
+
+    /**
      * Convert OpenAI-compatible message format to Google Gemini forma
      *
-     * @param array $messages The array of messages in OpenAI forma
+     * System messages are expected to have been removed beforehand (see
+     * extract_system_content()); only user and assistant turns are converted.
+     *
+     * @param array $messages The array of conversation messages in OpenAI forma
      * @return array The messages in Gemini forma
      */
     private function convert_to_gemini_format($messages) {
         $gemini_messages = [];
-        $system_content = '';
 
-        // First pass: collect system messages and convert others
         foreach ($messages as $message) {
             if ($message['role'] === 'system') {
-                // Gemini doesn't support system messages directly,
-                // so we collect them to add as contex
-                $system_content .= $message['content'] . "\n\n";
-            } else {
-                $gemini_messages[] = [
-                    'role' => $message['role'] === 'assistant' ? 'model' : 'user',
-                    'parts' => [
-                        ['text' => $message['content']]
-                    ]
-                ];
+                continue;
             }
+            $gemini_messages[] = [
+                'role' => $message['role'] === 'assistant' ? 'model' : 'user',
+                'parts' => [
+                    ['text' => $message['content']]
+                ]
+            ];
         }
 
-        // If we have system content, prepend it to the first user message
-        // or create a new user message if there are none
-        if (!empty($system_content)) {
-            $gemini_messages = $this->handle_system_content($gemini_messages, $system_content);
-        }
-
-        $this->log_info('Converted ' . count($messages) . ' messages to Gemini format');
-        return $gemini_messages;
-    }
-
-    /**
-     * Handle system content for Gemini API
-     *
-     * Gemini doesn't support system messages directly, so we need to
-     * inject system content into a user message.
-     *
-     * @param array $gemini_messages The messages in Gemini forma
-     * @param string $system_content The collected system conten
-     * @return array The updated Gemini messages
-     */
-    private function handle_system_content($gemini_messages, $system_content) {
-        $system_prefix = "You are an AI assistant with the following instructions to follow:\n\n" .
-                          $system_content .
-                          "\nPlease follow these instructions carefully in your responses.";
-
-        if (!empty($gemini_messages)) {
-            // Find the first user message
-            foreach ($gemini_messages as $key => $message) {
-                if ($message['role'] === 'user') {
-                    // Prepend system content to this user message
-                    $gemini_messages[$key]['parts'][0]['text'] =
-                        $system_prefix . "\n\n" . $gemini_messages[$key]['parts'][0]['text'];
-                    $this->log_info('Added system content to existing user message');
-                    return $gemini_messages;
-                }
-            }
-        }
-
-        // No user messages found, create a new one
-        $gemini_messages[] = [
-            'role' => 'user',
-            'parts' => [
-                ['text' => $system_prefix]
-            ]
-        ];
-        $this->log_info('Created new user message with system content');
-
+        $this->log_info('Converted ' . count($gemini_messages) . ' messages to Gemini format');
         return $gemini_messages;
     }
 

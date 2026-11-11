@@ -130,6 +130,43 @@
         display: inline-block;
     }
 
+    /* Rich markdown formatting for bot answers (normal + modal views) */
+    .bot-message p { margin: 0 0 8px 0; }
+    .bot-message p:last-child { margin-bottom: 0; }
+    .bot-message ul, .bot-message ol { margin: 4px 0 8px 0; padding-left: 22px; }
+    .bot-message li { margin: 2px 0; }
+    .bot-message h3, .bot-message h4, .bot-message h5, .bot-message h6 {
+        margin: 10px 0 4px 0; line-height: 1.2;
+    }
+    .bot-message a { color: %%MAIN_COLOR%%; text-decoration: underline; word-break: break-word; }
+    .bot-message code {
+        background: rgba(0, 0, 0, 0.06); padding: 1px 4px; border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em;
+    }
+    .bot-message pre.tm-code {
+        background: rgba(0, 0, 0, 0.06); padding: 10px 12px; border-radius: 8px;
+        overflow-x: auto; margin: 6px 0;
+    }
+    .bot-message pre.tm-code code { background: none; padding: 0; white-space: pre; }
+    .bot-message blockquote {
+        margin: 6px 0; padding: 4px 10px; border-left: 3px solid %%MAIN_COLOR%%;
+        background: rgba(0, 0, 0, 0.03);
+    }
+    .bot-message hr { border: none; border-top: 1px solid rgba(0, 0, 0, 0.15); margin: 10px 0; }
+    .tm-table { border-collapse: collapse; margin: 8px 0; width: 100%; font-size: 0.95em; }
+    .tm-table th, .tm-table td {
+        border: 1px solid rgba(0, 0, 0, 0.15); padding: 6px 10px; text-align: left;
+    }
+    .tm-table th { background: rgba(0, 0, 0, 0.06); font-weight: 600; }
+
+    /* Live streaming: preserve whitespace and show a blinking caret while typing */
+    .tm-streaming { white-space: pre-wrap; }
+    .tm-streaming::after {
+        content: "\258D"; display: inline-block; margin-left: 1px; color: %%MAIN_COLOR%%;
+        animation: tmBlink 1s steps(2, start) infinite;
+    }
+    @keyframes tmBlink { to { visibility: hidden; } }
+
     /* Chat bubbles */
     .chat-bubble {
         max-width: 85%;
@@ -384,6 +421,7 @@
     let promptSuggestions = `%%PROMPT_SUGGESTIONS%%`;
     let promptSuggestionsOpen = false;
     let isFullscreen = false;
+    let streamingEnabled = %%STREAMING_ENABLED%%;
 
     const rawBlockId = Number(%%BLOCK_ID%%);
     const blockId = isFinite(rawBlockId) && rawBlockId > 0 ? rawBlockId : null;
@@ -760,9 +798,8 @@
                 conversationHistory = [];
             }
             
-            // Sanitize for security
-            const safeWelcomeMessage = sanitizeHTML(welcomeMessage);
-            const formattedMessage = formatBotResponse(safeWelcomeMessage);
+            // formatBotResponse() escapes the text internally, so pass it raw.
+            const formattedMessage = formatBotResponse(welcomeMessage);
             
             chatMessages.innerHTML += `<div class='chat-bubble bot-message fade-in'><strong>${sanitizeHTML(assistantName)}:</strong><br>${formattedMessage}</div>`;
             
@@ -861,11 +898,180 @@
     }
 
     /**
-     * Send a user message to the server and handle the response
+     * Entry point: send a user message to the server.
+     * When "streaming" is enabled we fetch the full answer and reveal it with a
+     * typewriter effect so the user sees the text being written. This works in
+     * every environment, including servers / front-controllers that buffer
+     * output (where true progressive SSE cannot be delivered).
      * @param {string} message - The message to send
      * @param {string} view - Which view is active ("normal" or "modal")
      */
     async function sendMessageToServer(message, view) {
+        if (streamingEnabled && typeof requestAnimationFrame !== "undefined") {
+            await typewriterMessageFromServer(message, view);
+        } else {
+            await sendMessageToServerJSON(message, view);
+        }
+    }
+
+    /**
+     * Create a bot chat bubble for incremental (typewriter) output.
+     * @param {HTMLElement} container - The messages container to append to
+     * @param {string} assistantDisplayName - Raw assistant name (escaped by DOM)
+     * @returns {HTMLElement} The inner content element to update with text
+     */
+    function createStreamingBubble(container, assistantDisplayName) {
+        const bubble = document.createElement("div");
+        bubble.className = "chat-bubble bot-message fade-in";
+
+        const name = document.createElement("strong");
+        name.textContent = assistantDisplayName + ":";
+        bubble.appendChild(name);
+        bubble.appendChild(document.createElement("br"));
+
+        const content = document.createElement("span");
+        content.className = "tm-bot-content tm-streaming";
+        bubble.appendChild(content);
+
+        container.appendChild(bubble);
+        return content;
+    }
+
+    /**
+     * Reveal text into one or more bubbles with a typewriter effect, then call
+     * onComplete(). Shows escaped plain text (pre-wrap) while typing.
+     * @param {HTMLElement[]} bubbles - Content elements to update
+     * @param {string} fullText - The complete text to reveal
+     * @param {Function} onComplete - Called once the whole text is shown
+     */
+    function typewriterReveal(bubbles, fullText, onComplete) {
+        const total = fullText.length;
+        if (total === 0) { onComplete(); return; }
+
+        // Aim for a natural writing pace, capped so long answers do not drag.
+        const durationMs = Math.min(4000, Math.max(500, total * 7));
+        const perTick = Math.max(1, Math.ceil(total / (durationMs / 16)));
+        let shown = 0;
+
+        const step = function() {
+            shown = Math.min(total, shown + perTick);
+            const partial = fullText.slice(0, shown);
+            bubbles.forEach(function(b) { b.textContent = partial; });
+            scrollToBottom();
+            if (shown < total) {
+                requestAnimationFrame(step);
+            } else {
+                onComplete();
+            }
+        };
+        requestAnimationFrame(step);
+    }
+
+    /**
+     * Fetch the complete answer from the server and reveal it with a typewriter
+     * effect. Robust against output-buffering front-controllers / proxies.
+     * @param {string} message - The message to send
+     * @param {string} view - Which view is active ("normal" or "modal")
+     */
+    async function typewriterMessageFromServer(message, view) {
+        const normalMessages = document.getElementById("chat-messages");
+        const modalMessages = document.getElementById("modal-chat-messages");
+        const isModal = view === "modal";
+        const loadingId = isModal ? "modal-loading" : "loading";
+
+        const showError = function(html) {
+            normalMessages.innerHTML += html;
+            if ((isModal || isFullscreen) && modalMessages) {
+                modalMessages.innerHTML += html;
+            }
+            scrollToBottom();
+            saveSession();
+        };
+
+        // Prepare request data.
+        const formData = new FormData();
+        formData.append("message", message);
+        formData.append("history", JSON.stringify(conversationHistory));
+
+        if (typeof M !== "undefined" && M.cfg && M.cfg.sesskey) {
+            formData.append("sesskey", M.cfg.sesskey);
+        } else {
+            removeLoadingIndicator(loadingId);
+            showError(`<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Sicherheitstoken (sesskey) fehlt. Bitte lade die Seite neu.</div>`);
+            return;
+        }
+
+        try { if (blockId) { formData.append("blockid", blockId); } } catch (e) {}
+        try { if (courseId) { formData.append("courseid", courseId); } } catch (e) {}
+
+        let apiUrl = "/blocks/tutoring_machine/tutoring_machine.php";
+        if (typeof M !== "undefined" && M.cfg && M.cfg.wwwroot) {
+            apiUrl = M.cfg.wwwroot + "/blocks/tutoring_machine/tutoring_machine.php";
+        }
+
+        let data;
+        try {
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                body: formData,
+                credentials: "same-origin"
+            });
+            removeLoadingIndicator(loadingId);
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+            }
+            const responseText = await response.text();
+            data = JSON.parse(responseText);
+        } catch (error) {
+            removeLoadingIndicator(loadingId);
+            const safe = sanitizeHTML(error && error.message ? error.message : "Unbekannter Fehler");
+            showError(`<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Verbindungsproblem: ${safe}</div>`);
+            return;
+        }
+
+        if (data.error) {
+            showError(`<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>${data.message || 'Ein Fehler ist aufgetreten.'}</div>`);
+            return;
+        }
+
+        if (!data.response) {
+            showError(`<div class='chat-bubble error-message fade-in'><strong>Fehler:</strong><br>Hm, da scheint was schiefgelaufen zu sein. Versuch's nochmal!</div>`);
+            return;
+        }
+
+        const fullText = data.response;
+        const lastMessage = data.lastMessage || { role: "assistant", content: fullText };
+
+        // Record the answer in the conversation history straight away so the
+        // context survives even if the page is reloaded mid-reveal.
+        conversationHistory.push(lastMessage);
+        saveConversationHistory();
+
+        // Create the live bubble(s) and reveal the answer with a typewriter effect.
+        const bubbles = [createStreamingBubble(normalMessages, assistantName)];
+        if ((isModal || isFullscreen) && modalMessages) {
+            bubbles.push(createStreamingBubble(modalMessages, assistantName));
+        }
+        scrollToBottom();
+
+        typewriterReveal(bubbles, fullText, function() {
+            const formatted = formatBotResponse(fullText);
+            bubbles.forEach(function(b) {
+                b.classList.remove("tm-streaming");
+                b.innerHTML = formatted;
+            });
+            scrollToBottom();
+            saveSession();
+        });
+    }
+
+    /**
+     * Send a user message to the classic JSON endpoint (non-streaming fallback)
+     * @param {string} message - The message to send
+     * @param {string} view - Which view is active ("normal" or "modal")
+     */
+    async function sendMessageToServerJSON(message, view) {
         const normalMessages = document.getElementById("chat-messages");
         const modalMessages = document.getElementById("modal-chat-messages");
         const isModal = view === "modal";
@@ -1064,29 +1270,19 @@
     }
     
     /**
-     * Format bot messages with markdown-like syntax
-     * @param {string} text - The raw text to format
+     * Format a bot message written in Markdown into safe HTML.
+     * Supports headings, paragraphs, bold/italic, inline code, code blocks,
+     * ordered/unordered (nested) lists, block quotes, horizontal rules,
+     * links and GitHub-style tables. All text is HTML-escaped first so the
+     * renderer is safe against injection.
+     * @param {string} text - The raw Markdown text to format
      * @returns {string} - The formatted HTML
      */
     function formatBotResponse(text) {
-        // Sanitize text to prevent XSS
-        let formatted = sanitizeHTML(text);
-        
-        // Process numbered lists
-        formatted = processNumberedLists(formatted);
-        
-        // Process headers
-        formatted = processHeaders(formatted);
-        
-        // Process bullet lists
-        formatted = processBulletLists(formatted);
-        
-        // Cleanup and final formatting
-        formatted = cleanupFormatting(formatted);
-            
-        return formatted;
+        const raw = (text === null || text === undefined) ? '' : String(text);
+        return renderMarkdown(raw);
     }
-    
+
     /**
      * Sanitize HTML to prevent XSS attacks
      * @param {string} text - The text to sanitize
@@ -1097,99 +1293,298 @@
         element.textContent = text;
         return element.innerHTML;
     }
-    
+
     /**
-     * Process numbered lists in text
-     * @param {string} text - Text to process
-     * @returns {string} - Processed text with HTML numbered lists
+     * Render inline Markdown on an already HTML-escaped string.
+     * Handles inline code, bold, italic, and safe http(s)/mailto links.
+     * @param {string} escaped - HTML-escaped text
+     * @returns {string} - HTML with inline formatting applied
      */
-    function processNumberedLists(text) {
-        let lines = text.split('\n');
-        let inNumberedList = false;
-        let numberedListItems = [];
-        
-        // First pass: identify and collect numbered list items
-        for (let i = 0; i < lines.length; i++) {
-            const numberedMatch = lines[i].match(/^(\d+)\.\s+(.*?)$/);
-            
-            if (numberedMatch) {
-                if (!inNumberedList) {
-                    inNumberedList = true;
-                    lines[i] = `__NUMBERED_LIST_START__${i}__`;
-                    numberedListItems.push({
-                        start: i,
-                        items: [`<div class="numbered-item">${numberedMatch[1]}. ${numberedMatch[2].trim()}</div>`]
-                    });
-                } else {
-                    const currentList = numberedListItems[numberedListItems.length - 1];
-                    currentList.items.push(`<div class="numbered-item">${numberedMatch[1]}. ${numberedMatch[2].trim()}</div>`);
-                    lines[i] = '';
+    function tmRenderInline(escaped) {
+        const codeStore = [];
+        // Use a private-use-area sentinel so the placeholder cannot collide
+        // with real answer text while bold/italic/link processing runs.
+        const SENT = '';
+        let out = escaped.replace(/`([^`]+)`/g, function(match, code) {
+            codeStore.push(code);
+            return SENT + (codeStore.length - 1) + SENT;
+        });
+
+        out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        out = out.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+        out = out.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+        out = out.replace(/(^|[^_\w])_([^_\n]+)_(?!\w)/g, '$1<em>$2</em>');
+
+        out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+)\)/g,
+            function(match, label, url) {
+                return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + label + '</a>';
+            });
+
+        out = out.replace(new RegExp(SENT + '(\\d+)' + SENT, 'g'), function(match, idx) {
+            return '<code>' + codeStore[Number(idx)] + '</code>';
+        });
+
+        return out;
+    }
+
+    /**
+     * Escape a string for safe insertion into HTML.
+     * @param {string} text - Raw text
+     * @returns {string} - Escaped text
+     */
+    function tmEscapeHtml(text) {
+        return sanitizeHTML(text);
+    }
+
+    /**
+     * Split a Markdown table row into its cell strings.
+     * @param {string} line - A table row line
+     * @returns {string[]} - Cell contents
+     */
+    function tmSplitTableRow(line) {
+        let s = line.trim();
+        if (s.charAt(0) === '|') { s = s.slice(1); }
+        if (s.charAt(s.length - 1) === '|') { s = s.slice(0, -1); }
+        return s.split('|');
+    }
+
+    /**
+     * Detect whether a line is a Markdown table separator row (e.g. |---|:--:|).
+     * @param {string} line - The line to test
+     * @returns {boolean}
+     */
+    function tmIsTableSeparator(line) {
+        if (!line || line.indexOf('-') === -1 || line.indexOf('|') === -1) {
+            return false;
+        }
+        const cells = tmSplitTableRow(line);
+        if (!cells.length) { return false; }
+        return cells.every(function(c) { return /^\s*:?-{1,}:?\s*$/.test(c); });
+    }
+
+    /**
+     * Parse a GitHub-flavoured Markdown table starting at the given line.
+     * @param {string[]} lines - All lines
+     * @param {number} start - Index of the header row
+     * @returns {{html: string, next: number}}
+     */
+    function tmParseTable(lines, start) {
+        const headers = tmSplitTableRow(lines[start]);
+        const aligns = tmSplitTableRow(lines[start + 1]).map(function(c) {
+            const t = c.trim();
+            const left = t.charAt(0) === ':';
+            const right = t.charAt(t.length - 1) === ':';
+            if (left && right) { return 'center'; }
+            if (right) { return 'right'; }
+            if (left) { return 'left'; }
+            return '';
+        });
+
+        let i = start + 2;
+        const rows = [];
+        while (i < lines.length && lines[i].indexOf('|') !== -1 && lines[i].trim() !== '') {
+            rows.push(tmSplitTableRow(lines[i]));
+            i++;
+        }
+
+        let html = '<table class="tm-table"><thead><tr>';
+        headers.forEach(function(h, idx) {
+            const a = aligns[idx] ? ' style="text-align:' + aligns[idx] + '"' : '';
+            html += '<th' + a + '>' + tmRenderInline(tmEscapeHtml(h.trim())) + '</th>';
+        });
+        html += '</tr></thead><tbody>';
+
+        rows.forEach(function(row) {
+            html += '<tr>';
+            for (let c = 0; c < headers.length; c++) {
+                const cell = row[c] !== undefined ? row[c] : '';
+                const a = aligns[c] ? ' style="text-align:' + aligns[c] + '"' : '';
+                html += '<td' + a + '>' + tmRenderInline(tmEscapeHtml(cell.trim())) + '</td>';
+            }
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        return { html: html, next: i };
+    }
+
+    /**
+     * Build nested HTML list markup from collected list items.
+     * @param {Array<{indent:number, ordered:boolean, content:string}>} items
+     * @returns {string}
+     */
+    function tmBuildListHtml(items) {
+        let html = '';
+        const levels = [];
+
+        items.forEach(function(item) {
+            if (levels.length === 0) {
+                levels.push(item);
+                html += (item.ordered ? '<ol>' : '<ul>') + '<li>' + item.content;
+                return;
+            }
+
+            const top = levels[levels.length - 1];
+            if (item.indent > top.indent) {
+                levels.push(item);
+                html += (item.ordered ? '<ol>' : '<ul>') + '<li>' + item.content;
+            } else if (item.indent < top.indent) {
+                while (levels.length > 1 && item.indent < levels[levels.length - 1].indent) {
+                    const closed = levels.pop();
+                    html += '</li>' + (closed.ordered ? '</ol>' : '</ul>');
                 }
+                html += '</li><li>' + item.content;
             } else {
-                inNumberedList = false;
+                html += '</li><li>' + item.content;
+            }
+        });
+
+        while (levels.length) {
+            const closed = levels.pop();
+            html += '</li>' + (closed.ordered ? '</ol>' : '</ul>');
+        }
+
+        return html;
+    }
+
+    /**
+     * Parse a sequence of Markdown list items (with simple nesting) starting
+     * at the given line index.
+     * @param {string[]} lines - All lines
+     * @param {number} start - Index of the first list line
+     * @returns {{html: string, next: number}}
+     */
+    function tmParseList(lines, start) {
+        let i = start;
+        const items = [];
+
+        while (i < lines.length) {
+            const line = lines[i];
+            const m = line.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
+            if (m) {
+                const indent = m[1].replace(/\t/g, '    ').length;
+                const ordered = /\d/.test(m[2]);
+                items.push({
+                    indent: indent,
+                    ordered: ordered,
+                    content: tmRenderInline(tmEscapeHtml(m[3].trim()))
+                });
+                i++;
+            } else if (/^\s+\S/.test(line) && items.length) {
+                // Indented continuation line belongs to the previous item.
+                items[items.length - 1].content += '<br>' + tmRenderInline(tmEscapeHtml(line.trim()));
+                i++;
+            } else {
+                break;
             }
         }
-        
-        // Second pass: replace placeholders with HTML
-        numberedListItems.forEach(list => {
-            const numberedListHtml = `<div class="numbered-list">${list.items.join('')}</div>`;
-            lines[list.start] = numberedListHtml;
-        });
-        
-        return lines.join('\n');
+
+        return { html: tmBuildListHtml(items), next: i };
     }
-    
+
     /**
-     * Process header tags in text
-     * @param {string} text - Text to process
-     * @returns {string} - Processed text with HTML headers
+     * Render a Markdown string into safe HTML using a small block parser.
+     * @param {string} rawText - The raw Markdown
+     * @returns {string} - The rendered HTML
      */
-    function processHeaders(text) {
-        return text
-            .replace(/^# (.*?)$/gm, "<h3>$1</h3>")
-            .replace(/\n# (.*?)$/gm, "<br><h3>$1</h3>")
-            .replace(/^## (.*?)$/gm, "<h4>$1</h4>")
-            .replace(/\n## (.*?)$/gm, "<br><h4>$1</h4>")
-            .replace(/^### (.*?)$/gm, "<h5>$1</h5>")
-            .replace(/\n### (.*?)$/gm, "<br><h5>$1</h5>");
-    }
-    
-    /**
-     * Process bullet lists in text
-     * @param {string} text - Text to process
-     * @returns {string} - Processed text with HTML bullet lists
-     */
-    function processBulletLists(text) {
-        let processed = text.replace(/^- (.*?)$/gm, function(match, content) {
-            return `<div class="bullet-item">• ${content.trim()}</div>`;
-        });
-        
-        return processed.replace(/\n- (.*?)$/gm, function(match, content) {
-            return `\n<div class="bullet-item">• ${content.trim()}</div>`;
-        });
-    }
-    
-    /**
-     * Cleanup and apply final formatting
-     * @param {string} text - Text to clean up
-     * @returns {string} - Cleaned text with final formatting applied
-     */
-    function cleanupFormatting(text) {
-        // Limit consecutive newlines
-        let cleaned = text.replace(/\n{2,}/g, '\n');
-        
-        // Special handling for consecutive lists
-        cleaned = cleaned.replace(/(<\/div>\n<div class="numbered-list">|<\/div>\n<div class="bullet-item">)/g, '</div><div class="numbered-list">');
-        
-        // Process remaining paragraph structure
-        cleaned = cleaned.replace(/\n\n/g, "<br>");
-        
-        // Final formatting
-        return cleaned
-            .replace(/\n/g, " ") // Replace newlines with spaces
-            .replace(/(<br>){2,}/g, "<br>") // Limit consecutive <br> tags
-            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-            .replace(/\*(.*?)\*/g, "<em>$1</em>");
+    function renderMarkdown(rawText) {
+        const lines = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+        const html = [];
+        let paragraph = [];
+        let i = 0;
+
+        const flushParagraph = function() {
+            if (paragraph.length) {
+                const joined = paragraph.map(function(l) {
+                    return tmRenderInline(tmEscapeHtml(l));
+                }).join('<br>');
+                html.push('<p>' + joined + '</p>');
+                paragraph = [];
+            }
+        };
+
+        while (i < lines.length) {
+            const line = lines[i];
+
+            // Fenced code block.
+            if (/^\s*```/.test(line)) {
+                flushParagraph();
+                const codeLines = [];
+                i++;
+                while (i < lines.length && !/^\s*```/.test(lines[i])) {
+                    codeLines.push(lines[i]);
+                    i++;
+                }
+                i++; // Skip the closing fence.
+                html.push('<pre class="tm-code"><code>' + tmEscapeHtml(codeLines.join('\n')) + '</code></pre>');
+                continue;
+            }
+
+            // Blank line ends the current paragraph.
+            if (/^\s*$/.test(line)) {
+                flushParagraph();
+                i++;
+                continue;
+            }
+
+            // Heading (# .. ######).
+            const heading = line.match(/^\s*(#{1,6})\s+(.*)$/);
+            if (heading) {
+                flushParagraph();
+                const tag = 'h' + Math.min(heading[1].length + 2, 6);
+                html.push('<' + tag + '>' + tmRenderInline(tmEscapeHtml(heading[2].trim())) + '</' + tag + '>');
+                i++;
+                continue;
+            }
+
+            // Horizontal rule.
+            if (/^\s*([-*_])\1\1+\s*$/.test(line)) {
+                flushParagraph();
+                html.push('<hr>');
+                i++;
+                continue;
+            }
+
+            // Table (header row followed by a separator row).
+            if (line.indexOf('|') !== -1 && i + 1 < lines.length && tmIsTableSeparator(lines[i + 1])) {
+                flushParagraph();
+                const table = tmParseTable(lines, i);
+                html.push(table.html);
+                i = table.next;
+                continue;
+            }
+
+            // Block quote.
+            if (/^\s*>\s?/.test(line)) {
+                flushParagraph();
+                const quoteLines = [];
+                while (i < lines.length && /^\s*>\s?/.test(lines[i])) {
+                    quoteLines.push(lines[i].replace(/^\s*>\s?/, ''));
+                    i++;
+                }
+                const quoteHtml = quoteLines.map(function(l) {
+                    return tmRenderInline(tmEscapeHtml(l));
+                }).join('<br>');
+                html.push('<blockquote>' + quoteHtml + '</blockquote>');
+                continue;
+            }
+
+            // Ordered or unordered list.
+            if (/^\s*([-*+]|\d+[.)])\s+/.test(line)) {
+                flushParagraph();
+                const list = tmParseList(lines, i);
+                html.push(list.html);
+                i = list.next;
+                continue;
+            }
+
+            // Default: accumulate into the current paragraph.
+            paragraph.push(line);
+            i++;
+        }
+
+        flushParagraph();
+        return html.join('');
     }
     
     /**

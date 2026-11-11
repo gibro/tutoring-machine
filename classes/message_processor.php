@@ -417,6 +417,59 @@ class block_tutoring_machine_message_processor {
     }
 
     /**
+     * Replace activity reference tokens with real Moodle activity links.
+     *
+     * The assistant is instructed to reference course activities with a token
+     * [[akt:<cmid>]] instead of writing URLs itself (which it does unreliably).
+     * This deterministically turns each valid token into a Markdown link
+     * [Activity name](activity URL). Tokens for unknown, foreign-course or
+     * non-visible activities are removed so nothing bogus reaches the learner.
+     *
+     * @param string $text The raw assistant response
+     * @param int|null $courseid The course the request belongs to
+     * @return string The response with tokens replaced by links
+     */
+    public static function link_activity_references($text, $courseid) {
+        if (empty($courseid) || strpos($text, '[[akt:') === false) {
+            return $text;
+        }
+
+        try {
+            $modinfo = get_fast_modinfo($courseid);
+        } catch (Exception $e) {
+            // If modinfo cannot be loaded, strip tokens rather than leak them.
+            return preg_replace('/\[\[akt:\d+\]\]/', '', $text);
+        }
+
+        return preg_replace_callback('/\[\[akt:(\d+)\]\]/', function($matches) use ($modinfo) {
+            $cmid = (int)$matches[1];
+
+            try {
+                $cm = $modinfo->get_cm($cmid);
+            } catch (Exception $e) {
+                return '';
+            }
+
+            if (!$cm || !$cm->uservisible) {
+                return '';
+            }
+
+            $name = trim($cm->get_formatted_name());
+            if ($name === '') {
+                $name = $cm->name;
+            }
+            // Keep Markdown link syntax intact if the name contains brackets.
+            $name = str_replace(['[', ']'], ['(', ')'], $name);
+
+            if (empty($cm->url)) {
+                return $name;
+            }
+
+            return '[' . $name . '](' . $cm->url->out(false) . ')';
+        }, $text);
+    }
+
+    /**
      * Send JSON response to client with security headers
      *
      * @param string $response_text Text to send

@@ -121,7 +121,30 @@ class block_tutoring_machine extends block_base {
             } else {
                 link_manager::sync_links_for_block($this->instance->id, $courseid, []);
             }
+
+            if (isset($data->knowledgebase_content)) {
+                $context = context_block::instance($this->instance->id);
+                $fs = get_file_storage();
+                $fs->delete_area_files($context->id, 'block_tutoring_machine', 'knowledgebase', 0);
+
+                $content = trim($data->knowledgebase_content);
+                if ($content !== '') {
+                    $fs->create_file_from_string(array(
+                        'contextid' => $context->id,
+                        'component' => 'block_tutoring_machine',
+                        'filearea' => 'knowledgebase',
+                        'itemid' => 0,
+                        'filepath' => '/',
+                        'filename' => 'moodle-bot-context.md',
+                    ), $content);
+                }
+            }
         }
+
+        // The pasted text is stored as a plugin file (see above), not as a
+        // serialized config value, so the pasted content can be re-read even
+        // if it grows larger than what should live in block_instances.configdata.
+        unset($data->knowledgebase_content);
 
         return parent::instance_config_save($data, $nolongerused);
     }
@@ -300,6 +323,10 @@ class block_tutoring_machine extends block_base {
         $html = str_replace('%%ANALYTICS_NOTICE%%', $analytics_notice, $html);
         $html = str_replace('%%ANALYTICS_ENABLED%%', (!empty($analytics_notice) ? 'true' : 'false'), $html);
         $html = str_replace('%%PROMPT_SUGGESTIONS_ENABLED%%', ($prompt_suggestions_enabled ? 'true' : 'false'), $html);
+        // Streaming is a global plugin setting, enabled by default unless turned off.
+        $plugin_config = get_config('block_tutoring_machine');
+        $streaming_enabled = !isset($plugin_config->enable_streaming) || !empty($plugin_config->enable_streaming);
+        $html = str_replace('%%STREAMING_ENABLED%%', ($streaming_enabled ? 'true' : 'false'), $html);
         $html = str_replace('%%PROMPT_SUGGESTIONS%%', s($prompt_suggestions), $html);
         $html = str_replace('%%PROMPT_SUGGESTIONS_BUTTON_TEXT%%', get_string('prompt_suggestions_button_text', 'block_tutoring_machine'), $html);
         $html = str_replace('%%WELCOME_MESSAGE%%', s($welcome_message), $html);

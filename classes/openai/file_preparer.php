@@ -41,7 +41,8 @@ class block_tutoring_machine_openai_file_preparer {
         'pdf',
         'doc', 'docx',
         'ppt', 'pptx',
-        'rtf', 'odt', 'odp'
+        'rtf', 'odt', 'odp',
+        'md'
     ];
 
     /**

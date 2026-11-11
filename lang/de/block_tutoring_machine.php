@@ -13,6 +13,19 @@ $string['configincludecontext_option'] = 'Kursmaterialien im Kontext an die KI �
 $string['context_links_enable'] = 'Externe Links einbeziehen';
 $string['context_links'] = 'Externe Kontext-Links';
 $string['context_links_help'] = 'Eine HTTPS-URL pro Zeile. Nur Domains aus der globalen Whitelist werden verarbeitet. Die bereinigten Inhalte werden in den Kontext aufgenommen, sobald die Kontextweitergabe aktiviert ist.';
+$string['knowledgebase_intro'] = '<div class="alert alert-info">Hier können Sie den Inhalt einer im <strong>Open-Knowledge-Format (OKF)</strong> erzeugten Wissensbasis einfügen (z. B. für Support-Bots zu einer bestimmten Moodle-Installation oder einem Fachthema). Was genau einzufügen ist und wie es erzeugt wird, steht in der Anleitung <code>docs/okf_wissensbasis_hochladen.md</code> im Plugin-Ordner (Kurzfassung: <code>build_context.py</code> im OKF-Repo erzeugt <code>moodle-bot-context.md</code> – deren Inhalt hier eingefügt wird).</div>';
+$string['knowledgebase_content'] = 'Wissensbasis-Inhalt (OKF)';
+$string['knowledgebase_content_help'] = 'Fügen Sie hier den Inhalt der von build_context.py erzeugten Datei moodle-bot-context.md ein (Text kopieren und einfügen, keine Datei hochladen). Details in der Anleitung „OKF-Wissensbasis hochladen" (docs/okf_wissensbasis_hochladen.md im Plugin-Ordner).';
+$string['knowledgebase_content_placeholder'] = 'Inhalt von moodle-bot-context.md hier einfügen…';
+$string['knowledgebase_storage'] = 'Speicherort/Zugriff';
+$string['knowledgebase_storage_help'] = '„Direkt im Prompt" fügt den Dateiinhalt bei jeder Anfrage in den Kontext ein – funktioniert mit jedem Modell (OpenAI und Google), ohne Zusatzkosten für einen Vektor-Store. „OpenAI Vektor-Store" lädt die Datei stattdessen einmalig zu OpenAI hoch und durchsucht sie dort per Datei-Suche; das setzt ein OpenAI-Modell voraus, bei anderen Modellen wird automatisch auf „Direkt im Prompt" zurückgefallen.';
+$string['knowledgebase_storage_inline'] = 'Direkt im Prompt (empfohlen)';
+$string['knowledgebase_storage_openai'] = 'OpenAI Vektor-Store (nur mit OpenAI-Modell)';
+$string['knowledgebase_section_title'] = 'Wissensbasis (OKF)';
+$string['link_sources'] = 'Quellen als Link anhängen';
+$string['link_sources_option'] = 'Bei Antworten aus Kursinhalten auf die genutzten Aktivitäten verlinken';
+$string['link_sources_help'] = 'Wenn aktiviert, hängt der Assistent bei Antworten, die auf Kursinhalten beruhen, die passende(n) Aktivität(en) als anklickbaren Link an. Setzt voraus, dass die Kontextweitergabe aktiviert ist. Verlinkt werden nur Aktivitäten, die die/der Lernende auch sehen darf.';
+$string['link_sources_section'] = 'Verweisbare Kursaktivitäten';
 $string['configwelcomemessage'] = 'Willkommensnachricht';
 $string['configwelcomemessage_help'] = 'Legt die erste Nachricht fest, die Lernende beim Öffnen des Chats sehen. Nutzen Sie sie, um die Rolle des Assistenten zu erklären oder Transparenzhinweise zu geben.';
 $string['configwelcomemessageanalytics'] = 'Willkommensnachricht mit Analytics';
@@ -23,7 +36,7 @@ $string['courselogo']         = 'Kursspezifisches Logo';
 $string['courselogo_help']    = 'Laden Sie ein eigenes Logo für diese Kursinstanz hoch. Wenn nicht festgelegt, wird das Standard-Logo verwendet.';
 // API-Schlüssel
 $string['openai_apikey']      = 'OpenAI API-Schlüssel';
-$string['openai_apikeydesc']  = 'Geben Sie Ihren OpenAI API-Schlüssel für den Zugriff auf OpenAI-Modelle ein (GPT-5, GPT-5 Mini, GPT-5 Nano, usw.).';
+$string['openai_apikeydesc']  = 'Geben Sie Ihren OpenAI API-Schlüssel für den Zugriff auf OpenAI-Modelle ein (GPT-5.5, GPT-5.4 Mini, GPT-5.4 Nano, usw.).';
 $string['google_apikey']      = 'Google API-Schlüssel';
 $string['google_apikeydesc']  = 'Geben Sie Ihren Google API-Schlüssel für den Zugriff auf Gemini-Modelle ein.';
 
@@ -103,6 +116,8 @@ $string['link_refresh_ttl'] = 'Aktualisierungsintervall für Links (Sekunden)';
 $string['link_refresh_ttl_desc'] = 'Legt fest, wie lange gecachte Link-Inhalte gültig bleiben, bevor sie erneut geladen werden. Leer lassen für das Standardintervall von 24 Stunden.';
 $string['default_include_context'] = 'Kurskontext standardmäßig teilen';
 $string['default_include_context_desc'] = 'Legt fest, ob neue Blockinstanzen Kursmaterialien standardmäßig an die KI senden. Lehrende können diese Einstellung im Kurs jederzeit überschreiben.';
+$string['enable_streaming'] = 'Antworten live streamen';
+$string['enable_streaming_desc'] = 'Zeigt die Antwort der KI Wort für Wort während des Schreibens an, statt zu warten, bis die vollständige Antwort fertig ist. Wird vom Browser oder Server kein Streaming unterstützt, wird automatisch auf die klassische Antwortübertragung zurückgegriffen.';
 $string['default_welcome_message'] = 'Standard-Willkommensnachricht';
 $string['default_welcome_message_desc'] = 'Vorausfüllung der Willkommensnachricht für neue Blockinstanzen. Lernende sehen diesen Text, solange keine kursindividuelle Nachricht hinterlegt ist.';
 $string['default_welcome_message_value'] = 'Hey! Schön, dass du hier bist. Ich bin dein Lern-Begleiter. Frag mich einfach, wenn du Hilfe brauchst! 😊';
@@ -113,10 +128,10 @@ $string['modelsettings'] = 'KI-Modell-Einstellungen';
 $string['modelsettingsdesc'] = 'Wählen Sie das KI-Modell aus, das standardmäßig für alle Tutoring Machine-Instanzen verwendet werden soll. Modelle unterscheiden sich in Qualität, Geschwindigkeit und Kosten.';
 $string['model_usage_info'] = 'Anwendungsempfehlungen';
 $string['model_usage_info_desc'] = 'Modellempfehlungen für verschiedene Lernszenarien:<ul>
-<li><strong>Für Tutoring und komplexe Erklärungen:</strong> GPT-5 (höchste Reasoning-Qualität)</li>
-<li><strong>Für agentische Abläufe und Coding:</strong> GPT-5 mit mittlerem oder hohem Reasoning-Aufwand</li>
-<li><strong>Für alltägliche Chats mit moderaten Kosten:</strong> GPT-5 Mini (gute Balance aus Preis und Tempo)</li>
-<li><strong>Für latenzkritische oder massenhafte Klassifizierungen:</strong> GPT-5 Nano (schnellste Ausführung)</li>
+<li><strong>Für Tutoring und komplexe Erklärungen:</strong> GPT-5.5 (höchste Reasoning-Qualität)</li>
+<li><strong>Für agentische Abläufe und Coding:</strong> GPT-5.5 mit mittlerem oder hohem Reasoning-Aufwand</li>
+<li><strong>Für alltägliche Chats mit moderaten Kosten:</strong> GPT-5.4 Mini (gute Balance aus Preis und Tempo)</li>
+<li><strong>Für latenzkritische oder massenhafte Klassifizierungen:</strong> GPT-5.4 Nano (schnellste Ausführung)</li>
 </ul>';
 $string['parametersettings'] = 'Parameter-Einstellungen';
 $string['parametersettingsdesc'] = 'Konfigurieren Sie die Parameter für die KI-Antwortgenerierung, um Qualität und Stil der Antworten anzupassen.';
@@ -126,7 +141,7 @@ $string['systemsettings_desc'] = 'Erweiterte Einstellungen für die API-Kommunik
 // Anbieter-Einstellungen
 $string['default_provider'] = 'Standard-KI-Anbieter';
 $string['default_provider_desc'] = 'Wählen Sie den KI-Anbieter aus, der für alle Tutoring Machine-Instanzen verwendet werden soll, sofern nicht anders konfiguriert.';
-$string['provider_openai'] = 'OpenAI (GPT-5)';
+$string['provider_openai'] = 'OpenAI (GPT-5.5)';
 $string['provider_google'] = 'Google (Gemini)';
 
 // Modell-Einstellungen

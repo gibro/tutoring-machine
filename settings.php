@@ -27,6 +27,14 @@ if ($ADMIN->fulltree) {
         0
     ));
 
+    // Enable live (token-by-token) streaming of AI responses.
+    $settings->add(new admin_setting_configcheckbox(
+        'block_tutoring_machine/enable_streaming',
+        get_string('enable_streaming', 'block_tutoring_machine'),
+        get_string('enable_streaming_desc', 'block_tutoring_machine'),
+        1
+    ));
+
     $defaultwhitelist = "example.com\nopeneducationalresources.de\noercommons.org";
     $settings->add(new admin_setting_configtextarea(
         'block_tutoring_machine/linkdomain_whitelist',
@@ -104,14 +112,15 @@ if ($ADMIN->fulltree) {
 
     // Einstellung: KI-Modell
     $model_choices = [
-        // OpenAI Models
-        'openai:gpt-5' => 'OpenAI GPT-5 (komplexes Reasoning, Agenten-Workflows & Code - höchste Qualität)',
-        'openai:gpt-5-mini' => 'OpenAI GPT-5 Mini (Kostenoptimiertes Reasoning & Chat - ausgewogene Leistung)',
-        'openai:gpt-5-nano' => 'OpenAI GPT-5 Nano (Hochdurchsatz für einfache Aufgaben - sehr geringe Latenz)',
+        // OpenAI Models (current generation, 2026)
+        'openai:gpt-5.5' => 'OpenAI GPT-5.5 (komplexes Reasoning, Agenten-Workflows & Code - höchste Qualität)',
+        'openai:gpt-5.4-mini' => 'OpenAI GPT-5.4 Mini (Kostenoptimiertes Reasoning & Chat - ausgewogene Leistung)',
+        'openai:gpt-5.4-nano' => 'OpenAI GPT-5.4 Nano (Hochdurchsatz für einfache Aufgaben - sehr geringe Latenz)',
 
-        // Google Gemini Models
-        'google:gemini-1.5-pro' => 'Google Gemini 1.5 Pro (umfangreiches Wissen - allgemeine Verwendung)',
-        'google:gemini-1.5-flash' => 'Google Gemini 1.5 Flash (schnelle Antworten - kostengünstig)',
+        // Google Gemini Models (current generation, 2026)
+        'google:gemini-2.5-pro' => 'Google Gemini 2.5 Pro (umfangreiches Reasoning - allgemeine Verwendung)',
+        'google:gemini-3.5-flash' => 'Google Gemini 3.5 Flash (intelligent & schnell - gute Balance)',
+        'google:gemini-2.5-flash-lite' => 'Google Gemini 2.5 Flash-Lite (schnelle Antworten - kostengünstig)',
 
         // Anthropic Models wurden entfernt
     ];
@@ -120,7 +129,7 @@ if ($ADMIN->fulltree) {
         'block_tutoring_machine/default_model',
         get_string('default_model', 'block_tutoring_machine'),
         get_string('default_model_desc', 'block_tutoring_machine'),
-        'openai:gpt-5',
+        'openai:gpt-5.5',
         $model_choices
     ));
 

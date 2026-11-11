@@ -124,7 +124,9 @@ class block_tutoring_machine_content_extractor {
             'use_specific_activities' => false,
             'specific_activities' => [],
             'context_links_enable' => false,
-            'blockid' => 0
+            'link_sources' => false,
+            'blockid' => 0,
+            'knowledgebase_storage' => 'inline'
         ];
 
         // Override with provided configuration
@@ -133,7 +135,8 @@ class block_tutoring_machine_content_extractor {
             $boolkeys = [
                 'include_context', 'use_textpages', 'use_glossaries', 'use_internet', 'use_h5p',
                 'use_pdfs', 'use_office', 'use_forums', 'use_quizzes', 'use_books', 'use_assignments',
-                'use_labels', 'use_urls', 'use_lessons', 'use_specific_activities', 'context_links_enable'
+                'use_labels', 'use_urls', 'use_lessons', 'use_specific_activities', 'context_links_enable',
+                'link_sources'
             ];
            
             // Process main settings
@@ -144,6 +147,8 @@ class block_tutoring_machine_content_extractor {
                         $this->config[$setting_key] = (bool)$value;
                     } else if ($setting_key === 'blockid') {
                         $this->config[$setting_key] = (int)$value;
+                    } else if ($setting_key === 'knowledgebase_storage') {
+                        $this->config[$setting_key] = (string)$value;
                     }
                 }
                 
@@ -216,6 +221,81 @@ class block_tutoring_machine_content_extractor {
     }
 
     /**
+     * Get the .md file(s) uploaded as OKF-Wissensbasis for this block instance.
+     *
+     * @return stored_file[]
+     */
+    private function get_knowledgebase_stored_files() {
+        if (empty($this->config['blockid'])) {
+            return [];
+        }
+
+        try {
+            $context = context_block::instance($this->config['blockid']);
+        } catch (Exception $e) {
+            return [];
+        }
+
+        $fs = get_file_storage();
+        $files = $fs->get_area_files($context->id, 'block_tutoring_machine', 'knowledgebase', 0, 'filename', false);
+
+        return array_values($files);
+    }
+
+    /**
+     * Build a short fingerprint of the uploaded knowledge base files, so that
+     * a re-upload invalidates the cached context even if no other setting changed.
+     *
+     * @return string
+     */
+    private function get_knowledgebase_hash() {
+        $parts = [];
+        foreach ($this->get_knowledgebase_stored_files() as $file) {
+            $parts[] = $file->get_contenthash() . ':' . $file->get_timemodified();
+        }
+
+        return md5(implode('|', $parts));
+    }
+
+    /**
+     * Extract the content of the uploaded OKF-Wissensbasis file(s).
+     *
+     * In 'inline' storage mode the file content is read directly and returned
+     * as plain context text. In 'openai_vectorstore' mode the file is instead
+     * registered for upload (see enable_file_upload_mode()) and no inline text
+     * is returned, since the AI provider retrieves the content itself.
+     *
+     * @return string Formatted content from the uploaded knowledge base file(s)
+     */
+    private function extract_knowledgebase_files() {
+        $files = $this->get_knowledgebase_stored_files();
+        if (empty($files)) {
+            return '';
+        }
+
+        $storage_mode = $this->config['knowledgebase_storage'] ?? 'inline';
+        $context = '';
+
+        foreach ($files as $file) {
+            if ($storage_mode === 'openai_vectorstore') {
+                if ($this->file_upload_mode) {
+                    $this->register_file_for_upload($file, $file->get_filename(), 'knowledgebase');
+                }
+                continue;
+            }
+
+            $content = $this->clamp_text($file->get_content(), 60000);
+            if ($content === '') {
+                continue;
+            }
+
+            $context .= "### " . $file->get_filename() . "\n" . $content . "\n\n";
+        }
+
+        return $context;
+    }
+
+    /**
      * Get context from all enabled sources with caching
      *
      * @return string The formatted contex
@@ -230,6 +310,15 @@ class block_tutoring_machine_content_extractor {
         if (empty($this->config['include_context'])) {
             return '';
         }
+
+        // Fold the installed plugin version into the cache key so that a plugin
+        // update (which may change prompts/instructions) invalidates cached
+        // context automatically, without needing a manual cache purge.
+        $this->config['plugin_version'] = get_config('block_tutoring_machine', 'version');
+
+        // Änderungen an der hochgeladenen Wissensbasis sollen den Cache automatisch
+        // invalidieren, auch wenn sich sonst keine Einstellung geändert hat.
+        $this->config['knowledgebase_hash'] = $this->get_knowledgebase_hash();
 
         // Cache-Key immer generieren, unabhängig davon, ob wir ihn jetzt verwenden
         $cache_key = block_tutoring_machine_cache_manager::get_course_content_key($this->course->id, $this->config);
@@ -270,6 +359,15 @@ class block_tutoring_machine_content_extractor {
 
         // If not cached or expired, generate the context
         $sections = [];
+
+        // Process the uploaded OKF-Wissensbasis (per-block file upload)
+        $knowledgebase_context = $this->extract_knowledgebase_files();
+        if (!empty($knowledgebase_context)) {
+            $sections['knowledgebase'] = [
+                'title' => get_string('knowledgebase_section_title', 'block_tutoring_machine'),
+                'content' => $knowledgebase_context
+            ];
+        }
 
         // Process text pages
         if ($this->config['use_textpages']) {
@@ -413,6 +511,20 @@ class block_tutoring_machine_content_extractor {
             }
         }
 
+        // Collect direct links to the source activities so the assistant can
+        // reference them in its answers (per-block "link_sources" setting).
+        $has_activity_links = false;
+        if (!empty($this->config['link_sources'])) {
+            $activity_links = $this->extract_activity_links();
+            if ($activity_links !== '') {
+                $sections['activity_links'] = [
+                    'title' => get_string('link_sources_section', 'block_tutoring_machine'),
+                    'content' => $activity_links
+                ];
+                $has_activity_links = true;
+            }
+        }
+
         // Combine all sections into a structured context
         $context = '';
 
@@ -446,6 +558,16 @@ class block_tutoring_machine_content_extractor {
             $context .= "# WICHTIG: Strikte Informationsquellen\n";
             $context .= "Beantworte Fragen basierend auf den gegebenen Kursinhalten. Du kannst Informationen, die in den Kursinhalten explizit enthalten sind, flexibel und hilfreich erklären, umformulieren und zusammenfassen.\n\n";
             $context .= "Wenn du eine Frage bekommst, die mit den vorhandenen Kursinhalten beantwortet werden kann, gib eine möglichst hilfreiche Antwort. Nur wenn die Frage überhaupt nicht mit den vorhandenen Informationen beantwortet werden kann, antworte: \"Entschuldigung, aber zu diesem Thema finde ich keine Informationen in den Kursmaterialien. Bitte wende dich an deinen Kursleiter oder stelle eine andere Frage.\"\n\n";
+        }
+
+        // Instruction for referencing source activities via server-side tokens.
+        if ($has_activity_links) {
+            $section_title = get_string('link_sources_section', 'block_tutoring_machine');
+            $context .= "# Verweise auf Kursaktivitaeten\n";
+            $context .= "Der Abschnitt \"## {$section_title}\" oben ordnet jeder Aktivitaet einen Verweis-Baustein der Form [[akt:NUMMER]] zu.\n";
+            $context .= "Wenn deine Antwort auf einer oder mehreren dieser Aktivitaeten beruht, weise am Ende kurz darauf hin und setze den passenden Baustein exakt so ein, wie er in der Liste steht (zum Beispiel [[akt:5]]).\n";
+            $context .= "Schreibe NIEMALS selbst eine URL, einen Link, ein Rautezeichen als Link oder @@PLUGINFILE@@. Verwende ausschliesslich die Bausteine [[akt:NUMMER]] aus der Liste. Jeder Baustein wird spaeter automatisch in einen anklickbaren Link umgewandelt.\n";
+            $context .= "Findest du fuer eine Aktivitaet keinen passenden Baustein in der Liste, verweise nicht darauf.\n\n";
         }
 
         if ($context !== '' && core_text::strlen($context, 'UTF-8') > 60000) {
@@ -508,6 +630,40 @@ class block_tutoring_machine_content_extractor {
         }
     }
     
+    /**
+     * Build a mapping of included, user-visible activities to reference tokens.
+     *
+     * Each line maps a token [[akt:<cmid>]] to the activity name. The assistant
+     * is told to emit only these tokens; the server later turns them into real
+     * links (see message_processor::link_activity_references()). This keeps
+     * linking deterministic instead of relying on the model to reproduce URLs.
+     * Module types without a dedicated view page (e.g. labels) are skipped.
+     *
+     * @return string Token map ("- [[akt:ID]] = Name\n" per line) or '' if none
+     */
+    private function extract_activity_links() {
+        $links = '';
+
+        foreach ($this->modinfo->get_cms() as $cm) {
+            if (!$cm->uservisible || !$this->should_include_activity($cm)) {
+                continue;
+            }
+
+            if (empty($cm->url)) {
+                continue;
+            }
+
+            $name = trim($cm->get_formatted_name());
+            if ($name === '') {
+                $name = $cm->name;
+            }
+
+            $links .= '- [[akt:' . (int)$cm->id . ']] = ' . $name . "\n";
+        }
+
+        return $links;
+    }
+
     /**
      * Extract content from text pages with caching
      *

@@ -9,7 +9,7 @@
  */
 
 // Include Moodle config
-require_once('../../config.php');
+require_once(__DIR__ . '/configloader.php');
 require_once($CFG->libdir . '/weblib.php'); // Für html_to_tex
 require_once($CFG->dirroot . '/lib/filelib.php'); // Für get_file_storage
 require_once($CFG->dirroot . '/lib/accesslib.php'); // Für context_module
@@ -214,6 +214,40 @@ if ($include_context) {
 
     echo html_writer::end_div(); // card-body
     echo html_writer::end_div(); // card
+
+    // Hochgeladene OKF-Wissensbasis für diesen Block
+    echo html_writer::start_div('card mb-4');
+    echo html_writer::div(get_string('knowledgebase_section_title', 'block_tutoring_machine'), 'card-header');
+    echo html_writer::start_div('card-body');
+
+    $knowledgebase_files = [];
+    if ($blockid) {
+        $kb_context = context_block::instance($blockid);
+        $fs = get_file_storage();
+        $knowledgebase_files = $fs->get_area_files($kb_context->id, 'block_tutoring_machine', 'knowledgebase', 0, 'filename', false);
+    }
+
+    if (empty($knowledgebase_files)) {
+        echo html_writer::div('<div class="alert alert-info mb-0">Keine OKF-Wissensbasis hochgeladen.</div>');
+    } else {
+        $storage_mode = !empty($block_config->knowledgebase_storage) ? $block_config->knowledgebase_storage : 'inline';
+        $storage_label = $storage_mode === 'openai_vectorstore'
+            ? get_string('knowledgebase_storage_openai', 'block_tutoring_machine')
+            : get_string('knowledgebase_storage_inline', 'block_tutoring_machine');
+
+        echo html_writer::tag('p', 'Speicherort/Zugriff: ' . s($storage_label));
+
+        echo html_writer::start_tag('ul', ['class' => 'list-group']);
+        foreach ($knowledgebase_files as $file) {
+            $body = html_writer::tag('strong', s($file->get_filename())) . '<br>' .
+                html_writer::tag('small', display_size($file->get_filesize()) . ' · ' . userdate($file->get_timemodified()));
+            echo html_writer::tag('li', $body, ['class' => 'list-group-item list-group-item-success']);
+        }
+        echo html_writer::end_tag('ul');
+    }
+
+    echo html_writer::end_div();
+    echo html_writer::end_div();
 
     $linkrecords = \block_tutoring_machine\link_manager::get_links_for_block($blockid);
     echo html_writer::start_div('card mb-4');

@@ -76,20 +76,21 @@ class block_tutoring_machine_edit_form extends block_edit_form {
         $mform->addElement('header', 'ai_model', get_string('modelsettings', 'block_tutoring_machine'));
 
         // Get system default model
-        $default_model = isset($config->default_model) ? $config->default_model : 'openai:gpt-5';
+        $default_model = isset($config->default_model) ? $config->default_model : 'openai:gpt-5.5';
 
         // Model choices with descriptions for learning applications
         $model_choices = [
             '' => get_string('use_system_default', 'block_tutoring_machine') . ' (' . $default_model . ')',
 
-            // OpenAI Models
-            'openai:gpt-5' => 'OpenAI GPT-5 (komplexes Reasoning, Agenten-Workflows & Code - höchste Qualität)',
-            'openai:gpt-5-mini' => 'OpenAI GPT-5 Mini (Kostenoptimiertes Reasoning & Chat - ausgewogene Leistung)',
-            'openai:gpt-5-nano' => 'OpenAI GPT-5 Nano (Hochdurchsatz für einfache Aufgaben - sehr geringe Latenz)',
+            // OpenAI Models (current generation, 2026)
+            'openai:gpt-5.5' => 'OpenAI GPT-5.5 (komplexes Reasoning, Agenten-Workflows & Code - höchste Qualität)',
+            'openai:gpt-5.4-mini' => 'OpenAI GPT-5.4 Mini (Kostenoptimiertes Reasoning & Chat - ausgewogene Leistung)',
+            'openai:gpt-5.4-nano' => 'OpenAI GPT-5.4 Nano (Hochdurchsatz für einfache Aufgaben - sehr geringe Latenz)',
 
-            // Google Gemini Models
-            'google:gemini-1.5-pro' => 'Google Gemini 1.5 Pro (umfangreiches Wissen - allgemeine Verwendung)',
-            'google:gemini-1.5-flash' => 'Google Gemini 1.5 Flash (schnelle Antworten - kostengünstig)',
+            // Google Gemini Models (current generation, 2026)
+            'google:gemini-2.5-pro' => 'Google Gemini 2.5 Pro (umfangreiches Reasoning - allgemeine Verwendung)',
+            'google:gemini-3.5-flash' => 'Google Gemini 3.5 Flash (intelligent & schnell - gute Balance)',
+            'google:gemini-2.5-flash-lite' => 'Google Gemini 2.5 Flash-Lite (schnelle Antworten - kostengünstig)',
 
             // Anthropic Models wurden entfernt
         ];
@@ -138,6 +139,14 @@ class block_tutoring_machine_edit_form extends block_edit_form {
         $mform->setDefault('config_include_context', $defaultincludecontext);
         $mform->addHelpButton('config_include_context', 'configincludecontext', 'block_tutoring_machine');
 
+        // Append clickable links to the source activities when answering from course content.
+        $mform->addElement('advcheckbox', 'config_link_sources',
+            get_string('link_sources', 'block_tutoring_machine'),
+            get_string('link_sources_option', 'block_tutoring_machine'), array(), array(0, 1));
+        $mform->setDefault('config_link_sources', 0);
+        $mform->addHelpButton('config_link_sources', 'link_sources', 'block_tutoring_machine');
+        $mform->disabledIf('config_link_sources', 'config_include_context', 'neq', 1);
+
         $mform->addElement('advcheckbox', 'config_context_links_enable',
             get_string('context_links_enable', 'block_tutoring_machine'), '', array(), array(0, 1));
         $mform->setDefault('config_context_links_enable', 0);
@@ -149,6 +158,27 @@ class block_tutoring_machine_edit_form extends block_edit_form {
         $mform->addHelpButton('config_context_links', 'context_links', 'block_tutoring_machine');
         $mform->disabledIf('config_context_links', 'config_include_context', 'neq', 1);
         $mform->disabledIf('config_context_links', 'config_context_links_enable', 'neq', 1);
+
+        // OKF-Wissensbasis: Inhalt der Kontextdatei für diese Blockinstanz einfügen
+        $mform->addElement('static', 'knowledgebase_intro', '',
+            get_string('knowledgebase_intro', 'block_tutoring_machine'));
+
+        $mform->addElement('textarea', 'config_knowledgebase_content',
+            get_string('knowledgebase_content', 'block_tutoring_machine'),
+            array('rows' => 16, 'cols' => 60, 'placeholder' => get_string('knowledgebase_content_placeholder', 'block_tutoring_machine')));
+        $mform->setType('config_knowledgebase_content', PARAM_RAW_TRIMMED);
+        $mform->addHelpButton('config_knowledgebase_content', 'knowledgebase_content', 'block_tutoring_machine');
+        $mform->disabledIf('config_knowledgebase_content', 'config_include_context', 'neq', 1);
+
+        $knowledgebase_storage_choices = array(
+            'inline' => get_string('knowledgebase_storage_inline', 'block_tutoring_machine'),
+            'openai_vectorstore' => get_string('knowledgebase_storage_openai', 'block_tutoring_machine'),
+        );
+        $mform->addElement('select', 'config_knowledgebase_storage',
+            get_string('knowledgebase_storage', 'block_tutoring_machine'), $knowledgebase_storage_choices);
+        $mform->setDefault('config_knowledgebase_storage', 'inline');
+        $mform->addHelpButton('config_knowledgebase_storage', 'knowledgebase_storage', 'block_tutoring_machine');
+        $mform->disabledIf('config_knowledgebase_storage', 'config_include_context', 'neq', 1);
 
         // Erklärung zur Aktivitätsauswahl
         $mform->addElement('static', 'specific_activities_explanation', '',
@@ -319,6 +349,16 @@ class block_tutoring_machine_edit_form extends block_edit_form {
                     return $record->url;
                 }, $links);
                 $defaults->config_context_links = implode("\n", $urls);
+            }
+
+            if (!isset($defaults->config_knowledgebase_content)) {
+                $context = context_block::instance($this->block->instance->id);
+                $fs = get_file_storage();
+                $kb_files = $fs->get_area_files($context->id, 'block_tutoring_machine', 'knowledgebase', 0, 'filename', false);
+                $kb_file = reset($kb_files);
+                if ($kb_file) {
+                    $defaults->config_knowledgebase_content = $kb_file->get_content();
+                }
             }
         }
 
